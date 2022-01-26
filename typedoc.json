@@ -1,0 +1,6 @@
+{
+  "name": "parallel-universe",
+  "includeVersion": true,
+  "out": "./docs",
+  "excludePrivate": true
+}
