@@ -1,13 +1,32 @@
 const Exception = typeof DOMException !== 'undefined' ? DOMException : Error;
 
 export function newAbortError(): Error {
-  return new Exception('AbortError');
+  const ex = new Exception();
+  ex.name = 'AbortError';
+  return ex;
 }
 
 export function newTimeoutError(): Error {
-  return new Exception('TimeoutError');
+  const ex = new Exception();
+  ex.name = 'TimeoutError';
+  return ex;
 }
 
 export function callOrGet<T, A extends unknown[]>(value: ((...args: A) => T) | T, ...args: A): T {
   return typeof value === 'function' ? (value as Function)(...args) : value;
+}
+
+export function noop() {
+}
+
+export function addSignalListener(signal: AbortSignal | null | undefined, listener: () => void): void {
+  signal?.addEventListener('abort', listener);
+}
+
+export function removeSignalListener(signal: AbortSignal | null | undefined, listener: () => void): void {
+  signal?.removeEventListener('abort', listener);
+}
+
+export function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
+  return value != null && typeof value === 'object' && 'then' in value;
 }

@@ -3,28 +3,28 @@ import {newAbortError} from '../main/utils';
 
 describe('sleep', () => {
 
+  test('aborts if signal is aborted', async () => {
+    const ac = new AbortController();
+    ac.abort();
+
+    await expect(sleep(1, ac.signal)).rejects.toEqual(newAbortError());
+  });
+
   test('resolves after timeout', async () => {
-    const timestamp = Date.now();
+    const ts = Date.now();
     await sleep(200);
 
-    expect(Date.now() - timestamp).toBeGreaterThanOrEqual(199);
+    expect(Date.now() - ts).toBeGreaterThanOrEqual(199);
   });
 
-  test('rejects with AbortError when signal is aborted', async () => {
-    const abortController = new AbortController();
-    const promise = sleep(500, abortController.signal);
-    const timestamp = Date.now();
+  test('rejects when signal is aborted', async () => {
+    const ac = new AbortController();
+    const promise = sleep(500, ac.signal);
+    const ts = Date.now();
 
-    setTimeout(() => abortController.abort(), 100);
+    ac.abort();
 
     await expect(promise).rejects.toEqual(newAbortError());
-    expect(Date.now() - timestamp).toBeLessThan(150);
-  });
-
-  test('instantly aborts if signal is aborted', async () => {
-    const abortController = new AbortController();
-    abortController.abort();
-
-    await expect(sleep(500, abortController.signal)).rejects.toEqual(newAbortError());
+    expect(Date.now() - ts).toBeLessThan(10);
   });
 });

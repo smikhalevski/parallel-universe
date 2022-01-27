@@ -1,17 +1,28 @@
-import {newAbortError} from './utils';
+import {addSignalListener, newAbortError, removeSignalListener} from './utils';
 
 export function sleep(ms: number, signal?: AbortSignal | null): Promise<undefined> {
   return new Promise<undefined>((resolve, reject) => {
 
-    if (signal?.aborted) {
-      reject(newAbortError());
+    if (!signal) {
+      setTimeout(resolve, ms);
+      return;
     }
 
-    const timeout = setTimeout(resolve, ms);
+    if (signal.aborted) {
+      reject(newAbortError());
+      return;
+    }
 
-    signal?.addEventListener('abort', () => {
+    const signalListener = () => {
       clearTimeout(timeout);
       reject(newAbortError());
-    });
+    };
+
+    const timeout = setTimeout(() => {
+      removeSignalListener(signal, signalListener);
+      resolve(undefined);
+    }, ms);
+
+    addSignalListener(signal, signalListener);
   });
 }

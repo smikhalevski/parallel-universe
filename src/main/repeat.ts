@@ -1,51 +1,76 @@
-import {callOrGet, newAbortError} from './utils';
-import {sleep} from './sleep';
+import {addSignalListener, callOrGet, isPromiseLike, newAbortError, removeSignalListener} from './utils';
 
-export function repeat<T>(cb: (signal: AbortSignal) => Promise<T> | T, until: (result: T | undefined, reason: any) => boolean, ms: number | ((callCount: number) => number) = 50, signal?: AbortSignal | null): Promise<T> {
+export function repeat<T>(cb: (signal: AbortSignal) => PromiseLike<T> | T, until: (result: T | undefined, reason: any, callCount: number) => boolean, ms?: number | ((result: T | undefined, reason: any, callCount: number) => number), signal?: AbortSignal | null): Promise<T> {
   return new Promise<T>((resolve, reject) => {
 
     if (signal?.aborted) {
       reject(newAbortError());
+      return;
     }
 
-    const cbSignal = signal || new AbortSignal();
+    let callCount = -1;
+    let timeout: ReturnType<typeof setTimeout>;
+    let signalListener: () => void;
 
-    let callCount = 0;
+    const cbSignal = signal || new AbortController().signal;
 
-    const loopResolve = (result: T) => {
-      if (until(result, undefined)) {
-        resolve(result);
-        return;
-      }
+    if (signal) {
+      signalListener = () => {
+        clearTimeout(timeout);
+        reject(newAbortError());
+      };
+      addSignalListener(signal, signalListener);
+    }
+
+    const fulfillLoop = (result: any, reason: any, resolved: boolean): void => {
       if (signal?.aborted) {
         return;
       }
-      sleep(callOrGet(ms, callCount++), signal).then(loop);
+      ++callCount;
+
+      let completed;
+
+      try {
+        completed = until(result, reason, callCount);
+      } catch (error) {
+        reject(error);
+        return;
+      }
+
+      if (completed) {
+        removeSignalListener(signal, signalListener);
+        resolved ? resolve(result) : reject(reason);
+        return;
+      }
+
+      timeout = setTimeout(loop, callOrGet(ms, result, reason, callCount) || 0);
     };
 
-    const loopReject = (reason: any) => {
-      if (until(undefined, reason)) {
-        reject(reason);
-        return;
-      }
-      if (signal?.aborted) {
-        return;
-      }
-      sleep(callOrGet(ms, callCount++), signal).then(loop);
+    const resolveLoop = (result: T) => {
+      fulfillLoop(result, undefined, true);
+    };
+
+    const rejectLoop = (reason: any) => {
+      fulfillLoop(undefined, reason, false);
     };
 
     const loop = () => {
+      if (signal?.aborted) {
+        return;
+      }
+
       let result;
       try {
         result = cb(cbSignal);
       } catch (error) {
-        loopReject(error);
+        rejectLoop(error);
         return;
       }
-      if (result instanceof Promise) {
-        result.then(loopResolve, loopReject);
+
+      if (isPromiseLike(result)) {
+        result.then(resolveLoop, rejectLoop);
       } else {
-        loopResolve(result);
+        resolveLoop(result);
       }
     };
 

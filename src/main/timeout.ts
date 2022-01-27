@@ -1,36 +1,46 @@
-import {newAbortError, newTimeoutError} from './utils';
+import {addSignalListener, isPromiseLike, newAbortError, newTimeoutError, removeSignalListener} from './utils';
 
-export function timeout<T>(cb: (signal: AbortSignal) => Promise<T> | T, ms: number, signal?: AbortSignal | null): Promise<T> {
+export function timeout<T>(cb: (signal: AbortSignal) => PromiseLike<T> | T, ms: number, signal?: AbortSignal | null): Promise<T> {
   return new Promise<T>((resolve, reject) => {
 
     if (signal?.aborted) {
-      return reject(newAbortError());
-    }
-
-    const abortController = new AbortController();
-    const result = cb(abortController.signal);
-
-    if (!(result instanceof Promise)) {
-      return resolve(result);
-    }
-
-    signal?.addEventListener('abort', () => {
-      abortController.abort();
-      clearTimeout(timeout);
       reject(newAbortError());
-    });
+      return;
+    }
+
+    const ac = new AbortController();
+    const result = cb(ac.signal);
+
+    if (!isPromiseLike(result)) {
+      resolve(result);
+      return;
+    }
+
+    let signalListener: () => void;
+
+    if (signal) {
+      signalListener = () => {
+        ac.abort();
+        clearTimeout(timeout);
+        reject(newAbortError());
+      };
+      addSignalListener(signal, signalListener);
+    }
 
     const timeout = setTimeout(() => {
-      abortController.abort();
+      ac.abort();
+      removeSignalListener(signal, signalListener);
       reject(newTimeoutError());
     }, ms);
 
     result.then(
         (result) => {
+          removeSignalListener(signal, signalListener);
           clearTimeout(timeout);
           resolve(result);
         },
         (reason) => {
+          removeSignalListener(signal, signalListener);
           clearTimeout(timeout);
           reject(reason);
         },
