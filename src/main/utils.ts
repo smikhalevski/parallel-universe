@@ -16,7 +16,8 @@ export function callOrGet<T, A extends unknown[]>(value: ((...args: A) => T) | T
   return typeof value === 'function' ? (value as Function)(...args) : value;
 }
 
-export function noop() {
+export function identity<T>(value: T): T {
+  return value;
 }
 
 export function addSignalListener(signal: AbortSignal | null | undefined, listener: () => void): void {
