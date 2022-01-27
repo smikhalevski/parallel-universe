@@ -1,4 +1,4 @@
-# parallel-universe
+# parallel-universe 🔭
 
 Various promise utils.
 
