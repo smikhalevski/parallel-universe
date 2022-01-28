@@ -8,6 +8,12 @@ npm install --save-prod parallel-universe
 
 📚 [API documentation is available here.](https://smikhalevski.github.io/parallel-universe/)
 
+- [`repeat`](#repeat)
+- [`untilDefined`](#untildefined)
+- [`sleep`](#sleep)
+- [`timeout`](#timeout)
+- [`Lock`](#lock)
+
 # Usage
 
 ### `repeat`
@@ -42,7 +48,8 @@ untilDefined(
     async (signal) => value,
     100,
     abortController.signal,
-)
+);
+// → Promise<typeof value>
 ```
 
 ### `sleep`
@@ -50,7 +57,8 @@ untilDefined(
 Returns a promise that resolves after a timeout. If aborted via a passed signal then rejected with an `AbortError`.
 
 ```ts
-sleep(100, abortController.signal); // → Promise<undefined>
+sleep(100, abortController.signal);
+// → Promise<undefined>
 ```
 
 ### `timeout`
