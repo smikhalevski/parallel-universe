@@ -1,6 +1,11 @@
-import {addSignalListener, callOrGet, isPromiseLike, newAbortError, removeSignalListener} from './utils';
+import {addAbortListener, callOrGet, isPromiseLike, newAbortError, removeAbortListener} from './utils';
+import {AwaitableLike, Maybe} from './util-types';
 
-export function repeat<T>(cb: (signal: AbortSignal) => PromiseLike<T> | T, until: (result: T | undefined, reason: any, callCount: number) => boolean, ms?: number | ((result: T | undefined, reason: any, callCount: number) => number), signal?: AbortSignal | null): Promise<T> {
+export type UntilCallback<T> = (result: T | undefined, reason: any, resolved: boolean) => boolean;
+
+export type DelayCallback<T> = (result: T | undefined, reason: any, resolved: boolean) => number;
+
+export function repeat<T>(cb: (signal: AbortSignal) => AwaitableLike<T>, until: UntilCallback<T>, ms?: DelayCallback<T> | number, signal?: Maybe<AbortSignal>): Promise<T> {
   return new Promise<T>((resolve, reject) => {
 
     if (signal?.aborted) {
@@ -8,69 +13,59 @@ export function repeat<T>(cb: (signal: AbortSignal) => PromiseLike<T> | T, until
       return;
     }
 
-    let callCount = -1;
     let timeout: ReturnType<typeof setTimeout>;
-    let signalListener: () => void;
+    let abortListener: () => void;
 
     const cbSignal = signal || new AbortController().signal;
 
     if (signal) {
-      signalListener = () => {
+      abortListener = () => {
         clearTimeout(timeout);
         reject(newAbortError());
       };
-      addSignalListener(signal, signalListener);
+      addAbortListener(signal, abortListener);
     }
 
-    const fulfillLoop = (result: any, reason: any, resolved: boolean): void => {
+    const fulfillLoop = (result: any, reason: unknown, resolved: boolean): void => {
       if (signal?.aborted) {
         return;
       }
-      ++callCount;
-
-      let completed;
-
       try {
-        completed = until(result, reason, callCount);
+        if (!until(result, reason, resolved)) {
+          timeout = setTimeout(loop, callOrGet(ms, result, reason, resolved) || 0);
+          return;
+        }
       } catch (error) {
+        removeAbortListener(signal, abortListener);
         reject(error);
         return;
       }
-
-      if (completed) {
-        removeSignalListener(signal, signalListener);
-        resolved ? resolve(result) : reject(reason);
-        return;
+      removeAbortListener(signal, abortListener);
+      if (resolved) {
+        resolve(result);
+      } else {
+        reject(reason);
       }
-
-      timeout = setTimeout(loop, callOrGet(ms, result, reason, callCount) || 0);
     };
 
     const resolveLoop = (result: T) => {
       fulfillLoop(result, undefined, true);
     };
 
-    const rejectLoop = (reason: any) => {
+    const rejectLoop = (reason: unknown) => {
       fulfillLoop(undefined, reason, false);
     };
 
     const loop = () => {
-      if (signal?.aborted) {
-        return;
-      }
-
-      let result;
       try {
-        result = cb(cbSignal);
+        const result = cb(cbSignal);
+        if (isPromiseLike(result)) {
+          result.then(resolveLoop, rejectLoop);
+        } else {
+          resolveLoop(result);
+        }
       } catch (error) {
         rejectLoop(error);
-        return;
-      }
-
-      if (isPromiseLike(result)) {
-        result.then(resolveLoop, rejectLoop);
-      } else {
-        resolveLoop(result);
       }
     };
 

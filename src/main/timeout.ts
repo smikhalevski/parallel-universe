@@ -1,6 +1,7 @@
-import {addSignalListener, isPromiseLike, newAbortError, newTimeoutError, removeSignalListener} from './utils';
+import {addAbortListener, isPromiseLike, newAbortError, newTimeoutError, removeAbortListener} from './utils';
+import {AwaitableLike, Maybe} from './util-types';
 
-export function timeout<T>(cb: (signal: AbortSignal) => PromiseLike<T> | T, ms: number, signal?: AbortSignal | null): Promise<T> {
+export function timeout<T>(cb: PromiseLike<T> | ((signal: AbortSignal) => AwaitableLike<T>), ms: number, signal?: Maybe<AbortSignal>): Promise<T> {
   return new Promise<T>((resolve, reject) => {
 
     if (signal?.aborted) {
@@ -8,40 +9,46 @@ export function timeout<T>(cb: (signal: AbortSignal) => PromiseLike<T> | T, ms: 
       return;
     }
 
-    const ac = new AbortController();
-    const result = cb(ac.signal);
+    let result;
+    let abortController: AbortController | undefined;
+    let abortListener: () => void;
+
+    if (typeof cb === 'function') {
+      abortController = new AbortController();
+      result = cb(abortController.signal);
+    } else {
+      result = cb;
+    }
 
     if (!isPromiseLike(result)) {
       resolve(result);
       return;
     }
 
-    let signalListener: () => void;
-
     if (signal) {
-      signalListener = () => {
-        ac.abort();
+      abortListener = () => {
+        abortController?.abort();
         clearTimeout(timeout);
         reject(newAbortError());
       };
-      addSignalListener(signal, signalListener);
+      addAbortListener(signal, abortListener);
     }
 
     const timeout = setTimeout(() => {
-      ac.abort();
-      removeSignalListener(signal, signalListener);
+      abortController?.abort();
+      removeAbortListener(signal, abortListener);
       reject(newTimeoutError());
     }, ms);
 
     result.then(
         (result) => {
-          removeSignalListener(signal, signalListener);
           clearTimeout(timeout);
+          removeAbortListener(signal, abortListener);
           resolve(result);
         },
         (reason) => {
-          removeSignalListener(signal, signalListener);
           clearTimeout(timeout);
+          removeAbortListener(signal, abortListener);
           reject(reason);
         },
     );

@@ -1,6 +1,6 @@
 {
   "name": "parallel-universe",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "Various promise utils.",
   "main": "./lib/index-cjs.js",
   "module": "./lib/index.js",
@@ -24,7 +24,11 @@
     "url": "git+https://github.com/smikhalevski/parallel-universe.git"
   },
   "keywords": [
-    "promise"
+    "promise",
+    "repeat",
+    "timeout",
+    "sleep",
+    "delay"
   ],
   "author": "Savva Mikhalevski <smikhalevski@gmail.com>",
   "license": "MIT",

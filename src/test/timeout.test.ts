@@ -5,10 +5,10 @@ describe('timeout', () => {
 
   test('aborts if signal is aborted', async () => {
     const cbMock = jest.fn();
-    const ac = new AbortController();
-    ac.abort();
+    const abortController = new AbortController();
+    abortController.abort();
 
-    await expect(timeout(cbMock, 1, ac.signal)).rejects.toEqual(newAbortError());
+    await expect(timeout(cbMock, 1, abortController.signal)).rejects.toEqual(newAbortError());
     expect(cbMock).not.toHaveBeenCalled();
   });
 
@@ -31,14 +31,14 @@ describe('timeout', () => {
   });
 
   test('aborts if timeout expires', async () => {
-    await expect(timeout(() => sleep(100), 1)).rejects.toEqual(newTimeoutError());
+    await expect(timeout((signal) => sleep(100, signal), 1)).rejects.toEqual(newTimeoutError());
   });
 
   test('aborts when signal is aborted', async () => {
-    const ac = new AbortController();
-    const promise = timeout(() => sleep(1_000), 100, ac.signal);
+    const abortController = new AbortController();
+    const promise = timeout((signal) => sleep(1_000, signal), 100, abortController.signal);
 
-    ac.abort();
+    abortController.abort();
 
     await expect(promise).rejects.toEqual(newAbortError());
   });

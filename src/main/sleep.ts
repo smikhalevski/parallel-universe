@@ -1,6 +1,7 @@
-import {addSignalListener, newAbortError, removeSignalListener} from './utils';
+import {addAbortListener, newAbortError, removeAbortListener} from './utils';
+import {Maybe} from './util-types';
 
-export function sleep(ms: number, signal?: AbortSignal | null): Promise<undefined> {
+export function sleep(ms: number, signal?: Maybe<AbortSignal>): Promise<undefined> {
   return new Promise<undefined>((resolve, reject) => {
 
     if (!signal) {
@@ -13,16 +14,16 @@ export function sleep(ms: number, signal?: AbortSignal | null): Promise<undefine
       return;
     }
 
-    const signalListener = () => {
+    const abortListener = () => {
       clearTimeout(timeout);
       reject(newAbortError());
     };
 
+    addAbortListener(signal, abortListener);
+
     const timeout = setTimeout(() => {
-      removeSignalListener(signal, signalListener);
+      removeAbortListener(signal, abortListener);
       resolve(undefined);
     }, ms);
-
-    addSignalListener(signal, signalListener);
   });
 }

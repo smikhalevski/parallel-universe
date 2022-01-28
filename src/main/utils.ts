@@ -1,15 +1,22 @@
-const Exception = typeof DOMException !== 'undefined' ? DOMException : Error;
+interface Exception extends Error {
+  // https://developer.mozilla.org/en-US/docs/Web/API/DOMException/code
+  code?: number;
+}
+
+const Exception: new() => Exception = typeof DOMException !== 'undefined' ? DOMException : Error;
 
 export function newAbortError(): Error {
-  const ex = new Exception();
-  ex.name = 'AbortError';
-  return ex;
+  const error = new Exception();
+  error.name = 'AbortError';
+  error.code = 20;
+  return error;
 }
 
 export function newTimeoutError(): Error {
-  const ex = new Exception();
-  ex.name = 'TimeoutError';
-  return ex;
+  const error = new Exception();
+  error.name = 'TimeoutError';
+  error.code = 23;
+  return error;
 }
 
 export function callOrGet<T, A extends unknown[]>(value: ((...args: A) => T) | T, ...args: A): T {
@@ -20,11 +27,11 @@ export function identity<T>(value: T): T {
   return value;
 }
 
-export function addSignalListener(signal: AbortSignal | null | undefined, listener: () => void): void {
+export function addAbortListener(signal: AbortSignal | null | undefined, listener: () => void): void {
   signal?.addEventListener('abort', listener);
 }
 
-export function removeSignalListener(signal: AbortSignal | null | undefined, listener: () => void): void {
+export function removeAbortListener(signal: AbortSignal | null | undefined, listener: () => void): void {
   signal?.removeEventListener('abort', listener);
 }
 
