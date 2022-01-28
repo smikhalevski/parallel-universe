@@ -2,7 +2,7 @@ import {untilDefined} from '../main';
 
 describe('untilDefined', () => {
 
-  it('waits until returned value is defined', async () => {
+  test('waits until returned value is defined', async () => {
     let value: number | undefined;
 
     const promise = untilDefined<number>(() => value);

@@ -72,3 +72,25 @@ timeout(
 );
 // → Promise<ReturnType<typeof doSometging>>
 ```
+
+### `Lock`
+
+Promise-based lock implementation.
+
+```ts
+const lock = new Lock();
+
+async function process() {
+  const release = await lock.acquire();
+  try {
+    // Long process starts here
+  } finally {
+    release();
+  }
+}
+
+// Long process would be executed three times sequentially
+process();
+process();
+process();
+```
