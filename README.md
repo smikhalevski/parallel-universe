@@ -1,4 +1,4 @@
-# parallel-universe 🔭
+# parallel-universe 🔭 [![build](https://github.com/smikhalevski/parallel-universe/actions/workflows/master.yml/badge.svg?branch=master&event=push)](https://github.com/smikhalevski/parallel-universe/actions/workflows/master.yml)
 
 Various promise utils.
 
