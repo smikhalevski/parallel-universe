@@ -9,16 +9,26 @@
 export class Lock {
 
   private _promise?: Promise<unknown>;
+  private readonly _listener;
 
   /**
-   * `true` if lock was acquired and wasn't released yet.
+   * Creates a new {@link Lock} instance.
+   *
+   * @param listener The listener that would be notified about locked status changes.
+   */
+  public constructor(listener?: () => void) {
+    this._listener = listener;
+  }
+
+  /**
+   * `true` if {@link Lock} was acquired and wasn't released yet.
    */
   public get locked() {
     return this._promise != null;
   }
 
   /**
-   * Waits for the lock to become available and resolves with the callback that releases the lock.
+   * Waits for the {@link Lock} to become available and resolves with the callback that releases the lock.
    */
   public acquire(): Promise<() => void> {
     let release: () => void;
@@ -26,9 +36,11 @@ export class Lock {
     let promise = new Promise<void>((resolve) => {
       release = () => {
         resolve();
+
         if (this._promise === promise) {
           this._promise = undefined;
         }
+        this._listener?.();
       };
     });
 
@@ -40,6 +52,7 @@ export class Lock {
     }
 
     this._promise = promise;
+    this._listener?.();
 
     return Promise.resolve(release!);
   }
