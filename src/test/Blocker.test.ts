@@ -43,7 +43,8 @@ describe('Blocker', () => {
 
   test('triggers listener when blocked', () => {
     const listenerMock = jest.fn();
-    const blocker = new Blocker(listenerMock);
+    const blocker = new Blocker()
+    blocker.subscribe(listenerMock);
 
     blocker.block();
 
@@ -52,7 +53,8 @@ describe('Blocker', () => {
 
   test('triggers listener when unblocked', () => {
     const listenerMock = jest.fn();
-    const blocker = new Blocker(listenerMock);
+    const blocker = new Blocker();
+    blocker.subscribe(listenerMock);
 
     blocker.block();
     blocker.unblock();

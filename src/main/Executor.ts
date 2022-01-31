@@ -1,8 +1,18 @@
 import {isPromiseLike} from './utils';
 import {AwaitableLike} from './util-types';
+import {EventBus} from '@smikhalevski/event-bus';
 
+/**
+ * The callback that receives a signal that is aborted when execution must be stopped, and returns the execution result.
+ */
 export type ExecutorCallback<T> = (signal: AbortSignal) => AwaitableLike<T | undefined>;
 
+/**
+ * Manages async callback execution process and provides ways to access execution results, abort or replace an
+ * execution, and subscribe to state changes.
+ *
+ * @template T The type of the result returned by the executed callback.
+ */
 export class Executor<T = any> {
 
   public pending = false;
@@ -25,17 +35,8 @@ export class Executor<T = any> {
    */
   public promise: Promise<void> | undefined;
 
+  private readonly _eventBus = new EventBus();
   private _abortController?: AbortController;
-  private readonly _listener;
-
-  /**
-   * Creates a new {@link Executor}.
-   *
-   * @param listener The callback that is triggered when the executor state was changed.
-   */
-  public constructor(listener?: () => void) {
-    this._listener = listener;
-  }
 
   /**
    * Instantly aborts pending execution (if any), marks executor as pending and invokes the callback.
@@ -150,9 +151,18 @@ export class Executor<T = any> {
     return this;
   }
 
+  /**
+   * Subscribes a listener to the {@link Executor} state changes.
+   *
+   * @param listener The listener that would be notified.
+   * @returns The callback to unsubscribe the listener.
+   */
+  public subscribe(listener: () => void): () => void {
+    return this._eventBus.subscribe(listener);
+  }
+
   private _notify() {
-    const {_listener} = this;
-    _listener?.();
+    this._eventBus.publish();
   }
 
   private _forceAbort() {

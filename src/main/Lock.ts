@@ -1,3 +1,5 @@
+import {EventBus} from '@smikhalevski/event-bus';
+
 /**
  * Promise-based lock implementation.
  *
@@ -8,17 +10,8 @@
  */
 export class Lock {
 
+  private readonly _eventBus = new EventBus();
   private _promise?: Promise<() => void>;
-  private readonly _listener;
-
-  /**
-   * Creates a new {@link Lock} instance.
-   *
-   * @param listener The listener that would be notified about locked status changes.
-   */
-  public constructor(listener?: () => void) {
-    this._listener = listener;
-  }
 
   /**
    * `true` if {@link Lock} was acquired and wasn't released yet.
@@ -31,7 +24,7 @@ export class Lock {
    * Waits for the {@link Lock} to become available and resolves with the callback that releases the lock.
    */
   public acquire(): Promise<() => void> {
-    const {_promise, _listener} = this;
+    const {_promise} = this;
 
     let promise: Promise<() => void>;
 
@@ -39,17 +32,26 @@ export class Lock {
       if (this._promise === promise) {
         this._promise = undefined;
       }
-      const {_listener} = this;
-      _listener?.();
+      this._eventBus.publish();
     };
 
     if (_promise) {
       this._promise = promise = _promise.then(() => release);
     } else {
       this._promise = promise = Promise.resolve(release);
-      _listener?.();
+      this._eventBus.publish();
     }
 
     return promise;
+  }
+
+  /**
+   * Subscribes a listener to the {@link locked} status changes.
+   *
+   * @param listener The listener that would be notified.
+   * @returns The callback to unsubscribe the listener.
+   */
+  public subscribe(listener: () => void): () => void {
+    return this._eventBus.subscribe(listener);
   }
 }

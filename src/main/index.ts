@@ -6,4 +6,5 @@ export * from './repeat';
 export * from './sleep';
 export * from './timeout';
 export * from './untilDefined';
+export * from './utils';
 export * from './util-types';

@@ -1,23 +1,16 @@
+import {EventBus} from '@smikhalevski/event-bus';
+
 /**
  * Provides mechanism for blocking async processes and unblocking them from an external context.
  *
  * @template T The type of value that can be passed to {@link Blocker.unblock} to resolve the `Promise` returned by
  *     {@link Blocker.block}.
  */
-export class Blocker<T = any> {
+export class Blocker<T = void> {
 
+  private _eventBus = new EventBus();
   private _promise?: Promise<T>;
   private _resolve?: (result: T) => void;
-  private readonly _listener;
-
-  /**
-   * Creates a new {@link Blocker} instance.
-   *
-   * @param listener The listener that would be notified about blocked status changes.
-   */
-  public constructor(listener?: () => void) {
-    this._listener = listener;
-  }
 
   /**
    * `true` if {@link Blocker} was blocked and wasn't unblocked yet.
@@ -35,9 +28,7 @@ export class Blocker<T = any> {
       this._promise = new Promise((resolve) => {
         this._resolve = resolve;
       });
-
-      const {_listener} = this;
-      _listener?.();
+      this._eventBus.publish();
     }
     return this._promise;
   }
@@ -46,12 +37,22 @@ export class Blocker<T = any> {
    * Resolves the promise returned from {@link block}. If the blocker isn't blocked then no-op.
    */
   public unblock(result: T): void {
-    const {_resolve, _listener} = this;
+    const {_resolve} = this;
 
     if (_resolve) {
       this._resolve = undefined;
       _resolve(result);
-      _listener?.();
+      this._eventBus.publish();
     }
+  }
+
+  /**
+   * Subscribes a listener to {@link blocked} status changes.
+   *
+   * @param listener The listener that would be notified.
+   * @returns The callback to unsubscribe the listener.
+   */
+  public subscribe(listener: () => void): () => void {
+    return this._eventBus.subscribe(listener);
   }
 }

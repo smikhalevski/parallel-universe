@@ -55,7 +55,8 @@ describe('Lock', () => {
 
   test('triggers listener when locked', () => {
     const listenerMock = jest.fn();
-    const lock = new Lock(listenerMock);
+    const lock = new Lock();
+    lock.subscribe(listenerMock);
 
     lock.acquire();
 
@@ -64,7 +65,8 @@ describe('Lock', () => {
 
   test('triggers listener when unlocked', async () => {
     const listenerMock = jest.fn();
-    const lock = new Lock(listenerMock);
+    const lock = new Lock();
+    lock.subscribe(listenerMock);
 
     const release = await lock.acquire();
     release();
@@ -74,7 +76,8 @@ describe('Lock', () => {
 
   test('triggers listener when owner is changed', async () => {
     const listenerMock = jest.fn();
-    const lock = new Lock(listenerMock);
+    const lock = new Lock();
+    lock.subscribe(listenerMock);
 
     const releasePromise1 = lock.acquire();
     const releasePromise2 = lock.acquire();

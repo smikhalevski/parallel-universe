@@ -7,7 +7,8 @@ describe('Executor', () => {
 
   beforeEach(() => {
     listenerMock = jest.fn();
-    executor = new Executor(listenerMock);
+    executor = new Executor();
+    executor.subscribe(listenerMock);
   });
 
   it('creates a blank executor', () => {
