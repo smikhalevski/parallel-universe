@@ -8,7 +8,7 @@
  */
 export class Lock {
 
-  private _promise?: Promise<unknown>;
+  private _promise?: Promise<() => void>;
   private readonly _listener;
 
   /**
@@ -31,29 +31,25 @@ export class Lock {
    * Waits for the {@link Lock} to become available and resolves with the callback that releases the lock.
    */
   public acquire(): Promise<() => void> {
-    let release: () => void;
+    const {_promise, _listener} = this;
 
-    let promise = new Promise<void>((resolve) => {
-      release = () => {
-        resolve();
+    let promise: Promise<() => void>;
 
-        if (this._promise === promise) {
-          this._promise = undefined;
-        }
-        this._listener?.();
-      };
-    });
+    const release = () => {
+      if (this._promise === promise) {
+        this._promise = undefined;
+      }
+      const {_listener} = this;
+      _listener?.();
+    };
 
-    if (this._promise) {
-      const prevPromise = this._promise;
-      const nextPromise = promise;
-      this._promise = promise = prevPromise.then(() => nextPromise);
-      return prevPromise.then(() => release);
+    if (_promise) {
+      this._promise = promise = _promise.then(() => release);
+    } else {
+      this._promise = promise = Promise.resolve(release);
+      _listener?.();
     }
 
-    this._promise = promise;
-    this._listener?.();
-
-    return Promise.resolve(release!);
+    return promise;
   }
 }

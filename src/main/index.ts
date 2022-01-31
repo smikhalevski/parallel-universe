@@ -1,4 +1,5 @@
 export * from './Blocker';
+export * from './Executor';
 export * from './Lock';
 export * from './mute';
 export * from './repeat';

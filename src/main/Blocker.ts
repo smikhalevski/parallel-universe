@@ -4,7 +4,7 @@
  * @template T The type of value that can be passed to {@link Blocker.unblock} to resolve the `Promise` returned by
  *     {@link Blocker.block}.
  */
-export class Blocker<T = void> {
+export class Blocker<T = any> {
 
   private _promise?: Promise<T>;
   private _resolve?: (result: T) => void;
@@ -35,7 +35,9 @@ export class Blocker<T = void> {
       this._promise = new Promise((resolve) => {
         this._resolve = resolve;
       });
-      this._listener?.();
+
+      const {_listener} = this;
+      _listener?.();
     }
     return this._promise;
   }
@@ -44,11 +46,12 @@ export class Blocker<T = void> {
    * Resolves the promise returned from {@link block}. If the blocker isn't blocked then no-op.
    */
   public unblock(result: T): void {
-    if (this._resolve) {
-      const resolve = this._resolve;
+    const {_resolve, _listener} = this;
+
+    if (_resolve) {
       this._resolve = undefined;
-      resolve(result);
-      this._listener?.();
+      _resolve(result);
+      _listener?.();
     }
   }
 }

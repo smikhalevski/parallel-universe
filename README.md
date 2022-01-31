@@ -1,6 +1,6 @@
 # parallel-universe 🔭 [![build](https://github.com/smikhalevski/parallel-universe/actions/workflows/master.yml/badge.svg?branch=master&event=push)](https://github.com/smikhalevski/parallel-universe/actions/workflows/master.yml)
 
-Various promise utils.
+The set of async flow control structures and promise utils.
 
 ```sh
 npm install --save-prod parallel-universe

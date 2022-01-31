@@ -58,5 +58,8 @@
     "ts-jest": "^27.1.3",
     "typedoc": "^0.22.11",
     "typescript": "^4.5.5"
+  },
+  "dependencies": {
+    "@smikhalevski/event-bus": "^1.0.0"
   }
 }
