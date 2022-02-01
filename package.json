@@ -1,7 +1,7 @@
 {
   "name": "parallel-universe",
   "version": "1.0.0",
-  "description": "Various promise utils.",
+  "description": "The set of async flow control structures and promise utils.",
   "main": "./lib/index-cjs.js",
   "module": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -24,11 +24,15 @@
     "url": "git+https://github.com/smikhalevski/parallel-universe.git"
   },
   "keywords": [
+    "async",
     "promise",
-    "repeat",
+    "repeat-until",
     "timeout",
     "sleep",
-    "delay"
+    "delay",
+    "lock",
+    "blocker",
+    "executor"
   ],
   "author": "Savva Mikhalevski <smikhalevski@gmail.com>",
   "license": "MIT",
