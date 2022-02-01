@@ -10,7 +10,7 @@ import {EventBus} from '@smikhalevski/event-bus';
  */
 export class Lock {
 
-  private readonly _eventBus = new EventBus();
+  private _eventBus = new EventBus();
   private _promise?: Promise<() => void>;
 
   /**

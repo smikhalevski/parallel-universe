@@ -1,11 +1,30 @@
-import {isPromiseLike} from './utils';
-import {AwaitableLike} from './util-types';
 import {EventBus} from '@smikhalevski/event-bus';
+import {AsyncResult, Awaitable} from './shared-types';
+import {isPromiseLike} from './isPromiseLike';
 
 /**
  * The callback that receives a signal that is aborted when execution must be stopped, and returns the execution result.
  */
-export type ExecutorCallback<T> = (signal: AbortSignal) => AwaitableLike<T | undefined>;
+export type ExecutorCallback<T> = (signal: AbortSignal) => Awaitable<T | undefined>;
+
+/**
+ * The async result that may be updated over time.
+ *
+ * @template T The type of the result contained by the execution.
+ */
+export interface Execution<T = any> extends AsyncResult<T> {
+
+  pending: boolean;
+  promise: Promise<void> | undefined;
+
+  /**
+   * Subscribes a listener to the execution state changes.
+   *
+   * @param listener The listener that would be notified.
+   * @returns The callback to unsubscribe the listener.
+   */
+  subscribe(listener: () => void): () => void;
+}
 
 /**
  * Manages async callback execution process and provides ways to access execution results, abort or replace an
@@ -13,30 +32,20 @@ export type ExecutorCallback<T> = (signal: AbortSignal) => AwaitableLike<T | und
  *
  * @template T The type of the result returned by the executed callback.
  */
-export class Executor<T = any> {
+export class Executor<T = any> implements Execution<T> {
 
-  public pending = false;
   public resolved = false;
   public rejected = false;
-
-  /**
-   * The result of the last execution or `undefined` if there was no execution yet or if the last execution was
-   * rejected.
-   */
   public result: T | undefined;
-
-  /**
-   * The reason why the last execution was rejected.
-   */
   public reason: any;
-
-  /**
-   * The promise of the currently pending execution or `undefined` if there's no pending execution.
-   */
   public promise: Promise<void> | undefined;
 
-  private readonly _eventBus = new EventBus();
-  private _abortController?: AbortController;
+  private _eventBus = new EventBus();
+  private _ac?: AbortController;
+
+  get pending() {
+    return this.promise != null;
+  }
 
   /**
    * Instantly aborts pending execution (if any), marks executor as pending and invokes the callback.
@@ -48,12 +57,15 @@ export class Executor<T = any> {
    */
   public execute(cb: ExecutorCallback<T>): Promise<void> {
 
-    this._abortController?.abort();
-    this._abortController = new AbortController();
+    const prevAc = this._ac;
+    prevAc?.abort();
+
+    this._ac = undefined;
+    const ac = new AbortController();
 
     let result;
     try {
-      result = cb(this._abortController.signal);
+      result = cb(ac.signal);
     } catch (error) {
       this.reject(error);
       return Promise.resolve();
@@ -64,25 +76,29 @@ export class Executor<T = any> {
       return Promise.resolve();
     }
 
-    if (!this.pending) {
-      this.pending = true;
-      this._notify();
-    }
-
     const promise = result.then(
         (result) => {
-          if (promise === this.promise) {
+          if (ac === this._ac) {
+            this._ac = undefined;
             this.resolve(result);
           }
         },
         (reason) => {
-          if (promise === this.promise) {
+          if (ac === this._ac) {
+            this._ac = undefined;
             this.reject(reason);
           }
         },
     );
 
-    return this.promise = promise instanceof Promise ? promise : Promise.resolve(promise);
+    this._ac = ac;
+    this.promise = promise instanceof Promise ? promise : Promise.resolve(promise);
+
+    if (!prevAc) {
+      this._eventBus.publish();
+    }
+
+    return this.promise;
   }
 
   /**
@@ -92,7 +108,7 @@ export class Executor<T = any> {
     if (this.resolved || this.rejected) {
       this.resolved = this.rejected = false;
       this.result = this.reason = undefined;
-      this._notify();
+      this._eventBus.publish();
     }
     return this;
   }
@@ -102,36 +118,37 @@ export class Executor<T = any> {
    * callback is ignored. The signal passed to the executed callback is aborted.
    */
   public abort(): this {
-    if (this.pending) {
-      this._forceAbort();
-      this._notify();
+    if (this._ac) {
+      this._ac.abort();
+      this._ac = this.promise = undefined;
+      this._eventBus.publish();
     }
     return this;
   }
 
   /**
-   * Instantly aborts pending execution and resolves with the given result.
+   * Aborts pending execution and resolves with the given result.
    *
    * ```ts
    * executor.resolve(new Promise((resolve, reject) => {
-   *   // Async process
+   *   resolve(value);
    * }));
    * // or
    * executor.resolve(value);
    * ```
    */
-  public resolve(result: AwaitableLike<T> | undefined): this {
+  public resolve(result: Awaitable<T> | undefined): this {
     if (isPromiseLike(result)) {
       this.execute(() => result);
       return this;
     }
-    if (this.pending || !Object.is(this.result, result)) {
-      this._forceAbort();
+    if (this.promise || !this.resolved || !Object.is(this.result, result)) {
+      this._ac?.abort();
       this.resolved = true;
       this.rejected = false;
       this.result = result;
-      this.reason = undefined;
-      this._notify();
+      this.reason = this._ac = this.promise = undefined;
+      this._eventBus.publish();
     }
     return this;
   }
@@ -140,34 +157,18 @@ export class Executor<T = any> {
    * Instantly aborts pending execution and rejects with the given reason.
    */
   public reject(reason: any): this {
-    if (this.pending || !Object.is(this.reason, reason)) {
-      this._forceAbort();
+    if (this.promise || !this.rejected || !Object.is(this.reason, reason)) {
+      this._ac?.abort();
       this.resolved = false;
       this.rejected = true;
-      this.result = undefined;
+      this.result = this._ac = this.promise = undefined;
       this.reason = reason;
-      this._notify();
+      this._eventBus.publish();
     }
     return this;
   }
 
-  /**
-   * Subscribes a listener to the {@link Executor} state changes.
-   *
-   * @param listener The listener that would be notified.
-   * @returns The callback to unsubscribe the listener.
-   */
   public subscribe(listener: () => void): () => void {
     return this._eventBus.subscribe(listener);
-  }
-
-  private _notify() {
-    this._eventBus.publish();
-  }
-
-  private _forceAbort() {
-    this.pending = false;
-    this._abortController?.abort();
-    this.promise = this._abortController = undefined;
   }
 }

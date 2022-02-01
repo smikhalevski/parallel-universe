@@ -1,7 +1,14 @@
-import {addAbortListener, newAbortError, removeAbortListener} from './utils';
-import {Maybe} from './util-types';
+import {addAbortListener, createAbortError, removeAbortListener} from './utils';
 
-export function sleep(ms: number, signal?: Maybe<AbortSignal>): Promise<undefined> {
+/**
+ * Returns a `Promise` that resolves after a timeout.
+ *
+ * @param ms The timeout in milliseconds after which to resolve.
+ * @param signal The optional signal that instantly aborts the sleep.
+ * @returns The `Promise` that resolves after a timeout. If `signal` was aborted then returned `Promise` is rejected
+ *     with [`DOMException`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException) abort error.
+ */
+export function sleep(ms: number, signal?: AbortSignal | null): Promise<undefined> {
   return new Promise<undefined>((resolve, reject) => {
 
     if (!signal) {
@@ -10,13 +17,13 @@ export function sleep(ms: number, signal?: Maybe<AbortSignal>): Promise<undefine
     }
 
     if (signal.aborted) {
-      reject(newAbortError());
+      reject(createAbortError());
       return;
     }
 
-    const abortListener = () => {
+    const abortListener = (): void => {
       clearTimeout(timeout);
-      reject(newAbortError());
+      reject(createAbortError());
     };
 
     addAbortListener(signal, abortListener);

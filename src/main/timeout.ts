@@ -1,23 +1,31 @@
-import {addAbortListener, isPromiseLike, newAbortError, newTimeoutError, removeAbortListener} from './utils';
-import {AwaitableLike, Maybe} from './util-types';
+import {addAbortListener, createAbortError, createAbortSignal, createTimeoutError, removeAbortListener} from './utils';
+import {Awaitable} from './shared-types';
+import {isPromiseLike} from './isPromiseLike';
 
-export function timeout<T>(cb: PromiseLike<T> | ((signal: AbortSignal) => AwaitableLike<T>), ms: number, signal?: Maybe<AbortSignal>): Promise<T> {
+export function timeout<T>(cb: PromiseLike<T> | ((signal: AbortSignal) => Awaitable<T>), ms: number, signal?: AbortSignal | null): Promise<T> {
   return new Promise<T>((resolve, reject) => {
 
-    if (signal?.aborted) {
-      reject(newAbortError());
+    const cbSignal = signal || createAbortSignal();
+
+    if (cbSignal.aborted) {
+      reject(createAbortError());
       return;
     }
 
-    let result;
-    let abortController: AbortController | undefined;
-    let abortListener: () => void;
+    let aborted = false;
 
-    if (typeof cb === 'function') {
-      abortController = new AbortController();
-      result = cb(abortController.signal);
-    } else {
-      result = cb;
+    const abortListener = (): void => {
+      aborted = true;
+      clearTimeout(timeout);
+      reject(createAbortError());
+    };
+
+    addAbortListener(cbSignal, abortListener);
+
+    const result = isPromiseLike(cb) ? cb : cb(cbSignal);
+
+    if (aborted) {
+      return;
     }
 
     if (!isPromiseLike(result)) {
@@ -25,30 +33,20 @@ export function timeout<T>(cb: PromiseLike<T> | ((signal: AbortSignal) => Awaita
       return;
     }
 
-    if (signal) {
-      abortListener = () => {
-        abortController?.abort();
-        clearTimeout(timeout);
-        reject(newAbortError());
-      };
-      addAbortListener(signal, abortListener);
-    }
-
     const timeout = setTimeout(() => {
-      abortController?.abort();
-      removeAbortListener(signal, abortListener);
-      reject(newTimeoutError());
+      removeAbortListener(cbSignal, abortListener);
+      reject(createTimeoutError());
     }, ms);
 
     result.then(
         (result) => {
           clearTimeout(timeout);
-          removeAbortListener(signal, abortListener);
+          removeAbortListener(cbSignal, abortListener);
           resolve(result);
         },
         (reason) => {
           clearTimeout(timeout);
-          removeAbortListener(signal, abortListener);
+          removeAbortListener(cbSignal, abortListener);
           reject(reason);
         },
     );

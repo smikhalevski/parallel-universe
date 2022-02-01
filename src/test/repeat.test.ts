@@ -1,7 +1,7 @@
-import {repeat} from '../main';
-import {newAbortError} from '../main/utils';
+import {repeatUntil} from '../main';
+import {createAbortError} from '../main/utils';
 
-describe('repeat', () => {
+describe('repeatUntil', () => {
 
   test('aborts if signal is aborted', async () => {
     const cbMock = jest.fn();
@@ -9,7 +9,7 @@ describe('repeat', () => {
     const ac = new AbortController();
     ac.abort();
 
-    await expect(repeat(cbMock, untilMock, 0, ac.signal)).rejects.toEqual(newAbortError());
+    await expect(repeatUntil(cbMock, untilMock, 0, ac.signal)).rejects.toEqual(createAbortError());
     expect(cbMock).not.toHaveBeenCalled();
   });
 
@@ -18,11 +18,11 @@ describe('repeat', () => {
     const untilMock = jest.fn();
     const ac = new AbortController();
 
-    const promise = repeat(cbMock, untilMock, 0, ac.signal);
+    const promise = repeatUntil(cbMock, untilMock, 0, ac.signal);
 
     ac.abort();
 
-    await expect(promise).rejects.toEqual(newAbortError());
+    await expect(promise).rejects.toEqual(createAbortError());
 
     expect(cbMock).toHaveBeenCalled();
   });
@@ -30,44 +30,44 @@ describe('repeat', () => {
   test('first callback invocation in synchronous', () => {
     const cbMock = jest.fn();
 
-    repeat(cbMock, () => true);
+    repeatUntil(cbMock, () => true);
 
     expect(cbMock).toHaveBeenCalledTimes(1);
   });
 
   test('rejects if callback throws synchronously', async () => {
-    await expect(repeat(() => {
+    await expect(repeatUntil(() => {
       throw 'foo';
     }, () => true)).rejects.toEqual('foo');
   });
 
   test('resolves with returned value', async () => {
-    await expect(repeat(() => 'foo', () => true)).resolves.toEqual('foo');
+    await expect(repeatUntil(() => 'foo', () => true)).resolves.toEqual('foo');
   });
 
   test('resolves if callback returns resolved Promise', async () => {
-    await expect(repeat(() => Promise.resolve('foo'), () => true)).resolves.toEqual('foo');
+    await expect(repeatUntil(() => Promise.resolve('foo'), () => true)).resolves.toEqual('foo');
   });
 
   test('rejects if callback returns rejected Promise', async () => {
-    await expect(repeat(() => Promise.reject('foo'), () => true)).rejects.toEqual('foo');
+    await expect(repeatUntil(() => Promise.reject('foo'), () => true)).rejects.toEqual('foo');
   });
 
   test('rejects if until callback throws', async () => {
-    await expect(repeat(() => 'foo', () => {
+    await expect(repeatUntil(() => 'foo', () => {
       throw 'bar';
     })).rejects.toEqual('bar');
   });
 
   test('rejects if delay callback throws', async () => {
-    await expect(repeat(() => 'foo', () => false, () => {
+    await expect(repeatUntil(() => 'foo', () => false, () => {
       throw 'bar';
     })).rejects.toEqual('bar');
   });
 
   test('resolves when until callback returns true', async () => {
     let i = 0;
-    await repeat(() => 'foo', () => ++i === 3);
+    await repeatUntil(() => 'foo', () => ++i === 3);
 
     expect(i).toBe(3);
   });
@@ -75,42 +75,62 @@ describe('repeat', () => {
   test('passes result to until callback on resolve', async () => {
     const untilMock = jest.fn(() => true);
 
-    await repeat(() => 'foo', untilMock);
+    await repeatUntil(() => 'foo', untilMock);
 
     expect(untilMock).toHaveBeenCalledTimes(1);
-    expect(untilMock).toHaveBeenCalledWith('foo', undefined, true);
+    expect(untilMock).toHaveBeenCalledWith({
+      resolved: true,
+      rejected: false,
+      result: 'foo',
+      reason: undefined,
+    });
   });
 
   test('passes reason to until callback on reject', async () => {
     const untilMock = jest.fn(() => true);
 
-    await expect(repeat(() => {
+    await expect(repeatUntil(() => {
       throw 'foo';
     }, untilMock)).rejects.toBe('foo');
 
     expect(untilMock).toHaveBeenCalledTimes(1);
-    expect(untilMock).toHaveBeenCalledWith(undefined, 'foo', false);
+    expect(untilMock).toHaveBeenCalledWith({
+      resolved: false,
+      rejected: true,
+      result: undefined,
+      reason: 'foo',
+    });
   });
 
   test('passes result to delay callback on resolve', async () => {
     const delayMock = jest.fn();
 
     let i = 0;
-    await repeat(() => 'foo', () => ++i === 2, delayMock);
+    await repeatUntil(() => 'foo', () => ++i === 2, delayMock);
 
     expect(delayMock).toHaveBeenCalledTimes(1);
-    expect(delayMock).toHaveBeenCalledWith('foo', undefined, true);
+    expect(delayMock).toHaveBeenCalledWith({
+      resolved: true,
+      rejected: false,
+      result: 'foo',
+      reason: undefined,
+    });
   });
 
   test('passes reason to delay callback on reject', async () => {
     const delayMock = jest.fn();
 
     let i = 0;
-    await expect(repeat(() => {
+    await expect(repeatUntil(() => {
       throw 'foo';
     }, () => ++i === 2, delayMock)).rejects.toBe('foo');
 
     expect(delayMock).toHaveBeenCalledTimes(1);
-    expect(delayMock).toHaveBeenCalledWith(undefined, 'foo', false);
+    expect(delayMock).toHaveBeenCalledWith({
+      resolved: false,
+      rejected: true,
+      result: undefined,
+      reason: 'foo',
+    });
   });
 });

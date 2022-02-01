@@ -3,8 +3,7 @@ import {EventBus} from '@smikhalevski/event-bus';
 /**
  * Provides mechanism for blocking async processes and unblocking them from an external context.
  *
- * @template T The type of value that can be passed to {@link Blocker.unblock} to resolve the `Promise` returned by
- *     {@link Blocker.block}.
+ * @template T The type of value that can be passed to {@link unblock} to resolve the {@link block} `Promise`.
  */
 export class Blocker<T = void> {
 
