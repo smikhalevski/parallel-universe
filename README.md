@@ -8,48 +8,96 @@ npm install --save-prod parallel-universe
 
 📚 [API documentation is available here.](https://smikhalevski.github.io/parallel-universe/)
 
-- [`repeat`](#repeat)
-- [`untilDefined`](#untildefined)
+- [`Blocker`](#blocker)
+- [`Lock`](#lock)
+- [`Executor`](#executor)
+- [`repeatUntil`](#repeatuntil)
 - [`sleep`](#sleep)
 - [`timeout`](#timeout)
-- [`Lock`](#lock)
 
 # Usage
 
-### `repeat`
+### `Blocker`
 
-Repeatedly invokes callback. If aborted via a passed signal then rejected with an `AbortError`.
+Provides mechanism for blocking async processes and unblocking them from an external context.
 
 ```ts
-repeat(
+const blocker = new Blocker();
+
+async function doSomething() {
+  const value = await blocker.block();
+  // → "my value"
+}
+
+doSomething();
+
+blocker.unblock('my value');
+```
+
+### `Lock`
+
+Promise-based lock implementation.
+
+When someone tries to acquire a `Lock` they receive a `Promise` for a release callback that is resolved as soon as
+previous lock owner invokes their release callback.
+
+```ts
+const lock = new Lock();
+
+async function doSomething() {
+  const release = await lock.acquire();
+  try {
+    // Long process starts here
+  } finally {
+    release();
+  }
+}
+
+// Long process would be executed three times sequentially
+doSomething();
+doSomething();
+doSomething();
+```
+
+### `Executor`
+
+Manages async callback execution process and provides ways to access execution results, abort or replace an execution,
+and subscribe to state changes.
+
+```ts
+const executor = new Executor();
+
+executor.execute(async (signal) => doSomething());
+// → Promise<void>
+
+executor.pending;
+// → true
+
+// Aborts pending execution
+executor.abort();
+```
+
+### `repeatUntil`
+
+Invokes a callback periodically with the given delay between resolutions of the returned `Promise`.
+
+```ts
+repeatUntil(
     // The callback that is invoked repeatedly
     async (signal) => doSometging(),
 
     // The until clause must return true to stop the loop
-    (result, reason, rejected) => false,
+    (asyncResult) => asyncResult.rejected,
 
     // Optional delay between callback invokations
     100,
     // or
-    // (result, reason, rejected) => 100,
+    // (asyncResult) => 100,
 
     // Optional signal that can abort the loop from the outside
     abortController.signal,
 );
 // → Promise<ReturnType<typeof doSometging>>
-```
-
-### `untilDefined`
-
-Resolves with `value` if `value != null` or repeats the check.
-
-```ts
-untilDefined(
-    async (signal) => value,
-    100,
-    abortController.signal,
-);
-// → Promise<typeof value>
 ```
 
 ### `sleep`
@@ -79,26 +127,4 @@ timeout(
     abortController.signal,
 );
 // → Promise<ReturnType<typeof doSometging>>
-```
-
-### `Lock`
-
-Promise-based lock implementation.
-
-```ts
-const lock = new Lock();
-
-async function process() {
-  const release = await lock.acquire();
-  try {
-    // Long process starts here
-  } finally {
-    release();
-  }
-}
-
-// Long process would be executed three times sequentially
-process();
-process();
-process();
 ```
