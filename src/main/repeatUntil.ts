@@ -80,16 +80,17 @@ export function repeatUntil<T>(cb: (signal: AbortSignal) => Awaitable<T>, until:
       if (aborted) {
         return;
       }
+      let result;
       try {
-        const result = cb(cbSignal);
-
-        if (isPromiseLike(result)) {
-          result.then(loopResolve, loopReject);
-        } else {
-          loopResolve(result);
-        }
+        result = cb(cbSignal);
       } catch (error) {
         loopReject(error);
+        return;
+      }
+      if (isPromiseLike(result)) {
+        result.then(loopResolve, loopReject);
+      } else {
+        loopResolve(result);
       }
     };
 
