@@ -14,7 +14,7 @@ import {isPromiseLike} from './isPromiseLike';
  * @returns The `Promise` that resolves with the `cb` result. If `signal` was aborted then returned `Promise` is
  *     rejected with [`DOMException`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException) abort error.
  */
-export function repeatUntil<T>(cb: (signal: AbortSignal) => Awaitable<T>, until: (result: AsyncResult<T>) => boolean, ms?: ((result: AsyncResult<T>) => number) | number | null, signal?: AbortSignal | null): Promise<T | undefined> {
+export function repeatUntil<T>(cb: (signal: AbortSignal) => Awaitable<T>, until: (result: AsyncResult<T>) => boolean, ms?: ((result: AsyncResult<T>) => number) | number | null, signal?: AbortSignal | null): Promise<T> {
   return new Promise<T>((resolve, reject) => {
 
     const cbSignal = signal || createAbortSignal();
