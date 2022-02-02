@@ -84,7 +84,7 @@ Invokes a callback periodically with the given delay between resolutions of the 
 ```ts
 repeatUntil(
     // The callback that is invoked repeatedly
-    async (signal) => doSometging(),
+    async (signal) => doSomething(),
 
     // The until clause must return true to stop the loop
     (asyncResult) => asyncResult.rejected,
@@ -97,7 +97,7 @@ repeatUntil(
     // Optional signal that can abort the loop from the outside
     abortController.signal,
 );
-// → Promise<ReturnType<typeof doSometging>>
+// → Promise<ReturnType<typeof doSomething>>
 ```
 
 ### `sleep`
@@ -116,9 +116,9 @@ an `AbortError`.
 
 ```ts
 timeout(
-    async (signal) => doComething(),
+    async (signal) => doSomething(),
     // or
-    // doComething()
+    // doSomething()
 
     // Execution timeout
     100,
@@ -126,5 +126,5 @@ timeout(
     // Optional signal that can abort the execution from the outside
     abortController.signal,
 );
-// → Promise<ReturnType<typeof doSometging>>
+// → Promise<ReturnType<typeof doSomething>>
 ```
