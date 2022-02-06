@@ -7,7 +7,7 @@ export class Queue<T> {
   public take(): Promise<T> {
     return new Promise((resolve) => {
       this.takeAck((ack) => resolve(ack()!));
-    })
+    });
   }
 
   public takeAck(taker: (ack: () => T | undefined) => void): void {
@@ -50,4 +50,14 @@ export class Queue<T> {
     }
     return this;
   }
+
+  [Symbol.asyncIterator](): AsyncIterator<T, void, void> {
+    return {
+      next: () => this.take().then(createYield),
+    };
+  }
+}
+
+function createYield<T>(value: T): IteratorYieldResult<T> {
+  return {value};
 }
