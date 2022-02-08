@@ -1,4 +1,8 @@
-# parallel-universe 🔭 [![build](https://github.com/smikhalevski/parallel-universe/actions/workflows/master.yml/badge.svg?branch=master&event=push)](https://github.com/smikhalevski/parallel-universe/actions/workflows/master.yml)
+# parallel-universe [![build](https://github.com/smikhalevski/parallel-universe/actions/workflows/master.yml/badge.svg?branch=master&event=push)](https://github.com/smikhalevski/parallel-universe/actions/workflows/master.yml)
+
+<a href="#readme">
+  <img alt="Spaceman" src="https://github.com/smikhalevski/parallel-universe/raw/next/spaceman.png"/>
+</a>
 
 The set of async flow control structures and promise utils.
 
@@ -6,7 +10,7 @@ The set of async flow control structures and promise utils.
 npm install --save-prod parallel-universe
 ```
 
-📚 [API documentation is available here.](https://smikhalevski.github.io/parallel-universe/)
+🚀 [API documentation is available here.](https://smikhalevski.github.io/parallel-universe/)
 
 - [`Blocker`](#blocker)
 - [`Lock`](#lock)
