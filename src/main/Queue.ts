@@ -1,63 +1,76 @@
+import {noop} from './utils';
+
+export type Ack<T> = () => T | undefined;
+
 export class Queue<T> {
 
-  protected values: T[] = [];
+  public values: T[] = [];
 
-  private _takers: ((ack: () => T | undefined) => void)[] = [];
+  private _promise?: Promise<void>;
+  private _resolve?: () => void;
 
   public take(): Promise<T> {
-    return new Promise((resolve) => {
-      this.takeAck((ack) => resolve(ack()!));
-    });
+    return this.takeAck().then(acceptAck);
   }
 
-  public takeAck(taker: (ack: () => T | undefined) => void): void {
-    if (this.values.length) {
-      let stale = false;
-      let value: T | undefined;
-      taker(() => {
-        if (stale) {
-          return value;
-        }
-        return value = this.values.shift();
-      });
-      stale = true;
+  public takeAck(): Promise<Ack<T>> {
+
+    let taken = false;
+    let value: T | undefined;
+
+    const ack: Ack<T> = () => {
+      if (!taken) {
+        taken = true;
+        value = this.values.shift();
+      }
+      return value;
+    };
+
+    let resolveAck: (ack: Ack<T>) => void;
+
+    const ackPromise = new Promise<Ack<T>>((resolve) => {
+      resolveAck = resolve;
+    });
+
+    const provideAck = () => {
+      if (this.values.length) {
+        resolveAck(ack);
+        return;
+      }
+      this._resolve = () => {
+        this._resolve = undefined;
+        resolveAck(ack);
+      };
+    };
+
+    const revokeAck = () => {
+      taken = true;
+
+      if (this._promise === promise) {
+        this._promise = undefined;
+      }
+    };
+
+    let promise: Promise<void>;
+    if (this._promise) {
+      promise = this._promise = this._promise.then(provideAck).then(revokeAck);
+    } else {
+      promise = this._promise = ackPromise.then(noop).then(revokeAck);
+      provideAck();
     }
-    this._takers.push(taker);
+
+    return ackPromise;
   }
 
   public add(...values: T[]): this {
-    let i = 0;
-    let j = 0;
-
-    while (i < values.length && j < this._takers.length) {
-      let stale = false;
-      let value: T | undefined;
-      this._takers[j](() => {
-        if (stale) {
-          return value;
-        }
-        ++i;
-        return value = this.values.shift();
-      });
-      stale = true;
-      ++j;
-    }
-    if (j !== 0) {
-      this._takers.splice(0, j);
-    }
-    if (i !== values.length) {
-      this.values.push(...values.slice(i));
+    if (values.length) {
+      this.values.push(...values);
+      this._resolve?.();
     }
     return this;
   }
-
-  [Symbol.asyncIterator](): AsyncIterator<T, void, void> {
-    return {
-      next: () => this.take().then(createYield),
-    };
-  }
 }
 
-function createYield<T>(value: T): IteratorYieldResult<T> {
-  return {value};
+function acceptAck<T>(ack: Ack<T>): T {
+  return ack()!;
 }
