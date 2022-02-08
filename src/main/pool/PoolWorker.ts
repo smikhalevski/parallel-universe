@@ -3,54 +3,49 @@ import {isPromiseLike} from '../isPromiseLike';
 import {AsyncQueue} from '../AsyncQueue';
 
 /**
- * The job processed by a {@link Worker}.
- *
  * @internal
  */
-export interface Job {
-
-  /**
-   * The abort controller that aborts the callback execution.
-   */
+export interface PoolJob {
   __ac?: AbortController;
   __cb: (signal: AbortSignal) => Awaitable<unknown>;
-  __resolve: (result: unknown) => void;
-  __reject: (reason: unknown) => void;
+  __resolve: (result: any) => void;
+  __reject: (reason: any) => void;
 }
 
 /**
- * Worker consumes jobs from the job provider and executes them.
+ * Worker picks jobs from the queue, invokes associated callbacks and fulfills the `Promise`.
  *
  * @internal
  */
-export class Worker {
+export class PoolWorker {
 
   public __terminated = false;
   public __promise;
-  public __job: Job | undefined;
+  public __activeJob: PoolJob | undefined;
 
   private __jobs;
   private __resolve!: () => void;
 
-  public constructor(jobs: AsyncQueue<Job>) {
+  public constructor(jobs: AsyncQueue<PoolJob>) {
     this.__jobs = jobs;
     this.__promise = new Promise<void>((resolve) => {
       this.__resolve = resolve;
     });
+    this.__loop();
   }
 
   public __terminate(): void {
     this.__terminated = true;
 
-    if (this.__job) {
-      this.__job.__ac?.abort();
+    if (this.__activeJob) {
+      this.__activeJob.__ac?.abort();
     } else {
       this.__resolve();
     }
   }
 
-  public __loop = (): Awaitable<void> => {
-    this.__job = undefined;
+  private __loop = (): Awaitable<void> => {
+    this.__activeJob = undefined;
 
     if (this.__terminated) {
       this.__resolve();
@@ -63,7 +58,7 @@ export class Worker {
         return;
       }
 
-      const job = this.__job = ack();
+      const job = this.__activeJob = ack();
       const {__resolve, __reject} = job;
       const ac = job.__ac = new AbortController();
 

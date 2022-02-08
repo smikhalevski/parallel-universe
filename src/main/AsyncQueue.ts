@@ -3,7 +3,7 @@ import {noop} from './utils';
 /**
  * Asynchronous queue that decouples provider and consumer.
  */
-export class AsyncQueue<T> {
+export class AsyncQueue<T = any> {
 
   private _values: T[] = [];
   private _promise?: Promise<void>;

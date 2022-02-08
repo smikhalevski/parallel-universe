@@ -1,7 +1,7 @@
 import {Awaitable} from '../shared-types';
 import {AsyncQueue} from '../AsyncQueue';
 import {noop} from '../utils';
-import {Job, Worker} from './Worker';
+import {PoolJob, PoolWorker} from './PoolWorker';
 
 /**
  * The worker pool that can execute limited number of jobs (callbacks) in parallel while other submitted jobs wait in
@@ -9,15 +9,15 @@ import {Job, Worker} from './Worker';
  */
 export class Pool {
 
-  private _jobs = new AsyncQueue<Job>();
-  private _workers: Worker[] = [];
+  private _jobs = new AsyncQueue<PoolJob>();
+  private _workers: PoolWorker[] = [];
 
   /**
    * Creates a new {@link Pool} instance that uses given number of workers.
    *
-   * @param [size = 5]
+   * @param [size = 1] The number of workers in the pool.
    */
-  public constructor(size = 5) {
+  public constructor(size = 1) {
     this.resize(size);
   }
 
@@ -38,10 +38,10 @@ export class Pool {
    * Submits a new callback that should be executed by the worker in the pool.
    *
    * @param cb The callback to invoke.
-   * @returns The `Promise` that is fulfills with the execution result.
+   * @returns The `Promise` that is fulfilled with the `cb` result.
    */
   public submit<T>(cb: (signal: AbortSignal) => Awaitable<T>): Promise<T> {
-    return new Promise<any>((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       this._jobs.add({
         __cb: cb,
         __resolve: resolve,
@@ -54,7 +54,7 @@ export class Pool {
    * Changes the size of the pool by spawning or terminating workers. When worker is terminated while processing ann
    * async task, its `signal` is aborted.
    *
-   * @param size The new size of the pool.
+   * @param size The new number of workers in the pool.
    * @returns The `Promise` that resolves when the pool would reach the requested size: when excessive workers were
    *     terminated and insufficient workers were spawned.
    */
@@ -77,7 +77,7 @@ export class Pool {
         worker.__terminate();
       }
 
-      if (worker.__job) {
+      if (worker.__activeJob) {
         promises.push(worker.__promise);
       } else {
         _workers.splice(i--, 1);
@@ -86,9 +86,7 @@ export class Pool {
 
     // Spawn workers
     for (let i = 0; i < size; ++i) {
-      const worker = new Worker(this._jobs);
-      worker.__loop();
-      _workers.push(worker);
+      _workers.push(new PoolWorker(this._jobs));
     }
 
     return Promise.all(promises).then(noop);

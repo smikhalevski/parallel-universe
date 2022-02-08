@@ -40,7 +40,7 @@ blocker.unblock('my value');
 
 ### `Lock`
 
-Promise-based lock implementation.
+Promise-based [lock implementation](https://en.wikipedia.org/wiki/Lock_(computer_science)).
 
 When someone tries to acquire a `Lock` they receive a `Promise` for a release callback that is resolved as soon as
 previous lock owner invokes their release callback.
