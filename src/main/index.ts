@@ -1,3 +1,4 @@
+export * from './pool';
 export * from './AsyncQueue';
 export * from './Blocker';
 export * from './Executor';

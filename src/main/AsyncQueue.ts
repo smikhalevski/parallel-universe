@@ -5,7 +5,7 @@ import {noop} from './utils';
  */
 export class AsyncQueue<T> {
 
-  private values: T[] = [];
+  private _values: T[] = [];
   private _promise?: Promise<void>;
   private _resolve?: () => void;
 
@@ -13,7 +13,7 @@ export class AsyncQueue<T> {
    * Returns the number of values stored in this queue.
    */
   public get size() {
-    return this.values.length;
+    return this._values.length;
   }
 
   /**
@@ -43,6 +43,7 @@ export class AsyncQueue<T> {
    * @return The `Promise` that resolved with an element acknowledgement callback.
    */
   public takeAck(): Promise<() => T> {
+    const {_promise} = this;
 
     let accepted = false;
     let revoked = false;
@@ -56,7 +57,7 @@ export class AsyncQueue<T> {
         throw new Error('Acknowledgement was revoked');
       }
       accepted = true;
-      value = this.values.shift()!;
+      value = this._values.shift()!;
       return value;
     };
 
@@ -67,7 +68,7 @@ export class AsyncQueue<T> {
     });
 
     const provideAck = () => {
-      if (this.values.length) {
+      if (this._values.length) {
         resolveAck(ack);
         return;
       }
@@ -86,8 +87,8 @@ export class AsyncQueue<T> {
     };
 
     let promise: Promise<void>;
-    if (this._promise) {
-      promise = this._promise = this._promise.then(provideAck).then(revokeAck);
+    if (_promise) {
+      promise = this._promise = _promise.then(provideAck).then(revokeAck);
     } else {
       promise = this._promise = ackPromise.then(noop).then(revokeAck);
       provideAck();
@@ -102,7 +103,7 @@ export class AsyncQueue<T> {
    * @param value The value to append.
    */
   public add(value: T): this {
-    this.values.push(value);
+    this._values.push(value);
     this._resolve?.();
     return this;
   }
@@ -111,7 +112,7 @@ export class AsyncQueue<T> {
    * Iterates over elements that are available in the queue.
    */
   public [Symbol.iterator](): IterableIterator<T> {
-    return this.values[Symbol.iterator]();
+    return this._values[Symbol.iterator]();
   }
 }
 
