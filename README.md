@@ -12,6 +12,8 @@ npm install --save-prod parallel-universe
 
 🚀 [API documentation is available here.](https://smikhalevski.github.io/parallel-universe/)
 
+- [`AsyncQueue`](#asyncqueue)
+- [`Pool`](#pool)
 - [`Blocker`](#blocker)
 - [`Lock`](#lock)
 - [`Executor`](#executor)
@@ -20,6 +22,62 @@ npm install --save-prod parallel-universe
 - [`timeout`](#timeout)
 
 # Usage
+
+### `AsyncQueue`
+
+Asynchronous queue that decouples value providers and consumers.
+
+```ts
+const queue = new AsyncQueue();
+
+queue.take(); // → Promise<"my value">
+
+queue.add('my value');
+```
+
+`take` dequeues value from the queue. If value consumer may not be able to process the value when it was taken, you
+should use `takeAck`.
+
+`takeAck` returns a `Promise` that resolves with an acknowledgement callback that returns a value. The
+acknowledgement callback dequeues a value and returns it; all subsequent invocations of the acknowledgement callback
+would return the same value.
+
+```ts
+queue.takeAck().then((ack) => {
+  const value = ack();
+});
+```
+
+The acknowledgement callback must be either ignored or called on _the next tick_ after the returned `Promise` is
+resolved, otherwise it is revoked and would throw an error.
+
+```ts
+queue.takeAck()
+    .then(() => undefined) // Skip the tick
+    .then((ack) => {
+      ack(); // → throws an Error
+    });
+```
+
+### `Pool`
+
+The callback execution pool that can execute limited number of callbacks in parallel while other submitted callbacks
+wait in the queue.
+
+```ts
+// Pool that proceesses 5 callbacks in parallel at maximum
+const pool = new Pool(5);
+
+pool.submit(async () => doSomething());
+// → Promise<ReturnType<typeof doSomething>>
+
+// Change how many callback can the pool process in parallel
+pool.resize(2);
+// → Promise<void>
+```
+
+If you resize the pool down, some callbacks that are pending may be aborted via `signal.aborted`.
+`Pool.resize` returns the `Promise` that is resolved when there are no excessive are being processed in parallel.
 
 ### `Blocker`
 

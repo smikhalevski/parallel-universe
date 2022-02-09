@@ -1,7 +1,7 @@
 import {noop} from './utils';
 
 /**
- * Asynchronous queue that decouples provider and consumer.
+ * Asynchronous queue that decouples value providers and consumers.
  */
 export class AsyncQueue<T = any> {
 

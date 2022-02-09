@@ -4,8 +4,8 @@ import {noop} from '../utils';
 import {PoolJob, PoolWorker} from './PoolWorker';
 
 /**
- * The worker pool that can execute limited number of jobs (callbacks) in parallel while other submitted jobs wait in
- * the queue.
+ * The callback execution pool that can execute limited number of callbacks in parallel while other submitted callbacks
+ * wait in the queue.
  */
 export class Pool {
 
