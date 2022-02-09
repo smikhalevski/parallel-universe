@@ -21,7 +21,7 @@ describe('PoolWorker', () => {
   test('creates a blank worker', () => {
     expect(worker.__terminated).toBe(false);
     expect(worker.__activeJob).toBeUndefined();
-    expect(worker.__promise).toBeInstanceOf(Promise);
+    expect(worker.__terminationPromise).toBeInstanceOf(Promise);
   });
 
   test('takes jobs from the queue and resolves sync', async () => {
@@ -118,7 +118,7 @@ describe('PoolWorker', () => {
     expect(worker.__activeJob).toBe(job2);
   });
 
-  test('takes next job after thrown error', async () => {
+  test('takes next job after job that thrown error', async () => {
     job.__cb = jest.fn(() => {
       throw new Error();
     });
@@ -136,5 +136,88 @@ describe('PoolWorker', () => {
     await Promise.resolve().then(noop).then(noop).then(noop);
 
     expect(job2.__cb).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not pick jobs after termination', async () => {
+    worker.__terminate();
+    queue.add(job);
+
+    expect(worker.__terminated).toBe(true);
+
+    await Promise.resolve();
+
+    expect(job.__cb).not.toHaveBeenCalled();
+  });
+
+  test('aborts the job signal when terminated', async () => {
+    let jobSignal: AbortSignal | undefined;
+
+    job.__cb = jest.fn(async (signal) => {
+      await Promise.resolve();
+      jobSignal = signal;
+    });
+
+    queue.add(job);
+
+    await Promise.resolve().then(noop);
+
+    worker.__terminate();
+
+    expect(jobSignal?.aborted).toBe(true);
+  });
+
+  test('does not abort the signal of the completed job', async () => {
+    let jobSignal: AbortSignal | undefined;
+
+    job.__cb = jest.fn(async (signal) => {
+      await Promise.resolve();
+      jobSignal = signal;
+    });
+
+    queue.add(job);
+
+    await Promise.resolve().then(noop).then(noop).then(noop);
+
+    worker.__terminate();
+
+    expect(jobSignal?.aborted).toBe(false);
+  });
+
+  test('does not abort the sync job', async () => {
+    let jobSignal: AbortSignal | undefined;
+
+    job.__cb = jest.fn((signal) => {
+      jobSignal = signal;
+    });
+
+    queue.add(job);
+
+    await Promise.resolve().then(noop);
+
+    worker.__terminate();
+
+    expect(jobSignal?.aborted).toBe(false);
+
+    await Promise.resolve().then(noop);
+
+    expect(jobSignal?.aborted).toBe(false);
+  });
+
+  test('resolves the termination promise when idle', async () => {
+    worker.__terminate();
+
+    await expect(worker.__terminationPromise).resolves.toBeUndefined();
+  });
+
+  test('resolves the termination promise after an async job is completed', async () => {
+    job.__cb = jest.fn(() => Promise.resolve());
+
+    queue.add(job);
+
+    await Promise.resolve().then(noop);
+
+    worker.__terminate();
+
+    await expect(worker.__terminationPromise).resolves.toBeUndefined();
   });
 });

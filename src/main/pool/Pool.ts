@@ -9,29 +9,21 @@ import {PoolJob, PoolWorker} from './PoolWorker';
  */
 export class Pool {
 
+  /**
+   * The number of non-terminated workers is the pool. Use {@link resize} to change the pool size.
+   */
+  public size = 1;
+
   private _jobs = new AsyncQueue<PoolJob>();
   private _workers: PoolWorker[] = [];
 
   /**
    * Creates a new {@link Pool} instance that uses given number of workers.
    *
-   * @param [size = 1] The number of workers in the pool.
+   * @param [size = 0] The number of workers in the pool.
    */
-  public constructor(size = 1) {
-    this.resize(size);
-  }
-
-  /**
-   * The number of non-terminated workers is the pool.
-   */
-  public get size() {
-    let size = 0;
-    for (const worker of this._workers) {
-      if (!worker.__terminated) {
-        ++size;
-      }
-    }
-    return size;
+  public constructor(size?: number) {
+    this.resize(size || 0);
   }
 
   /**
@@ -54,15 +46,16 @@ export class Pool {
    * Changes the size of the pool by spawning or terminating workers. When worker is terminated while processing ann
    * async task, its `signal` is aborted.
    *
-   * @param size The new number of workers in the pool.
+   * @param size The non-negative integer number of workers in the pool.
    * @returns The `Promise` that resolves when the pool would reach the requested size: when excessive workers were
-   *     terminated and insufficient workers were spawned.
+   *     terminated or additional workers were spawned.
    */
   public resize(size: number): Promise<void> {
     const {_workers} = this;
 
-    // Termination promises
-    const promises: Promise<void>[] = [];
+    this.size = Math.max(size | 0, 0);
+
+    const terminationPromises: Promise<void>[] = [];
 
     // Terminate excessive workers
     for (let i = 0; i < _workers.length; ++i) {
@@ -78,17 +71,17 @@ export class Pool {
       }
 
       if (worker.__activeJob) {
-        promises.push(worker.__promise);
+        terminationPromises.push(worker.__terminationPromise);
       } else {
         _workers.splice(i--, 1);
       }
     }
 
-    // Spawn workers
+    // Spawn additional workers
     for (let i = 0; i < size; ++i) {
       _workers.push(new PoolWorker(this._jobs));
     }
 
-    return Promise.all(promises).then(noop);
+    return terminationPromises.length ? Promise.all(terminationPromises).then(noop) : Promise.resolve();
   }
 }

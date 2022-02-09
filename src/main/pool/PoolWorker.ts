@@ -20,16 +20,16 @@ export interface PoolJob {
 export class PoolWorker {
 
   public __terminated = false;
-  public __promise;
+  public __terminationPromise;
   public __activeJob: PoolJob | undefined;
 
   private __jobs;
-  private __resolve!: () => void;
+  private __resolveTermination!: () => void;
 
   public constructor(jobs: AsyncQueue<PoolJob>) {
     this.__jobs = jobs;
-    this.__promise = new Promise<void>((resolve) => {
-      this.__resolve = resolve;
+    this.__terminationPromise = new Promise<void>((resolve) => {
+      this.__resolveTermination = resolve;
     });
     this.__loop();
   }
@@ -40,7 +40,7 @@ export class PoolWorker {
     if (this.__activeJob) {
       this.__activeJob.__ac?.abort();
     } else {
-      this.__resolve();
+      this.__resolveTermination();
     }
   }
 
@@ -48,7 +48,7 @@ export class PoolWorker {
     this.__activeJob = undefined;
 
     if (this.__terminated) {
-      this.__resolve();
+      this.__resolveTermination();
       return;
     }
 
