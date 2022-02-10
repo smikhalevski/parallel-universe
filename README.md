@@ -1,7 +1,7 @@
 # parallel-universe [![build](https://github.com/smikhalevski/parallel-universe/actions/workflows/master.yml/badge.svg?branch=master&event=push)](https://github.com/smikhalevski/parallel-universe/actions/workflows/master.yml)
 
 <a href="#readme">
-  <img alt="Spaceman" src="https://github.com/smikhalevski/parallel-universe/raw/next/spaceman.png"/>
+  <img alt="Spaceman" src="https://github.com/smikhalevski/parallel-universe/raw/master/spaceman.png"/>
 </a>
 
 The set of async flow control structures and promise utils.
