@@ -75,8 +75,9 @@ queue.takeAck().then(([value, ack]) => {
 });
 ```
 
-`takeAck` returns an [`AckProtocol`](): a tuple of the available value and the acknowledgement callback. The consumer
-should call `ack` to notify the queue on weather to remove the value from the queue or to retain it.
+`takeAck` returns an [`AckProtocol`](https://smikhalevski.github.io/parallel-universe/modules.html#AckProtocol), a tuple
+of the available value and the acknowledgement callback. The consumer should call `ack` to notify the queue on weather
+to remove the value from the queue or to retain it.
 
 Acknowledge that the consumer can process the value, and the value must be removed from the queue:
 
@@ -151,27 +152,38 @@ async function blockingConsumer() {
 }
 ```
 
-### `WorkPool`
+## `WorkPool`
 
 The callback execution pool that can execute limited number of callbacks in parallel while other submitted callbacks
 wait in the queue.
 
 ```ts
-// WorkPool that proceesses 5 callbacks in parallel at maximum
+// The pool that proceesses 5 callbacks in parallel at maximum
 const pool = new WorkPool(5);
 
-pool.submit(async () => doSomething());
+pool.submit(async (signal) => doSomething());
 // → Promise<ReturnType<typeof doSomething>>
-
-// Change how many callback can the pool process in parallel
-pool.resize(2);
-// → Promise<void>
 ```
 
-If you resize the pool down, some callbacks that are pending may be aborted via `signal.aborted`.
-`WorkPool.resize` returns the `Promise` that is resolved when there are no excessive are being processed in parallel.
+You can change how many callbacks can the pool process in parallel:
 
-### `Blocker`
+```ts
+pool.resize(2); // → Promise<void>
+```
+
+`resize` returns the `Promise` that is resolved when there are no excessive callbacks being processed in parallel.
+
+If you resize the pool down, callbacks that are pending and exceed the new size limit, are notified via `signal` that
+they must be aborted.
+
+To abort all callbacks that are being processed by the pool and wait for their completion use:
+
+```ts
+// Resolved when all pending callbacks are fulfilled
+pool.resize(0); // → Promise<void>
+```
+
+## `Blocker`
 
 Provides mechanism for blocking async processes and unblocking them from an external context.
 
@@ -180,15 +192,15 @@ const blocker = new Blocker();
 
 async function doSomething() {
   const value = await blocker.block();
-  // → "my value"
+  // → "Mars"
 }
 
 doSomething();
 
-blocker.unblock('my value');
+blocker.unblock('Mars');
 ```
 
-### `Lock`
+## `Lock`
 
 Promise-based [lock implementation](https://en.wikipedia.org/wiki/Lock_(computer_science)).
 
@@ -213,7 +225,7 @@ doSomething();
 doSomething();
 ```
 
-### `Executor`
+## `Executor`
 
 Manages async callback execution process and provides ways to access execution results, abort or replace an execution,
 and subscribe to state changes.
@@ -231,7 +243,7 @@ executor.pending;
 executor.abort();
 ```
 
-### `repeatUntil`
+## `repeatUntil`
 
 Invokes a callback periodically with the given delay between resolutions of the returned `Promise`.
 
@@ -254,7 +266,7 @@ repeatUntil(
 // → Promise<ReturnType<typeof doSomething>>
 ```
 
-### `sleep`
+## `sleep`
 
 Returns a promise that resolves after a timeout. If aborted via a passed signal then rejected with an `AbortError`.
 
@@ -263,7 +275,7 @@ sleep(100, abortController.signal);
 // → Promise<undefined>
 ```
 
-### `timeout`
+## `timeout`
 
 Rejects with a `TimeoutError` if execution time exceeds the timeout. If aborted via a passed signal then rejected with
 an `AbortError`.
