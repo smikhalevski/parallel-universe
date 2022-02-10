@@ -23,7 +23,7 @@ export class PoolWorker {
   public __terminationPromise;
   public __activeJob: PoolJob | undefined;
 
-  private __jobs;
+  private __jobs: AsyncQueue<PoolJob>;
   private __resolveTermination!: () => void;
 
   public constructor(jobs: AsyncQueue<PoolJob>) {
@@ -52,14 +52,15 @@ export class PoolWorker {
       return;
     }
 
-    return this.__jobs.takeAck().then((ack) => {
+    return this.__jobs.takeAck().then(([job, ack]) => {
 
       if (this.__terminated) {
         return;
       }
 
-      const job = this.__activeJob = ack();
-      const {__resolve, __reject} = job;
+      ack();
+
+      const {__resolve, __reject} = this.__activeJob = job;
       const ac = job.__ac = new AbortController();
 
       let result;

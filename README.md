@@ -25,22 +25,72 @@ npm install --save-prod parallel-universe
 
 ### `AsyncQueue`
 
-Asynchronous queue that decouples value providers and consumers.
+Asynchronous queue decouples value providers and value consumers.
 
 ```ts
 const queue = new AsyncQueue();
 
-queue.take(); // → Promise<"my value">
-
+// Provider adds a value
 queue.add('my value');
+
+// Consumer takes a value when it becomes available
+queue.take(); // → Promise<"my value">
 ```
 
-`take` dequeues value from the queue. If value consumer may not be able to process the value when it was taken, you
-should use `takeAck`.
+`queue.take()` removes the value from the queue when it becomes available. If there are no values in the queue
+when `queue.take()` was called then the returned `Promise` would resolve after the next `queue.add()` call.
 
-`takeAck` returns a `Promise` that resolves with an acknowledgement callback that returns a value. The
-acknowledgement callback dequeues a value and returns it; all subsequent invocations of the acknowledgement callback
-would return the same value.
+```ts
+const queue = new AsyncQueue();
+
+// The returned Promise would be resolved after the add call
+queue.take(); // → Promise<"my value">
+
+queue.add("my value");
+```
+
+Consumers receive values from the queue in the same order they were added by providers:
+
+```ts
+const queue = new AsyncQueue();
+
+queue.add('Missouri');
+queue.add('Oregon');
+
+queue.take(); // → Promise<"Missouri">
+queue.take(); // → Promise<"Oregon">
+```
+
+Sometimes removing the values from the queue isn't a desirable behavior, since consumer may be in the state when it
+cannot process it.
+
+Protocol provides an available value and an acknowledgement callback. The consumer should call the acknowledgement callback
+to notify the queue that it would process the value.
+
+```ts
+queue.takeAck().then(([value, ack]) => {
+  ack();
+  doSomething(value);
+});
+```
+
+The acknowledgement callback can be used in a blocking and a non-blocking manner. If `ackRequired` is `true` then
+queue consumers would be blocked until `ack` is called. Otherwise, the acknowledgement would be automatically
+revoked on _the next tick_ after returned `AckProtocol` `Promise` is resolved and value would remain in
+the queue.
+
+```ts
+queue.takeAck(true).then(([value, ack]) => {
+  ack(true);
+  doSomething(value);
+});
+```
+
+If value consumer may not be able to process the value when it was taken, you should use `takeAck`.
+
+`takeAck` returns a `Promise` that resolves with an acknowledgement callback that returns a value. The acknowledgement
+callback dequeues a value and returns it; all subsequent invocations of the acknowledgement callback would return the
+same value.
 
 ```ts
 queue.takeAck().then((ack) => {
