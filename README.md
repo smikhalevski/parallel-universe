@@ -1,4 +1,8 @@
-# parallel-universe 🔭 [![build](https://github.com/smikhalevski/parallel-universe/actions/workflows/master.yml/badge.svg?branch=master&event=push)](https://github.com/smikhalevski/parallel-universe/actions/workflows/master.yml)
+# parallel-universe [![build](https://github.com/smikhalevski/parallel-universe/actions/workflows/master.yml/badge.svg?branch=master&event=push)](https://github.com/smikhalevski/parallel-universe/actions/workflows/master.yml)
+
+<a href="#readme">
+  <img alt="Spaceman" src="https://github.com/smikhalevski/parallel-universe/raw/next/spaceman.png"/>
+</a>
 
 The set of async flow control structures and promise utils.
 
@@ -6,37 +10,206 @@ The set of async flow control structures and promise utils.
 npm install --save-prod parallel-universe
 ```
 
-📚 [API documentation is available here.](https://smikhalevski.github.io/parallel-universe/)
+🚀 [API documentation is available here.](https://smikhalevski.github.io/parallel-universe/)
 
-- [`Blocker`](#blocker)
-- [`Lock`](#lock)
+- [`AsyncQueue`](#asyncqueue)
+- [`WorkPool`](#workpool)
 - [`Executor`](#executor)
+- [`Lock`](#lock)
+- [`Blocker`](#blocker)
 - [`repeatUntil`](#repeatuntil)
 - [`sleep`](#sleep)
 - [`timeout`](#timeout)
 
 # Usage
 
-### `Blocker`
+## `AsyncQueue`
 
-Provides mechanism for blocking async processes and unblocking them from an external context.
+Asynchronous queue decouples value providers and value consumers.
 
 ```ts
-const blocker = new Blocker();
+const queue = new AsyncQueue();
 
-async function doSomething() {
-  const value = await blocker.block();
-  // → "my value"
-}
+// Provider adds a value
+queue.add('Mars');
 
-doSomething();
-
-blocker.unblock('my value');
+// Consumer takes a value
+queue.take(); // → Promise<"Mars">
 ```
 
-### `Lock`
+`add` appends the value to the queue, while `take` removes the value from the queue as soon as it is available. If there
+are no values in the queue upon `take` call then the returned `Promise` is resolved after the next `add` call.
 
-Promise-based lock implementation.
+```ts
+const queue = new AsyncQueue();
+
+// The returned Promise would be resolved after the add call
+queue.take(); // → Promise<"Mars">
+
+queue.add("Mars");
+```
+
+Consumers receive values from the queue in the same order they were added by providers:
+
+```ts
+const queue = new AsyncQueue();
+
+queue.add('Mars');
+queue.add('Venus');
+
+queue.take(); // → Promise<"Mars">
+queue.take(); // → Promise<"Venus">
+```
+
+### Acknowledgements
+
+In some cases removing the value from the queue isn't the desirable behavior, since the consumer may not be able to
+process the taken value. Use `takeAck` to examine available value and acknowledge that it can be processed.
+
+```ts
+queue.takeAck().then(([value, ack]) => {
+  if (doSomeChecks()) {
+    ack();
+    doSomething(value);
+  }
+});
+```
+
+`takeAck` returns an [`AckProtocol`](https://smikhalevski.github.io/parallel-universe/modules.html#AckProtocol), a tuple
+of the available value and the acknowledgement callback. The consumer should call `ack` to notify the queue on weather
+to remove the value from the queue or to retain it.
+
+To acknowledge that the consumer can process the value, and the value must be removed from the queue use:
+
+```ts
+ack(); // or ack(true)
+```
+
+To acknowledge that the value should be retained by the queue use:
+
+```ts
+ack(false);
+```
+
+The value that was retained in the queue becomes available for the subsequent consumer.
+
+```ts
+const queue = new AsyncQueue();
+
+queue.add('Pluto');
+
+queue.takeAck(([value, ack]) => {
+  ack(false); // Tells queue to retain the value
+});
+
+queue.take(); // → Promise<"Pluto">
+```
+
+### Blocking vs non-blocking acknowledgements
+
+By default, if you didn't call `ack`, the acknowledgement would be automatically revoked on _the next tick_ after
+the `Promise` returned by `takeAck` is resolved, and the value would remain in the queue.
+
+If acknowledgement was revoked, the `ack` call would throw an error:
+
+```ts
+queue.takeAck()
+
+    .then((protocol) => protocol) // Extra tick
+
+    .then(([value, ack]) => {
+      ack(); // → throws an Error 
+    });
+```
+
+To prevent the acknowledgement from being revoked, request a blocking acknowledgement:
+
+```ts
+queue.takeAck(true) // Request blocking ack
+
+    .then((protocol) => protocol) // Extra tick
+
+    .then(([value, ack]) => {
+      ack(); // Works just fine!
+      doSomething(value);
+    });
+```
+
+Blocking acknowledgement is required if the consumer has to perform asynchronous actions before processing the value.
+
+To guarantee that consumers receive values in the same order as they were provided, blocking acknowledgements prevent
+subsequent consumers from being resolved until `ack` is called. Be sure to call `ack` to prevent the queue from being
+stuck indefinitely.
+
+```ts
+async function blockingConsumer() {
+
+  const [value, ack] = queue.takeAck(true);
+
+  try {
+    if (await doSomeChecks()) {
+      ack(true);
+      doSomething(value);
+    }
+  } finally {
+    // It's safe to call ack multiple times since it's a no-op
+    ack(false);
+  }
+}
+```
+
+## `WorkPool`
+
+The callback execution pool that executes the limited number of callbacks in parallel while other submitted callbacks
+wait in the queue.
+
+```ts
+// The pool that processes 5 callbacks in parallel at maximum
+const pool = new WorkPool(5);
+
+pool.submit(async (signal) => doSomething());
+// → Promise<ReturnType<typeof doSomething>>
+```
+
+You can change how many callbacks can the pool process in parallel:
+
+```ts
+pool.resize(2); // → Promise<void>
+```
+
+`resize` returns the `Promise` that is resolved when there are no excessive callbacks being processed in parallel.
+
+If you resize the pool down, callbacks that are pending and exceed the new size limit, are notified via `signal` that
+they must be aborted.
+
+To abort all callbacks that are being processed by the pool and wait for their completion use:
+
+```ts
+// Resolved when all pending callbacks are fulfilled
+pool.resize(0); // → Promise<void>
+```
+
+## `Executor`
+
+Manages async callback execution process and provides ways to access execution results, abort or replace an execution,
+and subscribe to state changes.
+
+```ts
+const executor = new Executor();
+
+executor.execute(async (signal) => doSomething());
+// → Promise<void>
+
+executor.pending;
+// → true
+
+// Aborts pending execution
+executor.abort();
+```
+
+## `Lock`
+
+Promise-based [lock implementation](https://en.wikipedia.org/wiki/Lock_(computer_science)).
 
 When someone tries to acquire a `Lock` they receive a `Promise` for a release callback that is resolved as soon as
 previous lock owner invokes their release callback.
@@ -59,32 +232,31 @@ doSomething();
 doSomething();
 ```
 
-### `Executor`
+## `Blocker`
 
-Manages async callback execution process and provides ways to access execution results, abort or replace an execution,
-and subscribe to state changes.
+Provides mechanism for blocking async processes and unblocking them from an external context.
 
 ```ts
-const executor = new Executor();
+const blocker = new Blocker();
 
-executor.execute(async (signal) => doSomething());
-// → Promise<void>
+async function doSomething() {
+  const value = await blocker.block();
+  // → "Mars"
+}
 
-executor.pending;
-// → true
+doSomething();
 
-// Aborts pending execution
-executor.abort();
+blocker.unblock('Mars');
 ```
 
-### `repeatUntil`
+## `repeatUntil`
 
 Invokes a callback periodically with the given delay between resolutions of the returned `Promise`.
 
 ```ts
 repeatUntil(
     // The callback that is invoked repeatedly
-    async (signal) => doSometging(),
+    async (signal) => doSomething(),
 
     // The until clause must return true to stop the loop
     (asyncResult) => asyncResult.rejected,
@@ -97,28 +269,30 @@ repeatUntil(
     // Optional signal that can abort the loop from the outside
     abortController.signal,
 );
-// → Promise<ReturnType<typeof doSometging>>
+// → Promise<ReturnType<typeof doSomething>>
 ```
 
-### `sleep`
+## `sleep`
 
-Returns a promise that resolves after a timeout. If aborted via a passed signal then rejected with an `AbortError`.
+Returns a promise that resolves after a timeout. If aborted via a passed signal then rejected with
+an [`AbortError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException).
 
 ```ts
 sleep(100, abortController.signal);
 // → Promise<undefined>
 ```
 
-### `timeout`
+## `timeout`
 
-Rejects with a `TimeoutError` if execution time exceeds the timeout. If aborted via a passed signal then rejected with
-an `AbortError`.
+Rejects with a [`TimeoutError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException) if execution time exceeds
+the timeout. If aborted via a passed signal then rejected with
+an [`AbortError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException).
 
 ```ts
 timeout(
-    async (signal) => doComething(),
+    async (signal) => doSomething(),
     // or
-    // doComething()
+    // doSomething()
 
     // Execution timeout
     100,
@@ -126,5 +300,5 @@ timeout(
     // Optional signal that can abort the execution from the outside
     abortController.signal,
 );
-// → Promise<ReturnType<typeof doSometging>>
+// → Promise<ReturnType<typeof doSomething>>
 ```

@@ -35,3 +35,6 @@ export function addAbortListener(signal: AbortSignal, listener: () => void): voi
 export function removeAbortListener(signal: AbortSignal, listener: () => void): void {
   signal.removeEventListener('abort', listener);
 }
+
+export function noop() {
+}
