@@ -1,23 +1,19 @@
-interface Exception extends Error {
-
-  // https://developer.mozilla.org/en-US/docs/Web/API/DOMException/code
-  code?: number;
+function createError(name: string, code: number, message?: string): Error {
+  if (typeof DOMException !== 'undefined') {
+    return new DOMException(message, name);
+  }
+  const error: any = new Error(message);
+  error.name = name;
+  error.code = code;
+  return error;
 }
 
-const Exception: new() => Exception = typeof DOMException !== 'undefined' ? DOMException : Error;
-
-export function createAbortError(): Exception {
-  const ex = new Exception();
-  ex.name = 'AbortError';
-  ex.code = 20;
-  return ex;
+export function createAbortError(): Error {
+  return createError('AbortError', 20);
 }
 
-export function createTimeoutError(): Exception {
-  const ex = new Exception();
-  ex.name = 'TimeoutError';
-  ex.code = 23;
-  return ex;
+export function createTimeoutError(): Error {
+  return createError('TimeoutError', 23);
 }
 
 export function callOrGet<T, A extends unknown[]>(value: ((...args: A) => T) | T, ...args: A): T {
