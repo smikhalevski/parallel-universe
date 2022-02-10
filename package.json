@@ -32,7 +32,14 @@
     "delay",
     "lock",
     "blocker",
-    "executor"
+    "executor",
+    "queue",
+    "async-queue",
+    "concurrency",
+    "parallel",
+    "pool",
+    "thread-pool",
+    "work-pool"
   ],
   "author": "Savva Mikhalevski <smikhalevski@gmail.com>",
   "license": "MIT",
