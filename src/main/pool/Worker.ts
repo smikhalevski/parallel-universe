@@ -5,7 +5,7 @@ import {AsyncQueue} from '../AsyncQueue';
 /**
  * @internal
  */
-export interface PoolJob {
+export interface Job {
   __ac?: AbortController;
   __cb: (signal: AbortSignal) => Awaitable<unknown>;
   __resolve: (result: any) => void;
@@ -17,16 +17,16 @@ export interface PoolJob {
  *
  * @internal
  */
-export class PoolWorker {
+export class Worker {
 
   public __terminated = false;
   public __terminationPromise;
-  public __activeJob: PoolJob | undefined;
+  public __activeJob: Job | undefined;
 
-  private __jobs: AsyncQueue<PoolJob>;
+  private __jobs: AsyncQueue<Job>;
   private __resolveTermination!: () => void;
 
-  public constructor(jobs: AsyncQueue<PoolJob>) {
+  public constructor(jobs: AsyncQueue<Job>) {
     this.__jobs = jobs;
     this.__terminationPromise = new Promise<void>((resolve) => {
       this.__resolveTermination = resolve;

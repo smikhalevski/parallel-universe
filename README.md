@@ -13,7 +13,7 @@ npm install --save-prod parallel-universe
 🚀 [API documentation is available here.](https://smikhalevski.github.io/parallel-universe/)
 
 - [`AsyncQueue`](#asyncqueue)
-- [`Pool`](#pool)
+- [`WorkPool`](#workpool)
 - [`Blocker`](#blocker)
 - [`Lock`](#lock)
 - [`Executor`](#executor)
@@ -23,7 +23,7 @@ npm install --save-prod parallel-universe
 
 # Usage
 
-### `AsyncQueue`
+## `AsyncQueue`
 
 Asynchronous queue decouples value providers and value consumers.
 
@@ -31,22 +31,22 @@ Asynchronous queue decouples value providers and value consumers.
 const queue = new AsyncQueue();
 
 // Provider adds a value
-queue.add('my value');
+queue.add('Mars');
 
-// Consumer takes a value when it becomes available
-queue.take(); // → Promise<"my value">
+// Consumer takes a value
+queue.take(); // → Promise<"Mars">
 ```
 
-`queue.take()` removes the value from the queue when it becomes available. If there are no values in the queue
-when `queue.take()` was called then the returned `Promise` would resolve after the next `queue.add()` call.
+`add` appends the value to the queue, while `take` removes the value from the queue as soon as it is available. If there
+are no values in the queue upon `take` call then the returned `Promise` is resolved after the next `add` call.
 
 ```ts
 const queue = new AsyncQueue();
 
 // The returned Promise would be resolved after the add call
-queue.take(); // → Promise<"my value">
+queue.take(); // → Promise<"Mars">
 
-queue.add("my value");
+queue.add("Mars");
 ```
 
 Consumers receive values from the queue in the same order they were added by providers:
@@ -54,69 +54,111 @@ Consumers receive values from the queue in the same order they were added by pro
 ```ts
 const queue = new AsyncQueue();
 
-queue.add('Missouri');
-queue.add('Oregon');
+queue.add('Mars');
+queue.add('Venus');
 
-queue.take(); // → Promise<"Missouri">
-queue.take(); // → Promise<"Oregon">
+queue.take(); // → Promise<"Mars">
+queue.take(); // → Promise<"Venus">
 ```
 
-Sometimes removing the values from the queue isn't a desirable behavior, since consumer may be in the state when it
-cannot process it.
+### Acknowledgements
 
-Protocol provides an available value and an acknowledgement callback. The consumer should call the acknowledgement callback
-to notify the queue that it would process the value.
+In some cases removing the value from the queue isn't the desirable behavior, since the consumer may not be able to
+process the taken value. Use `takeAck` to examine available value and acknowledge that it can be processed.
 
 ```ts
 queue.takeAck().then(([value, ack]) => {
-  ack();
-  doSomething(value);
+  if (doSomeChecks()) {
+    ack();
+    doSomething(value);
+  }
 });
 ```
 
-The acknowledgement callback can be used in a blocking and a non-blocking manner. If `ackRequired` is `true` then
-queue consumers would be blocked until `ack` is called. Otherwise, the acknowledgement would be automatically
-revoked on _the next tick_ after returned `AckProtocol` `Promise` is resolved and value would remain in
-the queue.
+`takeAck` returns an [`AckProtocol`](): a tuple of the available value and the acknowledgement callback. The consumer
+should call `ack` to notify the queue on weather to remove the value from the queue or to retain it.
+
+Acknowledge that the consumer can process the value, and the value must be removed from the queue:
 
 ```ts
-queue.takeAck(true).then(([value, ack]) => {
-  ack(true);
-  doSomething(value);
-});
+ack(); // or ack(true)
 ```
 
-If value consumer may not be able to process the value when it was taken, you should use `takeAck`.
-
-`takeAck` returns a `Promise` that resolves with an acknowledgement callback that returns a value. The acknowledgement
-callback dequeues a value and returns it; all subsequent invocations of the acknowledgement callback would return the
-same value.
+Acknowledge that the value should be retained by the queue:
 
 ```ts
-queue.takeAck().then((ack) => {
-  const value = ack();
-});
+ack(false);
 ```
 
-The acknowledgement callback must be either ignored or called on _the next tick_ after the returned `Promise` is
-resolved, otherwise it is revoked and would throw an error.
+The value that was retained in the queue becomes available for the subsequent consumer.
+
+```ts
+const queue = new AsyncQueue();
+
+queue.add('Pluto');
+
+queue.takeAck(([value, ack]) => {
+  ack(false); // Tells queue to retain the value
+});
+
+queue.take(); // → Promise<"Pluto">
+```
+
+### Blocking vs non-blocking acknowledgements
+
+By default, if you didn't call `ack`, the acknowledgement would be automatically revoked on _the next tick_ after
+the `Promise` returned by `takeAck` is resolved, and the value would remain in the queue.
+
+If acknowledgement was revoked, the `ack` call would throw an error:
 
 ```ts
 queue.takeAck()
-    .then(() => undefined) // Skip the tick
-    .then((ack) => {
-      ack(); // → throws an Error
+    .then((protocol) => protocol) // Extra tick
+    .then(([value, ack]) => {
+      ack(); // → throws an Error 
     });
 ```
 
-### `Pool`
+To prevent the acknowledgement from being revoked, request a blocking acknowledgement:
+
+```ts
+queue.takeAck(true) // Request blocking ack
+    .then((protocol) => protocol) // Extra tick
+    .then(([value, ack]) => {
+      ack(); // Works just fine!
+      doSomething(value);
+    });
+```
+
+Blocking acknowledgement are required if the consumer has to perform asynchronous actions before processing the value.
+
+To guarantee that consumers receive values in the same order as they were provided, blocking acknowledgements prevent
+subsequent consumers from being resolved until `ack` is called. So be sure to call `ack` for blocking acknowledgements
+to prevent the queue from being stuck indefinitely.
+
+```ts
+async function blockingConsumer() {
+  const [value, ack] = queue.takeAck(true);
+  try {
+    if (await doSomeChecks()) {
+      ack(true);
+      doSomething(value);
+    }
+  } finally {
+    // It's safe to call ack multiple times since it's a no-op
+    ack(false);
+  }
+}
+```
+
+### `WorkPool`
 
 The callback execution pool that can execute limited number of callbacks in parallel while other submitted callbacks
 wait in the queue.
 
 ```ts
-// Pool that proceesses 5 callbacks in parallel at maximum
-const pool = new Pool(5);
+// WorkPool that proceesses 5 callbacks in parallel at maximum
+const pool = new WorkPool(5);
 
 pool.submit(async () => doSomething());
 // → Promise<ReturnType<typeof doSomething>>
@@ -127,7 +169,7 @@ pool.resize(2);
 ```
 
 If you resize the pool down, some callbacks that are pending may be aborted via `signal.aborted`.
-`Pool.resize` returns the `Promise` that is resolved when there are no excessive are being processed in parallel.
+`WorkPool.resize` returns the `Promise` that is resolved when there are no excessive are being processed in parallel.
 
 ### `Blocker`
 

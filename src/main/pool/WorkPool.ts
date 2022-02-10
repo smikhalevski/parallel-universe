@@ -1,24 +1,24 @@
 import {Awaitable} from '../shared-types';
 import {AsyncQueue} from '../AsyncQueue';
 import {noop} from '../utils';
-import {PoolJob, PoolWorker} from './PoolWorker';
+import {Job, Worker} from './Worker';
 
 /**
  * The callback execution pool that can execute limited number of callbacks in parallel while other submitted callbacks
  * wait in the queue.
  */
-export class Pool {
+export class WorkPool {
 
   /**
    * The number of non-terminated workers is the pool. Use {@link resize} to change the pool size.
    */
   public size = 1;
 
-  private _jobs = new AsyncQueue<PoolJob>();
-  private _workers: PoolWorker[] = [];
+  private _jobs = new AsyncQueue<Job>();
+  private _workers: Worker[] = [];
 
   /**
-   * Creates a new {@link Pool} instance that uses given number of workers.
+   * Creates a new {@link WorkPool} instance that uses given number of workers.
    *
    * @param [size = 0] The number of workers in the pool.
    */
@@ -79,7 +79,7 @@ export class Pool {
 
     // Spawn additional workers
     for (let i = 0; i < size; ++i) {
-      _workers.push(new PoolWorker(this._jobs));
+      _workers.push(new Worker(this._jobs));
     }
 
     return terminationPromises.length ? Promise.all(terminationPromises).then(noop) : Promise.resolve();

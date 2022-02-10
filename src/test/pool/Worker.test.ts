@@ -1,16 +1,16 @@
 import {AsyncQueue, sleep} from '../../main';
-import {PoolJob, PoolWorker} from '../../main/pool/PoolWorker';
+import {Job, Worker} from '../../main/pool/Worker';
 import {noop} from '../../main/utils';
 
-describe('PoolWorker', () => {
+describe('Worker', () => {
 
-  let queue: AsyncQueue<PoolJob>;
-  let worker: PoolWorker;
-  let job: PoolJob;
+  let queue: AsyncQueue<Job>;
+  let worker: Worker;
+  let job: Job;
 
   beforeEach(() => {
     queue = new AsyncQueue();
-    worker = new PoolWorker(queue);
+    worker = new Worker(queue);
     job = {
       __cb: jest.fn(),
       __resolve: jest.fn(),

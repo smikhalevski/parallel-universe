@@ -1,12 +1,12 @@
-import {Pool, sleep} from '../../main';
+import {WorkPool, sleep} from '../../main';
 import {noop} from '../../main/utils';
 
-describe('Pool', () => {
+describe('WorkPool', () => {
 
-  let pool: Pool;
+  let pool: WorkPool;
 
   beforeEach(() => {
-    pool = new Pool(1);
+    pool = new WorkPool(1);
   });
 
   test('submit returns a Promise', () => {
