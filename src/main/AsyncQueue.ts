@@ -42,9 +42,9 @@ export class AsyncQueue<T = any> {
   public takeAck(blocking?: boolean): Promise<AckProtocol<T>> {
     const {_values} = this;
 
-    let ackResolve: (() => void) | undefined;
     let ackResolved = false;
     let ackRevoked = false;
+    let ackResolve: (() => void) | undefined;
 
     const ack = (ok = true): void => {
       if (ackResolved) {
@@ -60,16 +60,17 @@ export class AsyncQueue<T = any> {
       ackResolve?.();
     };
 
-    const promise = this._promise.then(() => new Promise<AckProtocol<T>>((resolve) => {
+    const promise = this._promise.then<AckProtocol<T>>(() => {
       if (_values.length) {
-        resolve([_values[0], ack]);
-        return;
+        return [_values[0], ack];
       }
-      this._resolve = () => {
-        this._resolve = undefined;
-        resolve([_values[0], ack]);
-      };
-    }));
+      return new Promise((resolve) => {
+        this._resolve = () => {
+          this._resolve = undefined;
+          resolve([_values[0], ack]);
+        };
+      });
+    });
 
     if (blocking) {
       const ackPromise = new Promise<void>((resolve) => {

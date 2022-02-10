@@ -1,4 +1,4 @@
-import {AsyncQueue} from '../../main';
+import {AsyncQueue, sleep} from '../../main';
 import {PoolJob, PoolWorker} from '../../main/pool/PoolWorker';
 import {noop} from '../../main/utils';
 
@@ -30,8 +30,7 @@ describe('PoolWorker', () => {
 
     queue.add(job);
 
-    // The job is taken on the next tick
-    await Promise.resolve();
+    await Promise.resolve().then(noop);
 
     expect(worker.__activeJob).toBeUndefined();
     expect(job.__cb).toHaveBeenCalledTimes(1);
@@ -49,8 +48,7 @@ describe('PoolWorker', () => {
 
     queue.add(job);
 
-    // The job is taken on the next tick
-    await Promise.resolve();
+    await Promise.resolve().then(noop);
 
     expect(worker.__activeJob).toBeUndefined();
     expect(job.__cb).toHaveBeenCalledTimes(1);
@@ -66,8 +64,7 @@ describe('PoolWorker', () => {
 
     queue.add(job);
 
-    // The job is taken on the next tick
-    await Promise.resolve();
+    await Promise.resolve().then(noop);
 
     expect(worker.__activeJob).toBe(job);
     expect(job.__cb).toHaveBeenCalledTimes(1);
@@ -83,12 +80,11 @@ describe('PoolWorker', () => {
   });
 
   test('takes jobs from the queue and rejects async', async () => {
-    const promise = Promise.reject(111);
-    job.__cb = jest.fn(() => promise);
+    job.__cb = jest.fn(() => Promise.reject(111));
 
     queue.add(job);
 
-    await promise.catch(noop);
+    await sleep(50);
 
     expect(job.__cb).toHaveBeenCalledTimes(1);
     expect(job.__resolve).not.toHaveBeenCalled();
@@ -108,12 +104,12 @@ describe('PoolWorker', () => {
     queue.add(job);
     queue.add(job2);
 
-    await Promise.resolve();
+    await Promise.resolve().then(noop);
 
     expect(worker.__activeJob).toBe(job);
 
     // Resolve job and take job2
-    await Promise.resolve().then(noop).then(noop);
+    await Promise.resolve().then(noop).then(noop).then(noop);
 
     expect(worker.__activeJob).toBe(job2);
   });
@@ -132,8 +128,7 @@ describe('PoolWorker', () => {
     queue.add(job);
     queue.add(job2);
 
-    // Take and resolve job, and take job2
-    await Promise.resolve().then(noop).then(noop).then(noop);
+    await sleep(50);
 
     expect(job2.__cb).toHaveBeenCalledTimes(1);
   });
@@ -144,7 +139,7 @@ describe('PoolWorker', () => {
 
     expect(worker.__terminated).toBe(true);
 
-    await Promise.resolve();
+    await sleep(50);
 
     expect(job.__cb).not.toHaveBeenCalled();
   });
@@ -159,7 +154,7 @@ describe('PoolWorker', () => {
 
     queue.add(job);
 
-    await Promise.resolve().then(noop);
+    await Promise.resolve().then(noop).then(noop);
 
     worker.__terminate();
 
@@ -176,7 +171,7 @@ describe('PoolWorker', () => {
 
     queue.add(job);
 
-    await Promise.resolve().then(noop).then(noop).then(noop);
+    await sleep(50);
 
     worker.__terminate();
 

@@ -84,7 +84,7 @@ describe('Pool', () => {
     pool.submit(cbMock1);
     pool.submit(cbMock2);
 
-    await Promise.resolve().then(noop).then(noop).then(noop);
+    await Promise.resolve().then(noop).then(noop).then(noop).then(noop);
 
     await pool.resize(1);
 
