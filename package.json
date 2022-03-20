@@ -1,6 +1,6 @@
 {
   "name": "parallel-universe",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "The set of async flow control structures and promise utils.",
   "main": "./lib/index-cjs.js",
   "module": "./lib/index.js",
