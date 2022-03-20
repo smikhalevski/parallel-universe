@@ -26,15 +26,15 @@ describe('Worker', () => {
 
   test('takes jobs from the queue and resolves sync', async () => {
     const result = 111;
-    job.__cb = jest.fn(() => result);
+    const cbMock = job.__cb = jest.fn((ac) => result);
 
     queue.add(job);
 
     await Promise.resolve().then(noop);
 
     expect(worker.__activeJob).toBeUndefined();
-    expect(job.__cb).toHaveBeenCalledTimes(1);
-    expect(job.__cb).toHaveBeenCalledWith(new AbortController().signal);
+    expect(cbMock).toHaveBeenCalledTimes(1);
+    expect(cbMock.mock.calls[0][0].aborted).toBe(false);
     expect(job.__resolve).toHaveBeenCalledTimes(1);
     expect(job.__resolve).toHaveBeenCalledWith(111);
     expect(job.__reject).not.toHaveBeenCalled();
@@ -42,7 +42,7 @@ describe('Worker', () => {
 
   test('takes jobs from the queue and rejects sync', async () => {
     const error = new Error();
-    job.__cb = jest.fn(() => {
+    const cbMock = job.__cb = jest.fn((ac) => {
       throw error;
     });
 
@@ -51,8 +51,8 @@ describe('Worker', () => {
     await Promise.resolve().then(noop);
 
     expect(worker.__activeJob).toBeUndefined();
-    expect(job.__cb).toHaveBeenCalledTimes(1);
-    expect(job.__cb).toHaveBeenCalledWith(new AbortController().signal);
+    expect(cbMock).toHaveBeenCalledTimes(1);
+    expect(cbMock.mock.calls[0][0].aborted).toBe(false);
     expect(job.__resolve).not.toHaveBeenCalled();
     expect(job.__reject).toHaveBeenCalledTimes(1);
     expect(job.__reject).toHaveBeenCalledWith(error);
@@ -60,15 +60,15 @@ describe('Worker', () => {
 
   test('takes jobs from the queue and resolves async', async () => {
     const promise = Promise.resolve(111);
-    job.__cb = jest.fn(() => promise);
+    const cbMock = job.__cb = jest.fn((ac) => promise);
 
     queue.add(job);
 
     await Promise.resolve().then(noop);
 
     expect(worker.__activeJob).toBe(job);
-    expect(job.__cb).toHaveBeenCalledTimes(1);
-    expect(job.__cb).toHaveBeenCalledWith(new AbortController().signal);
+    expect(cbMock).toHaveBeenCalledTimes(1);
+    expect(cbMock.mock.calls[0][0].aborted).toBe(false);
     expect(job.__resolve).not.toHaveBeenCalled();
     expect(job.__reject).not.toHaveBeenCalled();
 
