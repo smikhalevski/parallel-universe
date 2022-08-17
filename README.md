@@ -17,6 +17,7 @@ npm install --save-prod parallel-universe
 - [`Executor`](#executor)
 - [`Lock`](#lock)
 - [`Blocker`](#blocker)
+- [`untilTruthy`](#untiltruthy)
 - [`repeatUntil`](#repeatuntil)
 - [`sleep`](#sleep)
 - [`timeout`](#timeout)
@@ -36,7 +37,7 @@ queue.take(); // → Promise<"Mars">
 ```
 
 `add` appends the value to the queue, while `take` removes the value from the queue as soon as it is available. If there
-are no values in the queue upon `take` call then the returned `Promise` is resolved after the next `add` call.
+are no values in the queue upon `take` call then the returned promise is resolved after the next `add` call.
 
 ```ts
 const queue = new AsyncQueue();
@@ -59,7 +60,7 @@ queue.take(); // → Promise<"Mars">
 queue.take(); // → Promise<"Venus">
 ```
 
-### Acknowledgements
+## Acknowledgements
 
 In some cases removing the value from the queue isn't the desirable behavior, since the consumer may not be able to
 process the taken value. Use `takeAck` to examine available value and acknowledge that it can be processed.
@@ -102,34 +103,30 @@ queue.takeAck(([value, ack]) => {
 queue.take(); // → Promise<"Pluto">
 ```
 
-### Blocking vs non-blocking acknowledgements
+## Blocking vs non-blocking acknowledgements
 
 By default, if you didn't call `ack`, the acknowledgement would be automatically revoked on _the next tick_ after
-the `Promise` returned by `takeAck` is resolved, and the value would remain in the queue.
+the promise returned by `takeAck` is resolved, and the value would remain in the queue.
 
 If acknowledgement was revoked, the `ack` call would throw an error:
 
 ```ts
 queue.takeAck()
-
-    .then((protocol) => protocol) // Extra tick
-
-    .then(([value, ack]) => {
-      ack(); // Throws an error
-    });
+  .then(protocol => protocol) // Extra tick
+  .then(([value, ack]) => {
+    ack(); // Throws an error
+  });
 ```
 
 To prevent the acknowledgement from being revoked, request a blocking acknowledgement:
 
 ```ts
 queue.takeAck(true) // Request a blocking ack
-
-    .then((protocol) => protocol) // Extra tick
-
-    .then(([value, ack]) => {
-      ack(); // Value acknowledged
-      doSomething(value);
-    });
+  .then(protocol => protocol) // Extra tick
+  .then(([value, ack]) => {
+    ack(); // Value acknowledged
+    doSomething(value);
+  });
 ```
 
 Blocking acknowledgement is required if the consumer has to perform asynchronous actions before processing the value.
@@ -140,7 +137,6 @@ stuck indefinitely.
 
 ```ts
 async function blockingConsumer() {
-
   const [value, ack] = queue.takeAck(true);
 
   try {
@@ -164,7 +160,7 @@ wait in the queue.
 // The pool that processes 5 callbacks in parallel at maximum
 const pool = new WorkPool(5);
 
-pool.submit(async (signal) => doSomething());
+pool.submit(async signal => doSomething());
 // → Promise<ReturnType<typeof doSomething>>
 ```
 
@@ -174,7 +170,7 @@ You can change how many callbacks can the pool process in parallel:
 pool.resize(2); // → Promise<void>
 ```
 
-`resize` returns the `Promise` that is resolved when there are no excessive callbacks being processed in parallel.
+`resize` returns the promise that is resolved when there are no excessive callbacks being processed in parallel.
 
 If you resize the pool down, callbacks that are pending and exceed the new size limit, are notified via `signal` that
 they must be aborted.
@@ -191,25 +187,88 @@ pool.resize(0); // → Promise<void>
 Manages async callback execution process and provides ways to access execution results, abort or replace an execution,
 and subscribe to state changes.
 
+Create an `Executor` instance and submit a callback for execution:
+
 ```ts
 const executor = new Executor();
 
-executor.execute(async (signal) => doSomething());
-// → Promise<void>
+executor.execute(doSomething);
+// → Promise<void> | void
+```
 
-executor.pending;
-// → true
+The `execute` method returns a promise if a passed callback is returns a promise, or `undefined` otherwise. The returned
+promise is fulfilled when the promise returned from the callback is settled.
 
-// Aborts pending execution
+If there's a pending execution, it is aborted and the new execution is started.
+
+To check that executor is currently executing a callback check
+[`pending`](https://smikhalevski.github.io/parallel-universe/classes/Executor.html#pending).
+
+After a promise returned from the executed callback is settled, the execution result (or rejection reason) are available
+through [`result`](https://smikhalevski.github.io/parallel-universe/classes/Executor.html#result) and
+[`reason`](https://smikhalevski.github.io/parallel-universe/classes/Executor.html#reason).
+
+You can check whether the promise was
+[`fulfilled`](https://smikhalevski.github.io/parallel-universe/classes/Executor.html#fulfilled),
+[`rejected`](https://smikhalevski.github.io/parallel-universe/classes/Executor.html#rejected) or
+[`settled`](https://smikhalevski.github.io/parallel-universe/classes/Executor.html#settled).
+
+To abort the pending execution, you can use
+an [abort signal](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal)
+passed to the executed callback:
+
+```ts
+executor.execute(async signal => {
+  // Check signal.aborted
+});
+
 executor.abort();
+```
+
+When execution is aborted the current `result` and `reason` remain intact.
+
+To reset the executor to the initial state use:
+
+```ts
+executor.clear();
+```
+
+You can directly fulfill or reject an executor:
+
+```ts
+executor.resolve(value);
+
+executor.reject(reason);
+```
+
+Subscribe to an executor to receive notifications when its state changes:
+
+```ts
+const unsubscribe = executor.subscribe(() => {
+  // Handle the update
+});
+
+unsubscribe();
 ```
 
 # `Lock`
 
 Promise-based [lock implementation](https://en.wikipedia.org/wiki/Lock_(computer_science)).
 
-When someone tries to acquire a `Lock` they receive a `Promise` for a release callback that is resolved as soon as
+When someone tries to acquire a `Lock` they receive a promise for a release callback that is resolved as soon as
 previous lock owner invokes their release callback.
+
+```ts
+const lock = new Lock();
+
+lock.acquire();
+// → Promise<() => void>
+```
+
+You can check that the lock is [`locked`](https://smikhalevski.github.io/parallel-universe/classes/Lock.html#locked)
+before acquiring a lock.
+
+For example, if you want to force an async callback executions to be sequential you can use ane external lock:
 
 ```ts
 const lock = new Lock();
@@ -217,7 +276,7 @@ const lock = new Lock();
 async function doSomething() {
   const release = await lock.acquire();
   try {
-    // Long process starts here
+    // Long process is handled here
   } finally {
     release();
   }
@@ -231,40 +290,82 @@ doSomething();
 
 # `Blocker`
 
-Provides mechanism for blocking async processes and unblocking them from an external context.
+Provides a mechanism for blocking an async process and unblocking it from the outside.
 
 ```ts
-const blocker = new Blocker();
+const blocker = new Blocker<string>();
 
-async function doSomething() {
-  const value = await blocker.block();
-  // → "Mars"
-}
+blocker.block();
+// → Promise<string>
+```
 
-doSomething();
+You can later unblock it passing a value that would fulfill the promise returned from the `block` call:
 
+```ts
 blocker.unblock('Mars');
+```
+
+# `untilTruthy`
+
+Returns a promise that is fulfilled when a callback returns a truthy value, or a promise that is fulfilled with a
+truthy value.
+
+```ts
+untilTruthy(doSomeChecks);
+// → Promise<ReturnType<typeof doSomeChecks>>
+```
+
+If you don't want `untilTruthy` to invoke the callback too frequently, provide a delay in milliseconds:
+
+```ts
+untilTruthy(doSomeChecks, 1_000);
+```
+
+Instead of a fixed delay you can pass a function that returns a delay:
+
+```ts
+untilTruthy(
+  doSomeChecks,
+  asyncResult => asyncResult.rejected ? 1_000 : 0
+);
+```
+
+If a callback starts an async process, you can use an
+[abort signal](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal) to abort it later:
+
+```ts
+const abortController = new AbortController();
+
+untilTruthy(signal => doSomeChecks(signal), 0, abortController.signal);
+
+abortController.abort();
+```
+
+You can combine `untilTruthy` with [`timeout`](#timeout). For example, to poll a callback every 100 milliseconds until
+it returns a truthy value or abort after 5 seconds:
+
+```ts
+timeout(untilTruthy(doSomeChecks, 100), 5_000);
 ```
 
 # `repeatUntil`
 
-Invokes a callback periodically with the given delay between resolutions of the returned `Promise`.
+Much like a [`untilTruthy`](#untiltruthy) and provides more control when the callback polling is fulfilled.
 
 ```ts
 repeatUntil(
-    // The callback that is invoked repeatedly
-    async (signal) => doSomething(),
+  // The callback that is invoked repeatedly
+  async signal => doSomething(signal),
 
-    // The until clause must return true to stop the loop
-    (asyncResult) => asyncResult.rejected,
+  // The until clause must return true to stop the loop
+  asyncResult => asyncResult.rejected,
 
-    // Optional delay between callback invokations
-    100,
-    // or
-    // (asyncResult) => 100,
+  // Optional delay between callback invokations
+  asyncResult => 100,
+  // or just pass a literal number of milliseconds
 
-    // Optional signal that can abort the loop from the outside
-    abortController.signal,
+  // Optional signal that can abort the loop from the outside
+  abortController.signal,
 );
 // → Promise<ReturnType<typeof doSomething>>
 ```
@@ -281,21 +382,19 @@ sleep(100, abortController.signal);
 
 # `timeout`
 
-Rejects with a [`TimeoutError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if execution time exceeds
-the timeout. If aborted via a passed signal then rejected with
-an [`AbortError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror).
+Rejects with a [`TimeoutError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if execution
+time exceeds the timeout. If aborted via a passed signal then rejected with an
+[`AbortError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror).
 
 ```ts
 timeout(
-    async (signal) => doSomething(),
-    // or
-    // doSomething()
+  async (signal) => doSomething(),
 
-    // Execution timeout
-    100,
+  // Execution timeout
+  100,
 
-    // Optional signal that can abort the execution from the outside
-    abortController.signal,
+  // Optional signal that can abort the execution from the outside
+  abortController.signal,
 );
 // → Promise<ReturnType<typeof doSomething>>
 ```
