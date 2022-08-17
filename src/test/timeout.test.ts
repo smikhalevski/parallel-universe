@@ -1,21 +1,22 @@
-import {sleep, timeout} from '../main';
-import {createAbortError, createTimeoutError} from '../main/utils';
+import { sleep, timeout } from '../main';
+import { newAbortError, newTimeoutError } from '../main/utils';
 
 describe('timeout', () => {
-
-  test('aborts if signal is aborted', async () => {
+  test('aborts if an aborted signal is provided', async () => {
     const cbMock = jest.fn();
-    const ac = new AbortController();
-    ac.abort();
+    const abortController = new AbortController();
+    abortController.abort();
 
-    await expect(timeout(cbMock, 1, ac.signal)).rejects.toEqual(createAbortError());
+    await expect(timeout(cbMock, 1, abortController.signal)).rejects.toEqual(newAbortError());
     expect(cbMock).not.toHaveBeenCalled();
   });
 
   test('rejects if synchronous callback throws', async () => {
-    await expect(timeout(() => {
-      throw 'aaa';
-    }, 1)).rejects.toBe('aaa');
+    await expect(
+      timeout(() => {
+        throw 'aaa';
+      }, 1)
+    ).rejects.toBe('aaa');
   });
 
   test('resolves synchronous callback', async () => {
@@ -31,15 +32,15 @@ describe('timeout', () => {
   });
 
   test('aborts if timeout expires', async () => {
-    await expect(timeout((signal) => sleep(100, signal), 1)).rejects.toEqual(createTimeoutError());
+    await expect(timeout(signal => sleep(100, signal), 1)).rejects.toEqual(newTimeoutError());
   });
 
   test('aborts when signal is aborted', async () => {
-    const ac = new AbortController();
-    const promise = timeout((signal) => sleep(1_000, signal), 100, ac.signal);
+    const abortController = new AbortController();
+    const promise = timeout(signal => sleep(1_000, signal), 100, abortController.signal);
 
-    ac.abort();
+    abortController.abort();
 
-    await expect(promise).rejects.toEqual(createAbortError());
+    await expect(promise).rejects.toEqual(newAbortError());
   });
 });

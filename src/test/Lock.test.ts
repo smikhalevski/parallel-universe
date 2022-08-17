@@ -1,7 +1,6 @@
-import {Lock} from '../main';
+import { Lock } from '../main';
 
 describe('Lock', () => {
-
   test('the new lock is unlocked', () => {
     expect(new Lock().locked).toBe(false);
   });
@@ -18,8 +17,8 @@ describe('Lock', () => {
 
     let value;
 
-    releasePromise1.then(() => value = 1);
-    releasePromise2.then(() => value = 2);
+    releasePromise1.then(() => (value = 1));
+    releasePromise2.then(() => (value = 2));
 
     const release1 = await releasePromise1;
 

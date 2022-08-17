@@ -1,5 +1,6 @@
-export function isPromiseLike<T>(value: unknown): value is PromiseLike<T> {
-  return value != null
-      && typeof value === 'object'
-      && typeof (value as PromiseLike<unknown>).then === 'function';
+/**
+ * Returns `true` is value has `then` property that is a function.
+ */
+export function isPromiseLike<T>(value: any): value is PromiseLike<T> {
+  return value != null && typeof value === 'object' && typeof value.then === 'function';
 }

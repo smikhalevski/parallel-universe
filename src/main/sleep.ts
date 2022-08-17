@@ -1,29 +1,28 @@
-import {addAbortListener, createAbortError, removeAbortListener} from './utils';
+import { addAbortListener, newAbortError, removeAbortListener } from './utils';
 
 /**
- * Returns a `Promise` that resolves after a timeout.
+ * Returns a promise that is fulfilled after a timeout.
  *
  * @param ms The timeout in milliseconds after which to resolve.
- * @param signal The optional signal that instantly aborts the sleep.
- * @returns The `Promise` that resolves after a timeout. If `signal` was aborted then returned `Promise` is rejected
- *     with [`DOMException`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException) abort error.
+ * @param signal The optional signal that instantly aborts the sleep. If `signal` was aborted then returned promise is
+ * rejected with [`AbortError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror).
+ * @returns The promise that is fulfilled after a timeout.
  */
 export function sleep(ms: number, signal?: AbortSignal | null): Promise<undefined> {
   return new Promise<undefined>((resolve, reject) => {
-
     if (!signal) {
       setTimeout(resolve, ms);
       return;
     }
 
     if (signal.aborted) {
-      reject(createAbortError());
+      reject(newAbortError());
       return;
     }
 
     const abortListener = (): void => {
       clearTimeout(timeout);
-      reject(createAbortError());
+      reject(newAbortError());
     };
 
     addAbortListener(signal, abortListener);

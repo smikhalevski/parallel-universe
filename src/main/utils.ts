@@ -1,4 +1,4 @@
-function createError(name: string, code: number, message?: string): Error {
+function newException(name: string, code: number, message?: string): Error {
   if (typeof DOMException !== 'undefined') {
     return new DOMException(message, name);
   }
@@ -8,19 +8,19 @@ function createError(name: string, code: number, message?: string): Error {
   return error;
 }
 
-export function createAbortError(): Error {
-  return createError('AbortError', 20);
+export function newAbortError(message?: string): Error {
+  return newException('AbortError', 20, message);
 }
 
-export function createTimeoutError(): Error {
-  return createError('TimeoutError', 23);
+export function newTimeoutError(message?: string): Error {
+  return newException('TimeoutError', 23, message);
 }
 
 export function callOrGet<T, A extends unknown[]>(value: ((...args: A) => T) | T, ...args: A): T {
   return typeof value === 'function' ? (value as Function)(...args) : value;
 }
 
-export function createAbortSignal(): AbortSignal {
+export function newAbortSignal(): AbortSignal {
   return new AbortController().signal;
 }
 
@@ -32,5 +32,4 @@ export function removeAbortListener(signal: AbortSignal, listener: () => void): 
   signal.removeEventListener('abort', listener);
 }
 
-export function noop() {
-}
+export function noop() {}
