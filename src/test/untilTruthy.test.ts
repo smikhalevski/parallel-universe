@@ -27,6 +27,9 @@ describe('untilTruthy', () => {
   test('first callback invocation in synchronous', () => {
     const cbMock = jest.fn();
 
+    cbMock.mockImplementationOnce(() => false);
+    cbMock.mockImplementationOnce(() => true);
+
     untilTruthy(cbMock);
 
     expect(cbMock).toHaveBeenCalledTimes(1);
