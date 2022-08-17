@@ -10,10 +10,17 @@ export type ExecutorCallback<T> = (signal: AbortSignal) => Awaitable<T | undefin
 /**
  * The async result that may be updated over time.
  *
- * @template T The type of the result contained by the execution.
+ * @template T The result contained by the execution.
  */
 export interface Execution<T = any> extends AsyncResult<T> {
-  pending: boolean;
+  /**
+   * `true` if an execution is currently pending, or `false` otherwise.
+   */
+  readonly pending: boolean;
+
+  /**
+   * The promise that is fulfilled when the execution is completed. This promise is never rejected.
+   */
   promise: Promise<void> | undefined;
 
   /**
@@ -29,17 +36,21 @@ export interface Execution<T = any> extends AsyncResult<T> {
  * Manages async callback execution process and provides ways to access execution results, abort or replace an
  * execution, and subscribe to state changes.
  *
- * @template T The type of the result returned by the executed callback.
+ * @template T The result returned by the executed callback.
  */
 export class Executor<T = any> implements Execution<T> {
-  public resolved = false;
-  public rejected = false;
-  public result: T | undefined;
-  public reason: any;
-  public promise: Promise<void> | undefined;
+  fulfilled = false;
+  rejected = false;
+  result: T | undefined;
+  reason: any;
+  promise: Promise<void> | undefined;
 
   private _eventBus = new EventBus();
   private _abortController?: AbortController;
+
+  get settled() {
+    return this.fulfilled || this.rejected;
+  }
 
   get pending() {
     return this.promise != null;
@@ -53,7 +64,7 @@ export class Executor<T = any> implements Execution<T> {
    *
    * The returned promise is never rejected.
    */
-  public execute(cb: ExecutorCallback<T>): Promise<void> {
+  execute(cb: ExecutorCallback<T>): Promise<void> {
     const prevAbortController = this._abortController;
     prevAbortController?.abort();
 
@@ -101,9 +112,9 @@ export class Executor<T = any> implements Execution<T> {
   /**
    * Clears available results and doesn't affect the pending execution.
    */
-  public clear(): this {
-    if (this.resolved || this.rejected) {
-      this.resolved = this.rejected = false;
+  clear(): this {
+    if (this.fulfilled || this.rejected) {
+      this.fulfilled = this.rejected = false;
       this.result = this.reason = undefined;
       this._eventBus.publish();
     }
@@ -114,7 +125,7 @@ export class Executor<T = any> implements Execution<T> {
    * Instantly aborts pending execution and preserves available results. Value (or error) returned from pending
    * callback is ignored. The signal passed to the executed callback is aborted.
    */
-  public abort(): this {
+  abort(): this {
     if (this._abortController) {
       this._abortController.abort();
       this._abortController = this.promise = undefined;
@@ -124,24 +135,16 @@ export class Executor<T = any> implements Execution<T> {
   }
 
   /**
-   * Aborts pending execution and resolves with the given result.
-   *
-   * ```ts
-   * executor.resolve(new Promise((resolve, reject) => {
-   *   resolve(value);
-   * }));
-   * // or
-   * executor.resolve(value);
-   * ```
+   * Aborts pending execution and fulfills it with the given result.
    */
-  public resolve(result: Awaitable<T> | undefined): this {
+  resolve(result: Awaitable<T> | undefined): this {
     if (isPromiseLike(result)) {
       this.execute(() => result);
       return this;
     }
-    if (this.promise || !this.resolved || !Object.is(this.result, result)) {
+    if (this.promise || !this.fulfilled || !Object.is(this.result, result)) {
       this._abortController?.abort();
-      this.resolved = true;
+      this.fulfilled = true;
       this.rejected = false;
       this.result = result;
       this.reason = this._abortController = this.promise = undefined;
@@ -153,10 +156,10 @@ export class Executor<T = any> implements Execution<T> {
   /**
    * Instantly aborts pending execution and rejects with the given reason.
    */
-  public reject(reason: any): this {
+  reject(reason: any): this {
     if (this.promise || !this.rejected || !Object.is(this.reason, reason)) {
       this._abortController?.abort();
-      this.resolved = false;
+      this.fulfilled = false;
       this.rejected = true;
       this.result = this._abortController = this.promise = undefined;
       this.reason = reason;
@@ -165,7 +168,7 @@ export class Executor<T = any> implements Execution<T> {
     return this;
   }
 
-  public subscribe(listener: () => void): () => void {
+  subscribe(listener: () => void): () => void {
     return this._eventBus.subscribe(listener);
   }
 }

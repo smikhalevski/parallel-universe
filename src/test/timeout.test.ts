@@ -2,7 +2,7 @@ import { sleep, timeout } from '../main';
 import { newAbortError, newTimeoutError } from '../main/utils';
 
 describe('timeout', () => {
-  test('aborts if signal is aborted', async () => {
+  test('aborts if an aborted signal is provided', async () => {
     const cbMock = jest.fn();
     const abortController = new AbortController();
     abortController.abort();

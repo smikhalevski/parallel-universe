@@ -12,7 +12,7 @@ describe('Worker', () => {
     worker = new Worker(queue);
     job = {
       __abortController: null,
-      __cb: jest.fn(),
+      __callback: jest.fn(),
       __resolve: jest.fn(),
       __reject: jest.fn(),
     };
@@ -26,7 +26,7 @@ describe('Worker', () => {
 
   test('takes jobs from the queue and resolves sync', async () => {
     const result = 111;
-    const cbMock = (job.__cb = jest.fn(abortController => result));
+    const cbMock = (job.__callback = jest.fn(abortController => result));
 
     queue.add(job);
 
@@ -42,7 +42,7 @@ describe('Worker', () => {
 
   test('takes jobs from the queue and rejects sync', async () => {
     const error = new Error();
-    const cbMock = (job.__cb = jest.fn(abortController => {
+    const cbMock = (job.__callback = jest.fn(abortController => {
       throw error;
     }));
 
@@ -60,7 +60,7 @@ describe('Worker', () => {
 
   test('takes jobs from the queue and resolves async', async () => {
     const promise = Promise.resolve(111);
-    const cbMock = (job.__cb = jest.fn(abortController => promise));
+    const cbMock = (job.__callback = jest.fn(abortController => promise));
 
     queue.add(job);
 
@@ -80,24 +80,24 @@ describe('Worker', () => {
   });
 
   test('takes jobs from the queue and rejects async', async () => {
-    job.__cb = jest.fn(() => Promise.reject(111));
+    job.__callback = jest.fn(() => Promise.reject(111));
 
     queue.add(job);
 
     await sleep(50);
 
-    expect(job.__cb).toHaveBeenCalledTimes(1);
+    expect(job.__callback).toHaveBeenCalledTimes(1);
     expect(job.__resolve).not.toHaveBeenCalled();
     expect(job.__reject).toHaveBeenCalledTimes(1);
     expect(job.__reject).toHaveBeenCalledWith(111);
   });
 
   test('takes next job after completion', async () => {
-    job.__cb = jest.fn(() => Promise.resolve());
+    job.__callback = jest.fn(() => Promise.resolve());
 
-    const job2 = {
+    const job2: Job = {
       __abortController: null,
-      __cb: jest.fn(() => Promise.resolve()),
+      __callback: jest.fn(() => Promise.resolve()),
       __resolve: jest.fn(),
       __reject: jest.fn(),
     };
@@ -116,13 +116,13 @@ describe('Worker', () => {
   });
 
   test('takes next job after job that thrown error', async () => {
-    job.__cb = jest.fn(() => {
+    job.__callback = jest.fn(() => {
       throw new Error();
     });
 
-    const job2 = {
+    const job2: Job = {
       __abortController: null,
-      __cb: jest.fn(),
+      __callback: jest.fn(),
       __resolve: jest.fn(),
       __reject: jest.fn(),
     };
@@ -132,7 +132,7 @@ describe('Worker', () => {
 
     await sleep(50);
 
-    expect(job2.__cb).toHaveBeenCalledTimes(1);
+    expect(job2.__callback).toHaveBeenCalledTimes(1);
   });
 
   test('does not pick jobs after termination', async () => {
@@ -143,13 +143,13 @@ describe('Worker', () => {
 
     await sleep(50);
 
-    expect(job.__cb).not.toHaveBeenCalled();
+    expect(job.__callback).not.toHaveBeenCalled();
   });
 
   test('aborts the job signal when terminated', async () => {
     let jobSignal: AbortSignal | undefined;
 
-    job.__cb = jest.fn(async signal => {
+    job.__callback = jest.fn(async signal => {
       await Promise.resolve();
       jobSignal = signal;
     });
@@ -166,7 +166,7 @@ describe('Worker', () => {
   test('does not abort the signal of the completed job', async () => {
     let jobSignal: AbortSignal | undefined;
 
-    job.__cb = jest.fn(async signal => {
+    job.__callback = jest.fn(async signal => {
       await Promise.resolve();
       jobSignal = signal;
     });
@@ -183,7 +183,7 @@ describe('Worker', () => {
   test('does not abort the sync job', async () => {
     let jobSignal: AbortSignal | undefined;
 
-    job.__cb = jest.fn(signal => {
+    job.__callback = jest.fn(signal => {
       jobSignal = signal;
     });
 
@@ -207,7 +207,7 @@ describe('Worker', () => {
   });
 
   test('resolves the termination promise after an async job is completed', async () => {
-    job.__cb = jest.fn(() => Promise.resolve());
+    job.__callback = jest.fn(() => Promise.resolve());
 
     queue.add(job);
 

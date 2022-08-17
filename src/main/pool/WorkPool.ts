@@ -11,7 +11,7 @@ export class WorkPool {
   /**
    * The number of non-terminated workers is the pool. Use {@link resize} to change the pool size.
    */
-  public size = 1;
+  size = 1;
 
   private _jobs = new AsyncQueue<Job>();
   private _workers: Worker[] = [];
@@ -21,7 +21,7 @@ export class WorkPool {
    *
    * @param [size = 0] The number of workers in the pool.
    */
-  public constructor(size?: number) {
+  constructor(size?: number) {
     this.resize(size || 0);
   }
 
@@ -29,13 +29,13 @@ export class WorkPool {
    * Submits a new callback that should be executed by the worker in the pool.
    *
    * @param cb The callback to invoke.
-   * @returns The `Promise` that is fulfilled with the `cb` result.
+   * @returns The promise that is fulfilled with the `cb` result.
    */
-  public submit<T>(cb: (signal: AbortSignal) => Awaitable<T>): Promise<T> {
+  submit<T>(cb: (signal: AbortSignal) => Awaitable<T>): Promise<T> {
     return new Promise((resolve, reject) => {
       this._jobs.add({
         __abortController: null,
-        __cb: cb,
+        __callback: cb,
         __resolve: resolve,
         __reject: reject,
       });
@@ -43,14 +43,14 @@ export class WorkPool {
   }
 
   /**
-   * Changes the size of the pool by spawning or terminating workers. When worker is terminated while processing ann
+   * Changes the size of the pool by spawning or terminating workers. When worker is terminated while processing an
    * async task, its `signal` is aborted.
    *
    * @param size The non-negative integer number of workers in the pool.
-   * @returns The `Promise` that resolves when the pool would reach the requested size: when excessive workers were
-   *     terminated or additional workers were spawned.
+   * @returns The promise that is fulfilled when the pool would reach the requested size: when excessive workers were
+   * terminated or additional workers were spawned.
    */
-  public resize(size: number): Promise<void> {
+  resize(size: number): Promise<void> {
     const { _workers } = this;
 
     this.size = Math.max(size | 0, 0);

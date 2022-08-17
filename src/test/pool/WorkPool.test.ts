@@ -1,4 +1,4 @@
-import { WorkPool, sleep } from '../../main';
+import { sleep, WorkPool } from '../../main';
 import { noop } from '../../main/utils';
 
 describe('WorkPool', () => {

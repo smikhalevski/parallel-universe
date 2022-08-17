@@ -2,7 +2,7 @@ import { repeatUntil } from '../main';
 import { newAbortError } from '../main/utils';
 
 describe('repeatUntil', () => {
-  test('aborts if signal is aborted', async () => {
+  test('aborts if an aborted signal is provided', async () => {
     const cbMock = jest.fn();
     const untilMock = jest.fn();
     const abortController = new AbortController();
@@ -54,7 +54,7 @@ describe('repeatUntil', () => {
     ).resolves.toEqual('foo');
   });
 
-  test('resolves if callback returns resolved Promise', async () => {
+  test('resolves if callback returns a fulfilled Promise', async () => {
     await expect(
       repeatUntil(
         () => Promise.resolve('foo'),
@@ -112,7 +112,8 @@ describe('repeatUntil', () => {
 
     expect(untilMock).toHaveBeenCalledTimes(1);
     expect(untilMock).toHaveBeenCalledWith({
-      resolved: true,
+      settled: true,
+      fulfilled: true,
       rejected: false,
       result: 'foo',
       reason: undefined,
@@ -130,7 +131,8 @@ describe('repeatUntil', () => {
 
     expect(untilMock).toHaveBeenCalledTimes(1);
     expect(untilMock).toHaveBeenCalledWith({
-      resolved: false,
+      settled: true,
+      fulfilled: false,
       rejected: true,
       result: undefined,
       reason: 'foo',
@@ -149,7 +151,8 @@ describe('repeatUntil', () => {
 
     expect(delayMock).toHaveBeenCalledTimes(1);
     expect(delayMock).toHaveBeenCalledWith({
-      resolved: true,
+      settled: true,
+      fulfilled: true,
       rejected: false,
       result: 'foo',
       reason: undefined,
@@ -172,7 +175,8 @@ describe('repeatUntil', () => {
 
     expect(delayMock).toHaveBeenCalledTimes(1);
     expect(delayMock).toHaveBeenCalledWith({
-      resolved: false,
+      settled: true,
+      fulfilled: false,
       rejected: true,
       result: undefined,
       reason: 'foo',

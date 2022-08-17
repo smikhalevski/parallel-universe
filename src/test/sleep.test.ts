@@ -2,7 +2,7 @@ import { sleep } from '../main';
 import { newAbortError } from '../main/utils';
 
 describe('sleep', () => {
-  test('aborts if signal is aborted', async () => {
+  test('aborts if an aborted signal is provided', async () => {
     const abortController = new AbortController();
     abortController.abort();
 
