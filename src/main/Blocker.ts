@@ -1,4 +1,4 @@
-import {EventBus} from '@smikhalevski/event-bus';
+import { EventBus } from '@smikhalevski/event-bus';
 
 /**
  * Provides mechanism for blocking async processes and unblocking them from an external context.
@@ -6,7 +6,6 @@ import {EventBus} from '@smikhalevski/event-bus';
  * @template T The type of value that can be passed to {@link unblock} to resolve the {@link block} `Promise`.
  */
 export class Blocker<T = void> {
-
   private _eventBus = new EventBus();
   private _promise?: Promise<T>;
   private _resolve?: (result: T) => void;
@@ -24,7 +23,7 @@ export class Blocker<T = void> {
    */
   public block(): Promise<T> {
     if (!this._promise) {
-      this._promise = new Promise((resolve) => {
+      this._promise = new Promise(resolve => {
         this._resolve = resolve;
       });
       this._eventBus.publish();
@@ -36,7 +35,7 @@ export class Blocker<T = void> {
    * Resolves the promise returned from {@link block}. If the blocker isn't blocked then no-op.
    */
   public unblock(result: T): void {
-    const {_resolve} = this;
+    const { _resolve } = this;
 
     if (_resolve) {
       this._resolve = undefined;

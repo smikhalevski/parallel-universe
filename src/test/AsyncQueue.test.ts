@@ -1,7 +1,6 @@
-import {AsyncQueue, sleep} from '../main';
+import { AsyncQueue, sleep } from '../main';
 
 describe('AsyncQueue', () => {
-
   test('takes an existing value', async () => {
     const queue = new AsyncQueue();
 

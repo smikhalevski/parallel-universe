@@ -1,6 +1,6 @@
-import {addAbortListener, callOrGet, createAbortError, createAbortSignal, removeAbortListener} from './utils';
-import {AsyncResult, Awaitable} from './shared-types';
-import {isPromiseLike} from './isPromiseLike';
+import { addAbortListener, callOrGet, newAbortError, newAbortSignal, removeAbortListener } from './utils';
+import { AsyncResult, Awaitable } from './shared-types';
+import { isPromiseLike } from './isPromiseLike';
 
 /**
  * Invokes a callback periodically with the given delay between resolutions of the returned `Promise`.
@@ -12,15 +12,19 @@ import {isPromiseLike} from './isPromiseLike';
  *     invocation. Or a callback that receives the latest result and returns the delay. If omitted then delay is 0.
  * @param signal The optional signal that instantly aborts the loop.
  * @returns The `Promise` that resolves with the `cb` result. If `signal` was aborted then returned `Promise` is
- *     rejected with [`DOMException`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException) abort error.
+ *     rejected with [`AbortError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror).
  */
-export function repeatUntil<T>(cb: (signal: AbortSignal) => Awaitable<T>, until: (result: AsyncResult<T>) => boolean, ms?: ((result: AsyncResult<T>) => number) | number | null, signal?: AbortSignal | null): Promise<T> {
+export function repeatUntil<T>(
+  cb: (signal: AbortSignal) => Awaitable<T>,
+  until: (result: AsyncResult<T>) => boolean,
+  ms?: ((result: AsyncResult<T>) => number) | number | null,
+  signal?: AbortSignal | null
+): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-
-    const cbSignal = signal || createAbortSignal();
+    const cbSignal = signal || newAbortSignal();
 
     if (cbSignal.aborted) {
-      reject(createAbortError());
+      reject(newAbortError());
       return;
     }
 
@@ -30,18 +34,18 @@ export function repeatUntil<T>(cb: (signal: AbortSignal) => Awaitable<T>, until:
     const abortListener = (): void => {
       aborted = true;
       clearTimeout(timeout);
-      reject(createAbortError());
+      reject(newAbortError());
     };
 
     addAbortListener(cbSignal, abortListener);
 
-    const loopFulfill = (result: AsyncResult): void => {
+    const settleCycle = (result: AsyncResult): void => {
       if (aborted) {
         return;
       }
       try {
         if (!until(result)) {
-          timeout = setTimeout(loop, callOrGet(ms, result) || 0);
+          timeout = setTimeout(cycle, callOrGet(ms, result) || 0);
           return;
         }
       } catch (error) {
@@ -58,8 +62,8 @@ export function repeatUntil<T>(cb: (signal: AbortSignal) => Awaitable<T>, until:
       }
     };
 
-    const loopResolve = (result: T): void => {
-      loopFulfill({
+    const fulfillCycle = (result: T): void => {
+      settleCycle({
         resolved: true,
         rejected: false,
         result,
@@ -67,8 +71,8 @@ export function repeatUntil<T>(cb: (signal: AbortSignal) => Awaitable<T>, until:
       });
     };
 
-    const loopReject = (reason: unknown): void => {
-      loopFulfill({
+    const rejectCycle = (reason: unknown): void => {
+      settleCycle({
         resolved: false,
         rejected: true,
         result: undefined,
@@ -76,7 +80,7 @@ export function repeatUntil<T>(cb: (signal: AbortSignal) => Awaitable<T>, until:
       });
     };
 
-    const loop = (): void => {
+    const cycle = (): void => {
       if (aborted) {
         return;
       }
@@ -84,16 +88,16 @@ export function repeatUntil<T>(cb: (signal: AbortSignal) => Awaitable<T>, until:
       try {
         result = cb(cbSignal);
       } catch (error) {
-        loopReject(error);
+        rejectCycle(error);
         return;
       }
       if (isPromiseLike(result)) {
-        result.then(loopResolve, loopReject);
+        result.then(fulfillCycle, rejectCycle);
       } else {
-        loopResolve(result);
+        fulfillCycle(result);
       }
     };
 
-    loop();
+    cycle();
   });
 }

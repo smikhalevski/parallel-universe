@@ -1,4 +1,4 @@
-import {EventBus} from '@smikhalevski/event-bus';
+import { EventBus } from '@smikhalevski/event-bus';
 
 /**
  * Promise-based lock implementation.
@@ -9,7 +9,6 @@ import {EventBus} from '@smikhalevski/event-bus';
  * @see {@link https://en.wikipedia.org/wiki/Lock_(computer_science) Lock (computer science)}
  */
 export class Lock {
-
   private _eventBus = new EventBus();
   private _promise?: Promise<() => void>;
 
@@ -24,7 +23,7 @@ export class Lock {
    * Waits for the {@link Lock} to become available and resolves with the callback that releases the lock.
    */
   public acquire(): Promise<() => void> {
-    const {_promise} = this;
+    const { _promise } = this;
 
     let promise: Promise<() => void>;
 

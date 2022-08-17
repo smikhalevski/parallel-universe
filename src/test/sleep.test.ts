@@ -1,30 +1,29 @@
-import {sleep} from '../main';
-import {createAbortError} from '../main/utils';
+import { sleep } from '../main';
+import { newAbortError } from '../main/utils';
 
 describe('sleep', () => {
-
   test('aborts if signal is aborted', async () => {
-    const ac = new AbortController();
-    ac.abort();
+    const abortController = new AbortController();
+    abortController.abort();
 
-    await expect(sleep(1, ac.signal)).rejects.toEqual(createAbortError());
+    await expect(sleep(1, abortController.signal)).rejects.toEqual(newAbortError());
   });
 
   test('resolves after timeout', async () => {
-    const ts = Date.now();
+    const now = Date.now();
     await sleep(200);
 
-    expect(Date.now() - ts).toBeGreaterThanOrEqual(199);
+    expect(Date.now() - now).toBeGreaterThanOrEqual(199);
   });
 
   test('rejects when signal is aborted', async () => {
-    const ac = new AbortController();
-    const promise = sleep(500, ac.signal);
-    const ts = Date.now();
+    const abortController = new AbortController();
+    const promise = sleep(500, abortController.signal);
+    const now = Date.now();
 
-    ac.abort();
+    abortController.abort();
 
-    await expect(promise).rejects.toEqual(createAbortError());
-    expect(Date.now() - ts).toBeLessThan(10);
+    await expect(promise).rejects.toEqual(newAbortError());
+    expect(Date.now() - now).toBeLessThan(10);
   });
 });

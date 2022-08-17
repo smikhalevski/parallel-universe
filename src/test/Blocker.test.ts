@@ -1,7 +1,6 @@
-import {Blocker} from '../main';
+import { Blocker } from '../main';
 
 describe('Blocker', () => {
-
   test('unblocked by default', () => {
     expect(new Blocker().blocked).toBe(false);
   });
@@ -43,7 +42,7 @@ describe('Blocker', () => {
 
   test('triggers listener when blocked', () => {
     const listenerMock = jest.fn();
-    const blocker = new Blocker()
+    const blocker = new Blocker();
     blocker.subscribe(listenerMock);
 
     blocker.block();

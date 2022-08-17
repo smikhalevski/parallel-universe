@@ -1,14 +1,13 @@
-import {Awaitable} from '../shared-types';
-import {AsyncQueue} from '../AsyncQueue';
-import {noop} from '../utils';
-import {Job, Worker} from './Worker';
+import { Awaitable } from '../shared-types';
+import { AsyncQueue } from '../AsyncQueue';
+import { noop } from '../utils';
+import { Job, Worker } from './Worker';
 
 /**
  * The callback execution pool that can execute limited number of callbacks in parallel while other submitted callbacks
  * wait in the queue.
  */
 export class WorkPool {
-
   /**
    * The number of non-terminated workers is the pool. Use {@link resize} to change the pool size.
    */
@@ -35,6 +34,7 @@ export class WorkPool {
   public submit<T>(cb: (signal: AbortSignal) => Awaitable<T>): Promise<T> {
     return new Promise((resolve, reject) => {
       this._jobs.add({
+        __abortController: null,
         __cb: cb,
         __resolve: resolve,
         __reject: reject,
@@ -51,7 +51,7 @@ export class WorkPool {
    *     terminated or additional workers were spawned.
    */
   public resize(size: number): Promise<void> {
-    const {_workers} = this;
+    const { _workers } = this;
 
     this.size = Math.max(size | 0, 0);
 

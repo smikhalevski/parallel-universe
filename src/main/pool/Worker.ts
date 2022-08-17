@@ -1,12 +1,12 @@
-import {Awaitable} from '../shared-types';
-import {isPromiseLike} from '../isPromiseLike';
-import {AsyncQueue} from '../AsyncQueue';
+import { Awaitable } from '../shared-types';
+import { isPromiseLike } from '../isPromiseLike';
+import { AsyncQueue } from '../AsyncQueue';
 
 /**
  * @internal
  */
 export interface Job {
-  __ac?: AbortController;
+  __abortController: AbortController | null;
   __cb: (signal: AbortSignal) => Awaitable<unknown>;
   __resolve: (result: any) => void;
   __reject: (reason: any) => void;
@@ -18,7 +18,6 @@ export interface Job {
  * @internal
  */
 export class Worker {
-
   public __terminated = false;
   public __terminationPromise;
   public __activeJob: Job | undefined;
@@ -28,7 +27,7 @@ export class Worker {
 
   public constructor(jobs: AsyncQueue<Job>) {
     this.__jobs = jobs;
-    this.__terminationPromise = new Promise<void>((resolve) => {
+    this.__terminationPromise = new Promise<void>(resolve => {
       this.__resolveTermination = resolve;
     });
     this.__loop();
@@ -38,7 +37,7 @@ export class Worker {
     this.__terminated = true;
 
     if (this.__activeJob) {
-      this.__activeJob.__ac?.abort();
+      this.__activeJob.__abortController?.abort();
     } else {
       this.__resolveTermination();
     }
@@ -53,19 +52,18 @@ export class Worker {
     }
 
     return this.__jobs.takeAck().then(([job, ack]) => {
-
       if (this.__terminated) {
         return;
       }
 
       ack();
 
-      const {__resolve, __reject} = this.__activeJob = job;
-      const ac = job.__ac = new AbortController();
+      const { __resolve, __reject } = (this.__activeJob = job);
+      const abortController = (job.__abortController = new AbortController());
 
       let result;
       try {
-        result = job.__cb(ac.signal);
+        result = job.__cb(abortController.signal);
       } catch (error) {
         __reject(error);
         return this.__loop();

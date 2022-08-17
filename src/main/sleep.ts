@@ -1,4 +1,4 @@
-import {addAbortListener, createAbortError, removeAbortListener} from './utils';
+import { addAbortListener, newAbortError, removeAbortListener } from './utils';
 
 /**
  * Returns a `Promise` that resolves after a timeout.
@@ -10,20 +10,19 @@ import {addAbortListener, createAbortError, removeAbortListener} from './utils';
  */
 export function sleep(ms: number, signal?: AbortSignal | null): Promise<undefined> {
   return new Promise<undefined>((resolve, reject) => {
-
     if (!signal) {
       setTimeout(resolve, ms);
       return;
     }
 
     if (signal.aborted) {
-      reject(createAbortError());
+      reject(newAbortError());
       return;
     }
 
     const abortListener = (): void => {
       clearTimeout(timeout);
-      reject(createAbortError());
+      reject(newAbortError());
     };
 
     addAbortListener(signal, abortListener);

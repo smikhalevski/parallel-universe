@@ -1,8 +1,7 @@
-import {WorkPool, sleep} from '../../main';
-import {noop} from '../../main/utils';
+import { WorkPool, sleep } from '../../main';
+import { noop } from '../../main/utils';
 
 describe('WorkPool', () => {
-
   let pool: WorkPool;
 
   beforeEach(() => {

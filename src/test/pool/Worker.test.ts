@@ -1,9 +1,8 @@
-import {AsyncQueue, sleep} from '../../main';
-import {Job, Worker} from '../../main/pool/Worker';
-import {noop} from '../../main/utils';
+import { AsyncQueue, sleep } from '../../main';
+import { Job, Worker } from '../../main/pool/Worker';
+import { noop } from '../../main/utils';
 
 describe('Worker', () => {
-
   let queue: AsyncQueue<Job>;
   let worker: Worker;
   let job: Job;
@@ -12,6 +11,7 @@ describe('Worker', () => {
     queue = new AsyncQueue();
     worker = new Worker(queue);
     job = {
+      __abortController: null,
       __cb: jest.fn(),
       __resolve: jest.fn(),
       __reject: jest.fn(),
@@ -26,7 +26,7 @@ describe('Worker', () => {
 
   test('takes jobs from the queue and resolves sync', async () => {
     const result = 111;
-    const cbMock = job.__cb = jest.fn((ac) => result);
+    const cbMock = (job.__cb = jest.fn(abortController => result));
 
     queue.add(job);
 
@@ -42,9 +42,9 @@ describe('Worker', () => {
 
   test('takes jobs from the queue and rejects sync', async () => {
     const error = new Error();
-    const cbMock = job.__cb = jest.fn((ac) => {
+    const cbMock = (job.__cb = jest.fn(abortController => {
       throw error;
-    });
+    }));
 
     queue.add(job);
 
@@ -60,7 +60,7 @@ describe('Worker', () => {
 
   test('takes jobs from the queue and resolves async', async () => {
     const promise = Promise.resolve(111);
-    const cbMock = job.__cb = jest.fn((ac) => promise);
+    const cbMock = (job.__cb = jest.fn(abortController => promise));
 
     queue.add(job);
 
@@ -96,6 +96,7 @@ describe('Worker', () => {
     job.__cb = jest.fn(() => Promise.resolve());
 
     const job2 = {
+      __abortController: null,
       __cb: jest.fn(() => Promise.resolve()),
       __resolve: jest.fn(),
       __reject: jest.fn(),
@@ -120,6 +121,7 @@ describe('Worker', () => {
     });
 
     const job2 = {
+      __abortController: null,
       __cb: jest.fn(),
       __resolve: jest.fn(),
       __reject: jest.fn(),
@@ -147,7 +149,7 @@ describe('Worker', () => {
   test('aborts the job signal when terminated', async () => {
     let jobSignal: AbortSignal | undefined;
 
-    job.__cb = jest.fn(async (signal) => {
+    job.__cb = jest.fn(async signal => {
       await Promise.resolve();
       jobSignal = signal;
     });
@@ -164,7 +166,7 @@ describe('Worker', () => {
   test('does not abort the signal of the completed job', async () => {
     let jobSignal: AbortSignal | undefined;
 
-    job.__cb = jest.fn(async (signal) => {
+    job.__cb = jest.fn(async signal => {
       await Promise.resolve();
       jobSignal = signal;
     });
@@ -181,7 +183,7 @@ describe('Worker', () => {
   test('does not abort the sync job', async () => {
     let jobSignal: AbortSignal | undefined;
 
-    job.__cb = jest.fn((signal) => {
+    job.__cb = jest.fn(signal => {
       jobSignal = signal;
     });
 

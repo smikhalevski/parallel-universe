@@ -1,7 +1,6 @@
-import {Executor} from '../main';
+import { Executor } from '../main';
 
 describe('Executor', () => {
-
   let listenerMock: jest.Mock;
   let executor: Executor<string | number>;
 
@@ -26,7 +25,7 @@ describe('Executor', () => {
     executor.execute(cbMock);
 
     expect(cbMock).toHaveBeenCalledTimes(1);
-    expect(cbMock).toHaveBeenNthCalledWith(1, expect.objectContaining({aborted: false}));
+    expect(cbMock).toHaveBeenNthCalledWith(1, expect.objectContaining({ aborted: false }));
   });
 
   it('synchronously resolves execution', () => {
@@ -113,7 +112,7 @@ describe('Executor', () => {
 
     const promise = executor.execute(() => 'abc');
 
-    expect(cbMock).toHaveBeenNthCalledWith(1, expect.objectContaining({aborted: true}));
+    expect(cbMock).toHaveBeenNthCalledWith(1, expect.objectContaining({ aborted: true }));
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(executor.result).toBe('abc');
 

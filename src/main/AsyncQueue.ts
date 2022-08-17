@@ -1,4 +1,4 @@
-import {noop} from './utils';
+import { noop } from './utils';
 
 /**
  * The protocol provided to the {@link AsyncQueue} consumer so it can acknowledge that the value would be processed.
@@ -9,7 +9,6 @@ export type AckProtocol<T> = [value: T, ack: (ok?: boolean) => void];
  * Asynchronous queue decouples value providers and value consumers.
  */
 export class AsyncQueue<T = any> {
-
   private readonly _values: T[] = [];
   private _promise = Promise.resolve();
   private _resolve?: () => void;
@@ -40,7 +39,7 @@ export class AsyncQueue<T = any> {
    * @return The `Promise` that resolved with an acknowledgement protocol.
    */
   public takeAck(blocking?: boolean): Promise<AckProtocol<T>> {
-    const {_values} = this;
+    const { _values } = this;
 
     let ackResolved = false;
     let ackRevoked = false;
@@ -64,7 +63,7 @@ export class AsyncQueue<T = any> {
       if (_values.length) {
         return [_values[0], ack];
       }
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         this._resolve = () => {
           this._resolve = undefined;
           resolve([_values[0], ack]);
@@ -73,7 +72,7 @@ export class AsyncQueue<T = any> {
     });
 
     if (blocking) {
-      const ackPromise = new Promise<void>((resolve) => {
+      const ackPromise = new Promise<void>(resolve => {
         ackResolve = resolve;
       });
       this._promise = promise.then(() => ackPromise);

@@ -21,9 +21,7 @@ npm install --save-prod parallel-universe
 - [`sleep`](#sleep)
 - [`timeout`](#timeout)
 
-# Usage
-
-## `AsyncQueue`
+# `AsyncQueue`
 
 Asynchronous queue decouples value providers and value consumers.
 
@@ -75,9 +73,8 @@ queue.takeAck().then(([value, ack]) => {
 });
 ```
 
-`takeAck` returns an [`AckProtocol`](https://smikhalevski.github.io/parallel-universe/modules.html#AckProtocol), a tuple
-of the available value and the acknowledgement callback. The consumer should call `ack` to notify the queue on weather
-to remove the value from the queue or to retain it.
+`takeAck` returns a tuple of the available value and the acknowledgement callback. The consumer should call `ack` to
+notify the queue on weather to remove the value from the queue or to retain it.
 
 To acknowledge that the consumer can process the value, and the value must be removed from the queue use:
 
@@ -118,19 +115,19 @@ queue.takeAck()
     .then((protocol) => protocol) // Extra tick
 
     .then(([value, ack]) => {
-      ack(); // → throws an Error 
+      ack(); // Throws an error
     });
 ```
 
 To prevent the acknowledgement from being revoked, request a blocking acknowledgement:
 
 ```ts
-queue.takeAck(true) // Request blocking ack
+queue.takeAck(true) // Request a blocking ack
 
     .then((protocol) => protocol) // Extra tick
 
     .then(([value, ack]) => {
-      ack(); // Works just fine!
+      ack(); // Value acknowledged
       doSomething(value);
     });
 ```
@@ -158,7 +155,7 @@ async function blockingConsumer() {
 }
 ```
 
-## `WorkPool`
+# `WorkPool`
 
 The callback execution pool that executes the limited number of callbacks in parallel while other submitted callbacks
 wait in the queue.
@@ -189,7 +186,7 @@ To abort all callbacks that are being processed by the pool and wait for their c
 pool.resize(0); // → Promise<void>
 ```
 
-## `Executor`
+# `Executor`
 
 Manages async callback execution process and provides ways to access execution results, abort or replace an execution,
 and subscribe to state changes.
@@ -207,7 +204,7 @@ executor.pending;
 executor.abort();
 ```
 
-## `Lock`
+# `Lock`
 
 Promise-based [lock implementation](https://en.wikipedia.org/wiki/Lock_(computer_science)).
 
@@ -232,7 +229,7 @@ doSomething();
 doSomething();
 ```
 
-## `Blocker`
+# `Blocker`
 
 Provides mechanism for blocking async processes and unblocking them from an external context.
 
@@ -249,7 +246,7 @@ doSomething();
 blocker.unblock('Mars');
 ```
 
-## `repeatUntil`
+# `repeatUntil`
 
 Invokes a callback periodically with the given delay between resolutions of the returned `Promise`.
 
@@ -272,21 +269,21 @@ repeatUntil(
 // → Promise<ReturnType<typeof doSomething>>
 ```
 
-## `sleep`
+# `sleep`
 
 Returns a promise that resolves after a timeout. If aborted via a passed signal then rejected with
-an [`AbortError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException).
+an [`AbortError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror).
 
 ```ts
 sleep(100, abortController.signal);
 // → Promise<undefined>
 ```
 
-## `timeout`
+# `timeout`
 
-Rejects with a [`TimeoutError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException) if execution time exceeds
+Rejects with a [`TimeoutError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror) if execution time exceeds
 the timeout. If aborted via a passed signal then rejected with
-an [`AbortError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException).
+an [`AbortError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror).
 
 ```ts
 timeout(
