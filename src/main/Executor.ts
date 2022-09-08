@@ -100,7 +100,7 @@ export class Executor<T = any> implements Execution<T> {
     );
 
     this._abortController = abortController;
-    this.promise = promise instanceof Promise ? promise : Promise.resolve(promise);
+    this.promise = Promise.resolve(promise);
 
     if (!prevAbortController) {
       this._eventBus.publish();
