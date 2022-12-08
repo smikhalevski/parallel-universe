@@ -1,7 +1,7 @@
 import { noop } from './utils';
 
 /**
- * The protocol provided to the {@link AsyncQueue} consumer, so it can acknowledge that the value would be processed.
+ * The protocol provided to the {@linkcode AsyncQueue} consumer, so it can acknowledge that the value would be processed.
  */
 export type AckProtocol<T> = [value: T, ack: (ok?: boolean) => void];
 
@@ -36,7 +36,7 @@ export class AsyncQueue<T = any> {
   }
 
   /**
-   * Returns a promise that is fulfilled with an {@link AckProtocol} when a value is available.
+   * Returns a promise that is fulfilled with an {@linkcode AckProtocol} when a value is available.
    *
    * @param [blocking = false] If set to `true` then consequent consumers would be blocked until `ack` is called,
    * otherwise the acknowledgement is automatically revoked on _the next tick_ after returned promise is fulfilled

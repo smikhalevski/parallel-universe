@@ -9,7 +9,7 @@ import { Job, Worker } from './Worker';
  */
 export class WorkPool {
   /**
-   * The number of non-terminated workers is the pool. Use {@link resize} to change the pool size.
+   * The number of non-terminated workers is the pool. Use {@linkcode resize} to change the pool size.
    */
   size = 1;
 
@@ -17,12 +17,12 @@ export class WorkPool {
   private _workers: Worker[] = [];
 
   /**
-   * Creates a new {@link WorkPool} instance that uses given number of workers.
+   * Creates a new {@linkcode WorkPool} instance that uses given number of workers.
    *
    * @param [size = 0] The number of workers in the pool.
    */
   constructor(size?: number) {
-    this.resize(size || 0);
+    void this.resize(size || 0);
   }
 
   /**

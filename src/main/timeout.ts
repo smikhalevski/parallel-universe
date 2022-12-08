@@ -8,9 +8,9 @@ import { isPromiseLike } from './isPromiseLike';
  *
  * @param cb The promise or a callback that returns a promise.
  * @param ms The timeout after which the returned promise is rejected with a
- * [`TimeoutError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror).
+ * {@linkcode https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror TimeoutError}.
  * @param signal The optional signal that instantly aborts the timeout. If `signal` was aborted then returned promise
- * is rejected with [`AbortError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror).
+ * is rejected with {@linkcode https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror AbortError}.
  * @returns The fulfilled value.
  */
 export function timeout<T>(

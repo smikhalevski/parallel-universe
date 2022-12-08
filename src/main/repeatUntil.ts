@@ -11,7 +11,7 @@ import { isPromiseLike } from './isPromiseLike';
  * @param ms The number of milliseconds between the settlement of the last promise returned by the `cb` and the next
  * invocation. Or a callback that receives the latest result and returns the delay. If omitted then delay is 0.
  * @param signal The optional signal that instantly aborts the loop. If `signal` was aborted then returned promise is
- * rejected with [`AbortError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror).
+ * rejected with {@linkcode https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror AbortError}.
  * @template I The value returned by the `cb`.
  * @template O The value that fulfills the returned promise.
  * @returns The promise that is fulfilled with the `cb` result.
@@ -32,7 +32,7 @@ export function repeatUntil<I, O extends I>(
  * @param ms The number of milliseconds between the settlement of the last promise returned by the `cb` and the next
  * invocation. Or a callback that receives the latest result and returns the delay. If omitted then delay is 0.
  * @param signal The optional signal that instantly aborts the loop. If `signal` was aborted then returned promise is
- * rejected with [`AbortError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror).
+ * rejected with {@linkcode https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror AbortError}.
  * @template T The async result value.
  * @returns The promise that is fulfilled with the `cb` result.
  */
@@ -91,7 +91,7 @@ export function repeatUntil(
       }
     };
 
-    const resolveCycle = (result: unknown): void => {
+    const fulfillCycle = (result: unknown): void => {
       settleCycle({
         settled: true,
         fulfilled: true,
@@ -123,9 +123,9 @@ export function repeatUntil(
         return;
       }
       if (isPromiseLike(result)) {
-        result.then(resolveCycle, rejectCycle);
+        result.then(fulfillCycle, rejectCycle);
       } else {
-        resolveCycle(result);
+        fulfillCycle(result);
       }
     };
 

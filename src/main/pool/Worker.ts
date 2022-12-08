@@ -2,9 +2,6 @@ import { Awaitable } from '../shared-types';
 import { isPromiseLike } from '../isPromiseLike';
 import { AsyncQueue } from '../AsyncQueue';
 
-/**
- * @internal
- */
 export interface Job {
   __abortController: AbortController | null;
   __callback: (signal: AbortSignal) => Awaitable<unknown>;
@@ -14,8 +11,6 @@ export interface Job {
 
 /**
  * Worker picks jobs from the queue, invokes associated callbacks and fulfills the promise.
- *
- * @internal
  */
 export class Worker {
   __terminated = false;

@@ -1,4 +1,4 @@
-function newException(name: string, code: number, message?: string): Error {
+function newDOMException(name: string, code: number, message?: string): Error {
   if (typeof DOMException !== 'undefined') {
     return new DOMException(message, name);
   }
@@ -9,14 +9,14 @@ function newException(name: string, code: number, message?: string): Error {
 }
 
 export function newAbortError(message?: string): Error {
-  return newException('AbortError', 20, message);
+  return newDOMException('AbortError', 20, message);
 }
 
 export function newTimeoutError(message?: string): Error {
-  return newException('TimeoutError', 23, message);
+  return newDOMException('TimeoutError', 23, message);
 }
 
-export function callOrGet<T, A extends unknown[]>(value: ((...args: A) => T) | T, ...args: A): T {
+export function callOrGet<T, A extends any[]>(value: ((...args: A) => T) | T, ...args: A): T {
   return typeof value === 'function' ? (value as Function)(...args) : value;
 }
 
