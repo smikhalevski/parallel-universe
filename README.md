@@ -345,7 +345,10 @@ You can combine `untilTruthy` with [`timeout`](#timeout). For example, to poll a
 it returns a truthy value or abort after 5 seconds:
 
 ```ts
-timeout(untilTruthy(doSomeChecks, 100), 5_000);
+timeout(
+  signal => untilTruthy(doSomeChecks, 100, signal),
+  5_000,
+);
 ```
 
 # `repeatUntil`
@@ -355,7 +358,7 @@ Much like a [`untilTruthy`](#untiltruthy) and provides more control when the cal
 ```ts
 repeatUntil(
   // The callback that is invoked repeatedly
-  async signal => doSomething(signal),
+  async signal => doSomething(),
 
   // The until clause must return true to stop the loop
   asyncResult => asyncResult.rejected,
@@ -366,6 +369,22 @@ repeatUntil(
 
   // Optional signal that can abort the loop from the outside
   abortController.signal,
+);
+// → Promise<ReturnType<typeof doSomething>>
+```
+
+You can combine `repeatUntil` with [`timeout`](#timeout) to limit the repeat duration:
+
+```ts
+timeout(
+  timeoutSignal =>
+    repeatUntil(
+      signal => doSomething(),
+      asyncResult => asyncResult.fulfilled,
+      100,
+      timeoutSignal
+    ),
+  5000
 );
 // → Promise<ReturnType<typeof doSomething>>
 ```
@@ -388,7 +407,7 @@ time exceeds the timeout. If aborted via a passed signal then rejected with an
 
 ```ts
 timeout(
-  async (signal) => doSomething(),
+  async signal => doSomething(),
 
   // Execution timeout
   100,
