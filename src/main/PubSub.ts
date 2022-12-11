@@ -1,30 +1,56 @@
+/**
+ * Publish–subscribe pattern implementation that guarantees the delivery of published messages even if any of
+ * subscribers would throw an error.
+ *
+ * @template T The published message.
+ */
 export class PubSub<T = void> {
-  private _retainedValues: T[] = [];
-  private _listeners: Array<(value: T) => boolean | void> = [];
+  private _messages: T[] = [];
+  private _subscribers: Array<(value: T) => unknown> = [];
 
-  constructor(public retainedCount = 0) {}
+  /**
+   * Creates a new {@linkcode PubSub} instance.
+   *
+   * @param [retainableSize = 0] The maximum number of messages that are retained if they weren't processed by at least
+   * one subscriber. If the message wasn't processed but the retainable size is reached, then the earliest message is
+   * removed and the latest message is added.
+   */
+  constructor(
+    /**
+     * The maximum number of messages that are retained if they weren't processed by at least one subscriber.
+     */
+    public retainableSize = 0
+  ) {}
 
-  publish(value: T): void {
-    const { retainedCount, _retainedValues } = this;
+  /**
+   * Synchronously invokes subscribers and passes the message. If there are retained messages, they are synchronously
+   * passed to the subscriber.
+   *
+   * @param message The published message. If `undefined` is passed as a message then it is never retained.
+   */
+  publish(message: T): void {
+    const { retainableSize, _messages } = this;
 
-    let processed = value === undefined;
+    let processed = message === undefined;
     let errored = false;
     let error;
 
-    for (const listener of this._listeners) {
+    for (const subscriber of this._subscribers) {
       try {
-        processed = listener(value) !== false || processed;
+        processed = subscriber(message) !== false || processed;
       } catch (e) {
-        errored = true;
-        error = e;
+        if (!errored) {
+          errored = true;
+          error = e;
+        }
       }
     }
 
-    if (!processed && retainedCount > 0) {
-      if (_retainedValues.length > retainedCount) {
-        _retainedValues.splice(0, _retainedValues.length - retainedCount);
+    if (!processed && retainableSize > 0) {
+      if (_messages.length >= retainableSize) {
+        _messages.splice(0, _messages.length - retainableSize + 1);
       }
-      _retainedValues.push(value);
+      _messages.push(message);
     }
 
     if (errored) {
@@ -32,31 +58,37 @@ export class PubSub<T = void> {
     }
   }
 
-  subscribe(listener: (value: T) => any): () => void {
-    const { _retainedValues, _listeners } = this;
+  /**
+   * Adds a subscriber that would receive all messages published via {@linkcode publish}.
+   *
+   * @param subscriber The callback.
+   * @returns The callback that unsubscribes the subscriber.
+   */
+  subscribe(subscriber: (message: T) => any): () => void {
+    const { _messages, _subscribers } = this;
 
-    if (_listeners.indexOf(listener) === -1) {
-      for (let i = 0; i < _retainedValues.length; ++i) {
-        if (listener(_retainedValues[i]) !== false) {
-          _retainedValues.splice(i--, 1);
+    if (_subscribers.indexOf(subscriber) === -1) {
+      for (let i = 0; i < _messages.length; ++i) {
+        if (subscriber(_messages[i]) !== false) {
+          _messages.splice(i--, 1);
         }
       }
-      _listeners.push(listener);
+      _subscribers.push(subscriber);
     }
 
     return () => {
-      const index = _listeners.indexOf(listener);
+      const index = _subscribers.indexOf(subscriber);
 
       if (index !== -1) {
-        _listeners.splice(index, 1);
+        _subscribers.splice(index, 1);
       }
     };
   }
 
   /**
-   * Iterates over retained values.
+   * Iterates over retained messages.
    */
   [Symbol.iterator](): IterableIterator<T> {
-    return this._retainedValues[Symbol.iterator]();
+    return this._messages[Symbol.iterator]();
   }
 }
