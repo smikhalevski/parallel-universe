@@ -29,6 +29,7 @@ export class WorkPool {
    * Submits a new callback that should be executed by the worker in the pool.
    *
    * @param cb The callback to invoke.
+   * @template T The callback result.
    * @returns The promise that is fulfilled with the `cb` result.
    */
   submit<T>(cb: (signal: AbortSignal) => Awaitable<T>): Promise<T> {

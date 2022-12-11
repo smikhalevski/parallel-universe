@@ -4,6 +4,8 @@ import { PubSub } from './PubSub';
 
 /**
  * The callback that receives a signal that is aborted when execution must be stopped, and returns the execution result.
+ *
+ * @template T The result returned by the executed callback.
  */
 export type ExecutorCallback<T> = (signal: AbortSignal) => Awaitable<T | undefined>;
 

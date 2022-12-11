@@ -2,11 +2,15 @@ import { noop } from './utils';
 
 /**
  * The protocol provided to the {@linkcode AsyncQueue} consumer, so it can acknowledge that the value would be processed.
+ *
+ * @template T The taken value.
  */
 export type AckProtocol<T> = [value: T, ack: (ok?: boolean) => void];
 
 /**
  * Asynchronous queue decouples value providers and value consumers.
+ *
+ * @template T The value stored in the queue.
  */
 export class AsyncQueue<T = any> {
   private readonly _values: T[] = [];
@@ -93,7 +97,7 @@ export class AsyncQueue<T = any> {
   }
 
   /**
-   * Appends the new value to the queue.
+   * Appends the new value to the end of the queue.
    *
    * @param value The value to append.
    */
