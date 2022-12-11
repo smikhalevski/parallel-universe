@@ -38,7 +38,8 @@
     "parallel",
     "pool",
     "thread-pool",
-    "work-pool"
+    "work-pool",
+    "pubsub"
   ],
   "author": "Savva Mikhalevski <smikhalevski@gmail.com>",
   "license": "MIT",
@@ -57,8 +58,5 @@
     "ts-jest": "^29.0.3",
     "typedoc": "^0.23.21",
     "typescript": "^4.9.4"
-  },
-  "dependencies": {
-    "@smikhalevski/event-bus": "^1.0.0"
   }
 }

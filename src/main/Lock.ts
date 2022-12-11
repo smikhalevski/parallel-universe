@@ -1,4 +1,4 @@
-import { EventBus } from '@smikhalevski/event-bus';
+import { PubSub } from './PubSub';
 
 /**
  * Promise-based lock implementation.
@@ -9,7 +9,7 @@ import { EventBus } from '@smikhalevski/event-bus';
  * @see https://en.wikipedia.org/wiki/Lock_(computer_science) Lock (computer science)
  */
 export class Lock {
-  private _eventBus = new EventBus();
+  private _pubSub = new PubSub();
   private _promise?: Promise<() => void>;
 
   /**
@@ -31,14 +31,14 @@ export class Lock {
       if (this._promise === promise) {
         this._promise = undefined;
       }
-      this._eventBus.publish();
+      this._pubSub.publish();
     };
 
     if (_promise) {
       this._promise = promise = _promise.then(() => release);
     } else {
       this._promise = promise = Promise.resolve(release);
-      this._eventBus.publish();
+      this._pubSub.publish();
     }
 
     return promise;
@@ -51,6 +51,6 @@ export class Lock {
    * @returns The callback to unsubscribe the listener.
    */
   subscribe(listener: () => void): () => void {
-    return this._eventBus.subscribe(listener);
+    return this._pubSub.subscribe(listener);
   }
 }

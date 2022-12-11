@@ -1,5 +1,5 @@
 import { repeatUntil } from '../main';
-import { newAbortError } from '../main/utils';
+import { createAbortError } from '../main/utils';
 
 describe('repeatUntil', () => {
   test('aborts if an aborted signal is provided', async () => {
@@ -8,7 +8,7 @@ describe('repeatUntil', () => {
     const abortController = new AbortController();
     abortController.abort();
 
-    await expect(repeatUntil(cbMock, untilMock, 0, abortController.signal)).rejects.toEqual(newAbortError());
+    await expect(repeatUntil(cbMock, untilMock, 0, abortController.signal)).rejects.toEqual(createAbortError());
     expect(cbMock).not.toHaveBeenCalled();
   });
 
@@ -21,7 +21,7 @@ describe('repeatUntil', () => {
 
     abortController.abort();
 
-    await expect(promise).rejects.toEqual(newAbortError());
+    await expect(promise).rejects.toEqual(createAbortError());
 
     expect(cbMock).toHaveBeenCalled();
   });

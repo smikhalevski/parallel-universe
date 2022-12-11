@@ -1,4 +1,4 @@
-import { addAbortListener, callOrGet, newAbortError, newAbortSignal, removeAbortListener } from './utils';
+import { callOrGet, createAbortError } from './utils';
 import { AsyncResult, Awaitable } from './shared-types';
 import { isPromiseLike } from './isPromiseLike';
 
@@ -50,10 +50,10 @@ export function repeatUntil(
   signal?: AbortSignal | null
 ): Promise<unknown> {
   return new Promise((resolve, reject) => {
-    const cbSignal = signal || newAbortSignal();
+    const cbSignal = signal || new AbortController().signal;
 
     if (cbSignal.aborted) {
-      reject(newAbortError());
+      reject(createAbortError());
       return;
     }
 
@@ -63,10 +63,10 @@ export function repeatUntil(
     const abortListener = (): void => {
       aborted = true;
       clearTimeout(timeout);
-      reject(newAbortError());
+      reject(createAbortError());
     };
 
-    addAbortListener(cbSignal, abortListener);
+    cbSignal.addEventListener('abort', abortListener);
 
     const settleCycle = (result: AsyncResult): void => {
       if (aborted) {
@@ -78,12 +78,12 @@ export function repeatUntil(
           return;
         }
       } catch (error) {
-        removeAbortListener(cbSignal, abortListener);
+        cbSignal.removeEventListener('abort', abortListener);
         reject(error);
         return;
       }
 
-      removeAbortListener(cbSignal, abortListener);
+      cbSignal.removeEventListener('abort', abortListener);
       if (result.fulfilled) {
         resolve(result.result);
       } else {

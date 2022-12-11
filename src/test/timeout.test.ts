@@ -1,5 +1,5 @@
 import { sleep, timeout } from '../main';
-import { newAbortError, newTimeoutError } from '../main/utils';
+import { createAbortError, createTimeoutError } from '../main/utils';
 
 describe('timeout', () => {
   test('aborts if an aborted signal is provided', async () => {
@@ -7,7 +7,7 @@ describe('timeout', () => {
     const abortController = new AbortController();
     abortController.abort();
 
-    await expect(timeout(cbMock, 1, abortController.signal)).rejects.toEqual(newAbortError());
+    await expect(timeout(cbMock, 1, abortController.signal)).rejects.toEqual(createAbortError());
     expect(cbMock).not.toHaveBeenCalled();
   });
 
@@ -32,7 +32,7 @@ describe('timeout', () => {
   });
 
   test('aborts if timeout expires', async () => {
-    await expect(timeout(signal => sleep(100, signal), 1)).rejects.toEqual(newTimeoutError());
+    await expect(timeout(signal => sleep(100, signal), 1)).rejects.toEqual(createTimeoutError());
   });
 
   test('aborts when signal is aborted', async () => {
@@ -41,6 +41,6 @@ describe('timeout', () => {
 
     abortController.abort();
 
-    await expect(promise).rejects.toEqual(newAbortError());
+    await expect(promise).rejects.toEqual(createAbortError());
   });
 });

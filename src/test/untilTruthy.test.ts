@@ -1,5 +1,5 @@
 import { untilTruthy } from '../main';
-import { newAbortError } from '../main/utils';
+import { createAbortError } from '../main/utils';
 
 describe('untilTruthy', () => {
   test('aborts if an aborted signal is provided', async () => {
@@ -7,7 +7,7 @@ describe('untilTruthy', () => {
     const abortController = new AbortController();
     abortController.abort();
 
-    await expect(untilTruthy(cbMock, 0, abortController.signal)).rejects.toEqual(newAbortError());
+    await expect(untilTruthy(cbMock, 0, abortController.signal)).rejects.toEqual(createAbortError());
     expect(cbMock).not.toHaveBeenCalled();
   });
 
@@ -19,7 +19,7 @@ describe('untilTruthy', () => {
 
     abortController.abort();
 
-    await expect(promise).rejects.toEqual(newAbortError());
+    await expect(promise).rejects.toEqual(createAbortError());
 
     expect(cbMock).toHaveBeenCalled();
   });

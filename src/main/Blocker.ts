@@ -1,4 +1,4 @@
-import { EventBus } from '@smikhalevski/event-bus';
+import { PubSub } from './PubSub';
 
 /**
  * Provides mechanism for blocking async processes and unblocking them from an external context.
@@ -6,7 +6,7 @@ import { EventBus } from '@smikhalevski/event-bus';
  * @template T The value that can be passed to {@linkcode unblock} to resolve the {@linkcode block} promise.
  */
 export class Blocker<T = void> {
-  private _eventBus = new EventBus();
+  private _pubSub = new PubSub();
   private _promise?: Promise<T>;
   private _release?: (result: T) => void;
 
@@ -26,7 +26,7 @@ export class Blocker<T = void> {
       this._promise = new Promise(resolve => {
         this._release = resolve;
       });
-      this._eventBus.publish();
+      this._pubSub.publish();
     }
     return this._promise;
   }
@@ -40,7 +40,7 @@ export class Blocker<T = void> {
     if (_release) {
       this._release = undefined;
       _release(result);
-      this._eventBus.publish();
+      this._pubSub.publish();
     }
   }
 
@@ -51,6 +51,6 @@ export class Blocker<T = void> {
    * @returns The callback to unsubscribe the listener.
    */
   subscribe(listener: () => void): () => void {
-    return this._eventBus.subscribe(listener);
+    return this._pubSub.subscribe(listener);
   }
 }
