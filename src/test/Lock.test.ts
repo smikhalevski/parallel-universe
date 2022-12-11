@@ -17,18 +17,22 @@ describe('Lock', () => {
 
     let value;
 
-    releasePromise1.then(() => (value = 1));
-    releasePromise2.then(() => (value = 2));
+    releasePromise1.then(() => {
+      value = 111;
+    });
+    releasePromise2.then(() => {
+      value = 222;
+    });
 
     const release1 = await releasePromise1;
 
-    expect(value).toBe(1);
+    expect(value).toBe(111);
 
     release1();
 
     await releasePromise2;
 
-    expect(value).toBe(2);
+    expect(value).toBe(222);
   });
 
   test('locked is true if the lock is locked', async () => {

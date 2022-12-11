@@ -38,21 +38,21 @@ describe('untilTruthy', () => {
   test('rejects if callback throws synchronously', async () => {
     await expect(
       untilTruthy(() => {
-        throw 'foo';
+        throw 111;
       })
-    ).rejects.toEqual('foo');
+    ).rejects.toEqual(111);
   });
 
   test('resolves with returned value', async () => {
-    await expect(untilTruthy(() => 'foo')).resolves.toEqual('foo');
+    await expect(untilTruthy(() => 111)).resolves.toEqual(111);
   });
 
   test('resolves if callback returns a fulfilled Promise', async () => {
-    await expect(untilTruthy(() => Promise.resolve('foo'))).resolves.toEqual('foo');
+    await expect(untilTruthy(() => Promise.resolve(111))).resolves.toEqual(111);
   });
 
   test('rejects if callback returns rejected Promise', async () => {
-    await expect(untilTruthy(() => Promise.reject('foo'))).rejects.toEqual('foo');
+    await expect(untilTruthy(() => Promise.reject(111))).rejects.toEqual(111);
   });
 
   test('rejects if delay callback throws', async () => {
@@ -60,10 +60,10 @@ describe('untilTruthy', () => {
       untilTruthy(
         () => false,
         () => {
-          throw 'bar';
+          throw 222;
         }
       )
-    ).rejects.toEqual('bar');
+    ).rejects.toEqual(222);
   });
 
   test('passes result to delay callback on resolve', async () => {
