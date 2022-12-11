@@ -14,21 +14,21 @@ describe('timeout', () => {
   test('rejects if synchronous callback throws', async () => {
     await expect(
       timeout(() => {
-        throw 'aaa';
+        throw 111;
       }, 1)
-    ).rejects.toBe('aaa');
+    ).rejects.toBe(111);
   });
 
   test('resolves synchronous callback', async () => {
-    await expect(timeout(() => 'aaa', 1)).resolves.toBe('aaa');
+    await expect(timeout(() => 111, 1)).resolves.toBe(111);
   });
 
   test('rejects if asynchronous callback rejects', async () => {
-    await expect(timeout(() => Promise.reject('aaa'), 1)).rejects.toBe('aaa');
+    await expect(timeout(() => Promise.reject(111), 1)).rejects.toBe(111);
   });
 
   test('resolves asynchronous callback', async () => {
-    await expect(timeout(() => Promise.resolve('aaa'), 1)).resolves.toBe('aaa');
+    await expect(timeout(() => Promise.resolve(111), 1)).resolves.toBe(111);
   });
 
   test('aborts if timeout expires', async () => {
