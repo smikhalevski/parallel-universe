@@ -12,7 +12,10 @@ npm install --save-prod parallel-universe
 
 🚀 [API documentation is available here.](https://smikhalevski.github.io/parallel-universe/)
 
+- [`PubSub`](#pubsub)
 - [`AsyncQueue`](#asyncqueue)
+    - [Acknowledgements](#acknowledgements)
+    - [Blocking vs non-blocking acknowledgements](#blocking-vs-non-blocking-acknowledgements)
 - [`WorkPool`](#workpool)
 - [`Executor`](#executor)
 - [`Lock`](#lock)
@@ -21,6 +24,38 @@ npm install --save-prod parallel-universe
 - [`repeatUntil`](#repeatuntil)
 - [`sleep`](#sleep)
 - [`timeout`](#timeout)
+
+# `PubSub`
+
+Publish–subscribe pattern implementation that guarantees that published messages are delivered even if some subscribers
+throw an error.
+
+```ts
+const pubSub = new PubSub<string>();
+
+pubSub.subscribe(message => {
+  message === 'Pluto' // → true
+});
+
+pubSub.publish('Pluto');
+```
+
+`PubSub` can retain messages that were not processed. Message is considered not processed if all subscribers returned
+`false`, or if there are no subscribers at all. You can pass a limit of retained messages to the constructor.
+
+```ts
+const pubSub = new PubSub<string>(100);
+
+// 🟡 Note that a message is published before a subscriber is added
+pubSub.publish('Mars');
+
+pubSub.subscribe(message => {
+  message === 'Mars' // → true
+});
+```
+
+Retained messages are passed to the new subscriber when it is being subscribed for the first time. If the message wasn't
+processed but the limit is reached, then the earliest message is removed and the published message is added.
 
 # `AsyncQueue`
 
@@ -33,7 +68,7 @@ const queue = new AsyncQueue();
 queue.add('Mars');
 
 // Consumer takes a value
-queue.take(); // → Promise<"Mars">
+queue.take(); // → Promise<'Mars'>
 ```
 
 `add` appends the value to the queue, while `take` removes the value from the queue as soon as it is available. If there
@@ -42,10 +77,10 @@ are no values in the queue upon `take` call then the returned promise is resolve
 ```ts
 const queue = new AsyncQueue();
 
-// The returned Promise would be resolved after the add call
-queue.take(); // → Promise<"Mars">
+// The returned promise would be resolved after the add call
+queue.take(); // → Promise<'Mars'>
 
-queue.add("Mars");
+queue.add('Mars');
 ```
 
 Consumers receive values from the queue in the same order they were added by providers:
@@ -56,8 +91,8 @@ const queue = new AsyncQueue();
 queue.add('Mars');
 queue.add('Venus');
 
-queue.take(); // → Promise<"Mars">
-queue.take(); // → Promise<"Venus">
+queue.take(); // → Promise<'Mars'>
+queue.take(); // → Promise<'Venus'>
 ```
 
 ## Acknowledgements
@@ -100,7 +135,7 @@ queue.takeAck(([value, ack]) => {
   ack(false); // Tells queue to retain the value
 });
 
-queue.take(); // → Promise<"Pluto">
+queue.take(); // → Promise<'Pluto'>
 ```
 
 ## Blocking vs non-blocking acknowledgements
