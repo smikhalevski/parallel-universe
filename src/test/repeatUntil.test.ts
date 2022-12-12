@@ -1,5 +1,5 @@
 import { repeatUntil } from '../main';
-import { newAbortError } from '../main/utils';
+import { createAbortError } from '../main/utils';
 
 describe('repeatUntil', () => {
   test('aborts if an aborted signal is provided', async () => {
@@ -8,7 +8,7 @@ describe('repeatUntil', () => {
     const abortController = new AbortController();
     abortController.abort();
 
-    await expect(repeatUntil(cbMock, untilMock, 0, abortController.signal)).rejects.toEqual(newAbortError());
+    await expect(repeatUntil(cbMock, untilMock, 0, abortController.signal)).rejects.toEqual(createAbortError());
     expect(cbMock).not.toHaveBeenCalled();
   });
 
@@ -21,7 +21,7 @@ describe('repeatUntil', () => {
 
     abortController.abort();
 
-    await expect(promise).rejects.toEqual(newAbortError());
+    await expect(promise).rejects.toEqual(createAbortError());
 
     expect(cbMock).toHaveBeenCalled();
   });
@@ -38,67 +38,67 @@ describe('repeatUntil', () => {
     await expect(
       repeatUntil(
         () => {
-          throw 'foo';
+          throw 111;
         },
         () => true
       )
-    ).rejects.toEqual('foo');
+    ).rejects.toEqual(111);
   });
 
   test('resolves with returned value', async () => {
     await expect(
       repeatUntil(
-        () => 'foo',
+        () => 111,
         () => true
       )
-    ).resolves.toEqual('foo');
+    ).resolves.toEqual(111);
   });
 
   test('resolves if callback returns a fulfilled Promise', async () => {
     await expect(
       repeatUntil(
-        () => Promise.resolve('foo'),
+        () => Promise.resolve(111),
         () => true
       )
-    ).resolves.toEqual('foo');
+    ).resolves.toEqual(111);
   });
 
   test('rejects if callback returns rejected Promise', async () => {
     await expect(
       repeatUntil(
-        () => Promise.reject('foo'),
+        () => Promise.reject(111),
         () => true
       )
-    ).rejects.toEqual('foo');
+    ).rejects.toEqual(111);
   });
 
   test('rejects if until callback throws', async () => {
     await expect(
       repeatUntil(
-        () => 'foo',
+        () => 111,
         () => {
-          throw 'bar';
+          throw 222;
         }
       )
-    ).rejects.toEqual('bar');
+    ).rejects.toEqual(222);
   });
 
   test('rejects if delay callback throws', async () => {
     await expect(
       repeatUntil(
-        () => 'foo',
+        () => 111,
         () => false,
         () => {
-          throw 'bar';
+          throw 222;
         }
       )
-    ).rejects.toEqual('bar');
+    ).rejects.toEqual(222);
   });
 
   test('resolves when until callback returns true', async () => {
     let i = 0;
     await repeatUntil(
-      () => 'foo',
+      () => 111,
       () => ++i === 3
     );
 
@@ -108,14 +108,14 @@ describe('repeatUntil', () => {
   test('passes result to until callback on resolve', async () => {
     const untilMock = jest.fn(() => true);
 
-    await repeatUntil(() => 'foo', untilMock);
+    await repeatUntil(() => 111, untilMock);
 
     expect(untilMock).toHaveBeenCalledTimes(1);
     expect(untilMock).toHaveBeenCalledWith({
       settled: true,
       fulfilled: true,
       rejected: false,
-      result: 'foo',
+      result: 111,
       reason: undefined,
     });
   });
@@ -125,9 +125,9 @@ describe('repeatUntil', () => {
 
     await expect(
       repeatUntil(() => {
-        throw 'foo';
+        throw 111;
       }, untilMock)
-    ).rejects.toBe('foo');
+    ).rejects.toBe(111);
 
     expect(untilMock).toHaveBeenCalledTimes(1);
     expect(untilMock).toHaveBeenCalledWith({
@@ -135,7 +135,7 @@ describe('repeatUntil', () => {
       fulfilled: false,
       rejected: true,
       result: undefined,
-      reason: 'foo',
+      reason: 111,
     });
   });
 
@@ -144,7 +144,7 @@ describe('repeatUntil', () => {
 
     let i = 0;
     await repeatUntil(
-      () => 'foo',
+      () => 111,
       () => ++i === 2,
       delayMock
     );
@@ -154,7 +154,7 @@ describe('repeatUntil', () => {
       settled: true,
       fulfilled: true,
       rejected: false,
-      result: 'foo',
+      result: 111,
       reason: undefined,
     });
   });
@@ -166,12 +166,12 @@ describe('repeatUntil', () => {
     await expect(
       repeatUntil(
         () => {
-          throw 'foo';
+          throw 111;
         },
         () => ++i === 2,
         delayMock
       )
-    ).rejects.toBe('foo');
+    ).rejects.toBe(111);
 
     expect(delayMock).toHaveBeenCalledTimes(1);
     expect(delayMock).toHaveBeenCalledWith({
@@ -179,7 +179,7 @@ describe('repeatUntil', () => {
       fulfilled: false,
       rejected: true,
       result: undefined,
-      reason: 'foo',
+      reason: 111,
     });
   });
 });

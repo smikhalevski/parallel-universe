@@ -29,20 +29,20 @@ describe('Executor', () => {
   });
 
   it('synchronously resolves execution', () => {
-    executor.execute(() => 123);
+    executor.execute(() => 111);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
     expect(executor.pending).toBe(false);
     expect(executor.fulfilled).toBe(true);
     expect(executor.rejected).toBe(false);
-    expect(executor.result).toBe(123);
+    expect(executor.result).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(undefined);
   });
 
   it('synchronously rejects execution', () => {
     executor.execute(() => {
-      throw 'abc';
+      throw 222;
     });
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
@@ -50,12 +50,12 @@ describe('Executor', () => {
     expect(executor.fulfilled).toBe(false);
     expect(executor.rejected).toBe(true);
     expect(executor.result).toBe(undefined);
-    expect(executor.reason).toBe('abc');
+    expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(undefined);
   });
 
   it('asynchronously resolves execution', async () => {
-    const promise = executor.execute(() => Promise.resolve(123));
+    const promise = executor.execute(() => Promise.resolve(111));
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
     expect(executor.pending).toBe(true);
@@ -71,13 +71,13 @@ describe('Executor', () => {
     expect(executor.pending).toBe(false);
     expect(executor.fulfilled).toBe(true);
     expect(executor.rejected).toBe(false);
-    expect(executor.result).toBe(123);
+    expect(executor.result).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(undefined);
   });
 
   it('asynchronously rejects execution', async () => {
-    const promise = executor.execute(() => Promise.reject('abc'));
+    const promise = executor.execute(() => Promise.reject(222));
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
     expect(executor.pending).toBe(true);
@@ -94,48 +94,48 @@ describe('Executor', () => {
     expect(executor.fulfilled).toBe(false);
     expect(executor.rejected).toBe(true);
     expect(executor.result).toBe(undefined);
-    expect(executor.reason).toBe('abc');
+    expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(undefined);
   });
 
   it('does not notify listener on sequential asynchronous executions', async () => {
-    executor.execute(() => Promise.resolve(123));
-    executor.execute(() => Promise.resolve(456));
+    executor.execute(() => Promise.resolve(111));
+    executor.execute(() => Promise.resolve(333));
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
   });
 
   it('aborts pending execution if new execution is submitted', async () => {
-    const cbMock = jest.fn(() => Promise.resolve(123));
+    const cbMock = jest.fn(() => Promise.resolve(111));
 
     executor.execute(cbMock);
 
-    const promise = executor.execute(() => 'abc');
+    const promise = executor.execute(() => 222);
 
     expect(cbMock).toHaveBeenNthCalledWith(1, expect.objectContaining({ aborted: true }));
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.result).toBe('abc');
+    expect(executor.result).toBe(222);
 
     await promise;
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.result).toBe('abc');
+    expect(executor.result).toBe(222);
   });
 
   it('synchronously resolves', () => {
-    executor.resolve(123);
+    executor.resolve(111);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
     expect(executor.pending).toBe(false);
     expect(executor.fulfilled).toBe(true);
     expect(executor.rejected).toBe(false);
-    expect(executor.result).toBe(123);
+    expect(executor.result).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(undefined);
   });
 
   it('asynchronously resolves', async () => {
-    executor.resolve(Promise.resolve(123));
+    executor.resolve(Promise.resolve(111));
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
     expect(executor.pending).toBe(true);
@@ -151,107 +151,107 @@ describe('Executor', () => {
     expect(executor.pending).toBe(false);
     expect(executor.fulfilled).toBe(true);
     expect(executor.rejected).toBe(false);
-    expect(executor.result).toBe(123);
+    expect(executor.result).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(undefined);
   });
 
   it('synchronously rejects', () => {
-    executor.reject('abc');
+    executor.reject(222);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
     expect(executor.pending).toBe(false);
     expect(executor.fulfilled).toBe(false);
     expect(executor.rejected).toBe(true);
     expect(executor.result).toBe(undefined);
-    expect(executor.reason).toBe('abc');
+    expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(undefined);
   });
 
   it('stores only last result', () => {
-    executor.reject('abc');
-    executor.resolve(123);
+    executor.reject(222);
+    executor.resolve(111);
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(executor.pending).toBe(false);
     expect(executor.fulfilled).toBe(true);
     expect(executor.rejected).toBe(false);
-    expect(executor.result).toBe(123);
+    expect(executor.result).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(undefined);
   });
 
   it('stores only last reason', () => {
-    executor.resolve(123);
-    executor.reject('abc');
+    executor.resolve(111);
+    executor.reject(222);
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(executor.pending).toBe(false);
     expect(executor.fulfilled).toBe(false);
     expect(executor.rejected).toBe(true);
     expect(executor.result).toBe(undefined);
-    expect(executor.reason).toBe('abc');
+    expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(undefined);
   });
 
   it('preserves previous result on asynchronous execution', () => {
-    executor.resolve(123);
-    const promise = executor.execute(() => Promise.resolve(456));
+    executor.resolve(111);
+    const promise = executor.execute(() => Promise.resolve(333));
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(executor.pending).toBe(true);
     expect(executor.fulfilled).toBe(true);
     expect(executor.rejected).toBe(false);
-    expect(executor.result).toBe(123);
+    expect(executor.result).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(promise);
   });
 
   it('preserves previous reason on asynchronous execution', () => {
-    executor.reject('abc');
-    const promise = executor.execute(() => Promise.resolve(123));
+    executor.reject(222);
+    const promise = executor.execute(() => Promise.resolve(111));
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(executor.pending).toBe(true);
     expect(executor.fulfilled).toBe(false);
     expect(executor.rejected).toBe(true);
     expect(executor.result).toBe(undefined);
-    expect(executor.reason).toBe('abc');
+    expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(promise);
   });
 
   it('does not invoke listener if result did not change after resolve', () => {
-    executor.resolve(123);
-    executor.resolve(123);
+    executor.resolve(111);
+    executor.resolve(111);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
   });
 
   it('does not invoke listener if reason did not change after reject', () => {
-    executor.reject('abc');
-    executor.reject('abc');
+    executor.reject(222);
+    executor.reject(222);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
   });
 
   it('does not invoke listener if result did not change after execute', () => {
-    executor.resolve(123);
-    executor.execute(() => 123);
+    executor.resolve(111);
+    executor.execute(() => 111);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
   });
 
   it('does not invoke listener if reason did not change after execute', () => {
-    executor.reject('abc');
+    executor.reject(222);
     executor.execute(() => {
-      throw 'abc';
+      throw 222;
     });
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
   });
 
   it('clears after resolve', () => {
-    executor.resolve(123);
+    executor.resolve(111);
     executor.clear();
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
@@ -264,7 +264,7 @@ describe('Executor', () => {
   });
 
   it('clears after reject', () => {
-    executor.reject('abc');
+    executor.reject(222);
     executor.clear();
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
@@ -277,8 +277,8 @@ describe('Executor', () => {
   });
 
   it('clear does not interrupt execution', async () => {
-    executor.resolve(123);
-    const promise = executor.execute(() => Promise.resolve(456));
+    executor.resolve(111);
+    const promise = executor.execute(() => Promise.resolve(333));
     executor.clear();
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
@@ -295,28 +295,28 @@ describe('Executor', () => {
     expect(executor.pending).toBe(false);
     expect(executor.fulfilled).toBe(true);
     expect(executor.rejected).toBe(false);
-    expect(executor.result).toBe(456);
+    expect(executor.result).toBe(333);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(undefined);
   });
 
   it('abort preserves result intact', () => {
-    executor.resolve(123);
-    executor.execute(() => Promise.resolve(456));
+    executor.resolve(111);
+    executor.execute(() => Promise.resolve(333));
     executor.abort();
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
     expect(executor.pending).toBe(false);
     expect(executor.fulfilled).toBe(true);
     expect(executor.rejected).toBe(false);
-    expect(executor.result).toBe(123);
+    expect(executor.result).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(undefined);
   });
 
   it('abort preserves reason intact', () => {
-    executor.reject('abc');
-    executor.execute(() => Promise.resolve(123));
+    executor.reject(222);
+    executor.execute(() => Promise.resolve(111));
     executor.abort();
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
@@ -324,13 +324,13 @@ describe('Executor', () => {
     expect(executor.fulfilled).toBe(false);
     expect(executor.rejected).toBe(true);
     expect(executor.result).toBe(undefined);
-    expect(executor.reason).toBe('abc');
+    expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(undefined);
   });
 
   it('aborts pending execution', async () => {
-    executor.resolve(123);
-    const promise = executor.execute(() => Promise.resolve(456));
+    executor.resolve(111);
+    const promise = executor.execute(() => Promise.resolve(333));
     executor.abort();
     await promise;
 
@@ -338,7 +338,7 @@ describe('Executor', () => {
     expect(executor.pending).toBe(false);
     expect(executor.fulfilled).toBe(true);
     expect(executor.rejected).toBe(false);
-    expect(executor.result).toBe(123);
+    expect(executor.result).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(undefined);
   });

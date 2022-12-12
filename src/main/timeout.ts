@@ -1,4 +1,4 @@
-import { addAbortListener, newAbortError, newAbortSignal, newTimeoutError, removeAbortListener } from './utils';
+import { createAbortError, createTimeoutError } from './utils';
 import { Awaitable } from './shared-types';
 import { isPromiseLike } from './isPromiseLike';
 
@@ -8,9 +8,9 @@ import { isPromiseLike } from './isPromiseLike';
  *
  * @param cb The promise or a callback that returns a promise.
  * @param ms The timeout after which the returned promise is rejected with a
- * [`TimeoutError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror).
+ * {@linkcode https://developer.mozilla.org/en-US/docs/Web/API/DOMException#timeouterror TimeoutError}.
  * @param signal The optional signal that instantly aborts the timeout. If `signal` was aborted then returned promise
- * is rejected with [`AbortError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror).
+ * is rejected with {@linkcode https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror AbortError}.
  * @returns The fulfilled value.
  */
 export function timeout<T>(
@@ -19,10 +19,10 @@ export function timeout<T>(
   signal?: AbortSignal | null
 ): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    const cbSignal = signal || newAbortSignal();
+    const cbSignal = signal || new AbortController().signal;
 
     if (cbSignal.aborted) {
-      reject(newAbortError());
+      reject(createAbortError());
       return;
     }
 
@@ -31,10 +31,10 @@ export function timeout<T>(
     const abortListener = (): void => {
       aborted = true;
       clearTimeout(timeout);
-      reject(newAbortError());
+      reject(createAbortError());
     };
 
-    addAbortListener(cbSignal, abortListener);
+    cbSignal.addEventListener('abort', abortListener);
 
     const result = isPromiseLike(cb) ? cb : cb(cbSignal);
 
@@ -48,19 +48,19 @@ export function timeout<T>(
     }
 
     const timeout = setTimeout(() => {
-      removeAbortListener(cbSignal, abortListener);
-      reject(newTimeoutError());
+      cbSignal.removeEventListener('abort', abortListener);
+      reject(createTimeoutError());
     }, ms);
 
     result.then(
       result => {
         clearTimeout(timeout);
-        removeAbortListener(cbSignal, abortListener);
+        cbSignal.removeEventListener('abort', abortListener);
         resolve(result);
       },
       reason => {
         clearTimeout(timeout);
-        removeAbortListener(cbSignal, abortListener);
+        cbSignal.removeEventListener('abort', abortListener);
         reject(reason);
       }
     );

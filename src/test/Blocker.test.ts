@@ -19,13 +19,13 @@ describe('Blocker', () => {
   });
 
   test('unblocks with result', async () => {
-    const blocker = new Blocker<string>();
+    const blocker = new Blocker<number>();
 
     const promise = blocker.block();
 
-    blocker.unblock('foo');
+    blocker.unblock(111);
 
-    await expect(promise).resolves.toBe('foo');
+    await expect(promise).resolves.toBe(111);
     expect(blocker.blocked).toBe(false);
   });
 

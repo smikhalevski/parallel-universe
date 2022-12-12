@@ -1,9 +1,11 @@
-import { EventBus } from '@smikhalevski/event-bus';
 import { AsyncResult, Awaitable } from './shared-types';
 import { isPromiseLike } from './isPromiseLike';
+import { PubSub } from './PubSub';
 
 /**
  * The callback that receives a signal that is aborted when execution must be stopped, and returns the execution result.
+ *
+ * @template T The result returned by the executed callback.
  */
 export type ExecutorCallback<T> = (signal: AbortSignal) => Awaitable<T | undefined>;
 
@@ -45,7 +47,7 @@ export class Executor<T = any> implements Execution<T> {
   reason: any;
   promise: Promise<void> | undefined;
 
-  private _eventBus = new EventBus();
+  private _pubSub = new PubSub();
   private _abortController?: AbortController;
 
   get settled() {
@@ -103,7 +105,7 @@ export class Executor<T = any> implements Execution<T> {
     this.promise = Promise.resolve(promise);
 
     if (!prevAbortController) {
-      this._eventBus.publish();
+      this._pubSub.publish();
     }
 
     return this.promise;
@@ -116,7 +118,7 @@ export class Executor<T = any> implements Execution<T> {
     if (this.fulfilled || this.rejected) {
       this.fulfilled = this.rejected = false;
       this.result = this.reason = undefined;
-      this._eventBus.publish();
+      this._pubSub.publish();
     }
     return this;
   }
@@ -129,7 +131,7 @@ export class Executor<T = any> implements Execution<T> {
     if (this._abortController) {
       this._abortController.abort();
       this._abortController = this.promise = undefined;
-      this._eventBus.publish();
+      this._pubSub.publish();
     }
     return this;
   }
@@ -139,7 +141,7 @@ export class Executor<T = any> implements Execution<T> {
    */
   resolve(result: Awaitable<T> | undefined): this {
     if (isPromiseLike(result)) {
-      this.execute(() => result);
+      void this.execute(() => result);
       return this;
     }
     if (this.promise || !this.fulfilled || !Object.is(this.result, result)) {
@@ -148,7 +150,7 @@ export class Executor<T = any> implements Execution<T> {
       this.rejected = false;
       this.result = result;
       this.reason = this._abortController = this.promise = undefined;
-      this._eventBus.publish();
+      this._pubSub.publish();
     }
     return this;
   }
@@ -163,12 +165,12 @@ export class Executor<T = any> implements Execution<T> {
       this.rejected = true;
       this.result = this._abortController = this.promise = undefined;
       this.reason = reason;
-      this._eventBus.publish();
+      this._pubSub.publish();
     }
     return this;
   }
 
   subscribe(listener: () => void): () => void {
-    return this._eventBus.subscribe(listener);
+    return this._pubSub.subscribe(listener);
   }
 }

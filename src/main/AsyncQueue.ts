@@ -1,12 +1,16 @@
 import { noop } from './utils';
 
 /**
- * The protocol provided to the {@link AsyncQueue} consumer, so it can acknowledge that the value would be processed.
+ * The protocol provided to the {@linkcode AsyncQueue} consumer, so it can acknowledge that the value would be processed.
+ *
+ * @template T The taken value.
  */
 export type AckProtocol<T> = [value: T, ack: (ok?: boolean) => void];
 
 /**
  * Asynchronous queue decouples value providers and value consumers.
+ *
+ * @template T The value stored in the queue.
  */
 export class AsyncQueue<T = any> {
   private readonly _values: T[] = [];
@@ -36,7 +40,7 @@ export class AsyncQueue<T = any> {
   }
 
   /**
-   * Returns a promise that is fulfilled with an {@link AckProtocol} when a value is available.
+   * Returns a promise that is fulfilled with an {@linkcode AckProtocol} when a value is available.
    *
    * @param [blocking = false] If set to `true` then consequent consumers would be blocked until `ack` is called,
    * otherwise the acknowledgement is automatically revoked on _the next tick_ after returned promise is fulfilled
@@ -93,7 +97,7 @@ export class AsyncQueue<T = any> {
   }
 
   /**
-   * Appends the new value to the queue.
+   * Appends the new value to the end of the queue.
    *
    * @param value The value to append.
    */

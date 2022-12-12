@@ -1,5 +1,5 @@
 import { sleep, timeout } from '../main';
-import { newAbortError, newTimeoutError } from '../main/utils';
+import { createAbortError, createTimeoutError } from '../main/utils';
 
 describe('timeout', () => {
   test('aborts if an aborted signal is provided', async () => {
@@ -7,32 +7,32 @@ describe('timeout', () => {
     const abortController = new AbortController();
     abortController.abort();
 
-    await expect(timeout(cbMock, 1, abortController.signal)).rejects.toEqual(newAbortError());
+    await expect(timeout(cbMock, 1, abortController.signal)).rejects.toEqual(createAbortError());
     expect(cbMock).not.toHaveBeenCalled();
   });
 
   test('rejects if synchronous callback throws', async () => {
     await expect(
       timeout(() => {
-        throw 'aaa';
+        throw 111;
       }, 1)
-    ).rejects.toBe('aaa');
+    ).rejects.toBe(111);
   });
 
   test('resolves synchronous callback', async () => {
-    await expect(timeout(() => 'aaa', 1)).resolves.toBe('aaa');
+    await expect(timeout(() => 111, 1)).resolves.toBe(111);
   });
 
   test('rejects if asynchronous callback rejects', async () => {
-    await expect(timeout(() => Promise.reject('aaa'), 1)).rejects.toBe('aaa');
+    await expect(timeout(() => Promise.reject(111), 1)).rejects.toBe(111);
   });
 
   test('resolves asynchronous callback', async () => {
-    await expect(timeout(() => Promise.resolve('aaa'), 1)).resolves.toBe('aaa');
+    await expect(timeout(() => Promise.resolve(111), 1)).resolves.toBe(111);
   });
 
   test('aborts if timeout expires', async () => {
-    await expect(timeout(signal => sleep(100, signal), 1)).rejects.toEqual(newTimeoutError());
+    await expect(timeout(signal => sleep(100, signal), 1)).rejects.toEqual(createTimeoutError());
   });
 
   test('aborts when signal is aborted', async () => {
@@ -41,6 +41,6 @@ describe('timeout', () => {
 
     abortController.abort();
 
-    await expect(promise).rejects.toEqual(newAbortError());
+    await expect(promise).rejects.toEqual(createAbortError());
   });
 });

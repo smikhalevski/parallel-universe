@@ -1,12 +1,12 @@
 import { sleep } from '../main';
-import { newAbortError } from '../main/utils';
+import { createAbortError } from '../main/utils';
 
 describe('sleep', () => {
   test('aborts if an aborted signal is provided', async () => {
     const abortController = new AbortController();
     abortController.abort();
 
-    await expect(sleep(1, abortController.signal)).rejects.toEqual(newAbortError());
+    await expect(sleep(1, abortController.signal)).rejects.toEqual(createAbortError());
   });
 
   test('resolves after timeout', async () => {
@@ -23,7 +23,7 @@ describe('sleep', () => {
 
     abortController.abort();
 
-    await expect(promise).rejects.toEqual(newAbortError());
+    await expect(promise).rejects.toEqual(createAbortError());
     expect(Date.now() - now).toBeLessThan(10);
   });
 });

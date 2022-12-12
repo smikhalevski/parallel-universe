@@ -1,26 +1,26 @@
-import { EventBus } from '@smikhalevski/event-bus';
+import { PubSub } from './PubSub';
 
 /**
  * Promise-based lock implementation.
  *
- * When someone tries to acquire a {@link Lock} they receive a promise for a release callback that is fulfilled as
+ * When someone tries to acquire a {@linkcode Lock} they receive a promise for a release callback that is fulfilled as
  * soon as previous lock owner invokes their release callback.
  *
- * @see {@link https://en.wikipedia.org/wiki/Lock_(computer_science) Lock (computer science)}
+ * @see https://en.wikipedia.org/wiki/Lock_(computer_science) Lock (computer science)
  */
 export class Lock {
-  private _eventBus = new EventBus();
+  private _pubSub = new PubSub();
   private _promise?: Promise<() => void>;
 
   /**
-   * `true` if {@link Lock} was acquired and wasn't released yet.
+   * `true` if {@linkcode Lock} was acquired and wasn't released yet.
    */
   get locked() {
     return this._promise != null;
   }
 
   /**
-   * Waits for the {@link Lock} to become available and fulfills it with the callback that releases the lock.
+   * Waits for the {@linkcode Lock} to become available and fulfills it with the callback that releases the lock.
    */
   acquire(): Promise<() => void> {
     const { _promise } = this;
@@ -31,26 +31,26 @@ export class Lock {
       if (this._promise === promise) {
         this._promise = undefined;
       }
-      this._eventBus.publish();
+      this._pubSub.publish();
     };
 
     if (_promise) {
       this._promise = promise = _promise.then(() => release);
     } else {
       this._promise = promise = Promise.resolve(release);
-      this._eventBus.publish();
+      this._pubSub.publish();
     }
 
     return promise;
   }
 
   /**
-   * Subscribes a listener to the {@link locked} status changes.
+   * Subscribes a listener to the {@linkcode locked} status changes.
    *
    * @param listener The listener that would be notified.
    * @returns The callback to unsubscribe the listener.
    */
   subscribe(listener: () => void): () => void {
-    return this._eventBus.subscribe(listener);
+    return this._pubSub.subscribe(listener);
   }
 }
