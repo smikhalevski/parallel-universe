@@ -9,4 +9,4 @@ export * from './repeatUntil';
 export * from './sleep';
 export * from './timeout';
 export * from './untilTruthy';
-export * from './shared-types';
+export * from './public-types';

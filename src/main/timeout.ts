@@ -1,5 +1,5 @@
 import { createAbortError, createTimeoutError } from './utils';
-import { Awaitable } from './shared-types';
+import { Awaitable } from './public-types';
 import { isPromiseLike } from './isPromiseLike';
 
 /**

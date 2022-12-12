@@ -1,4 +1,4 @@
-import { Awaitable } from '../shared-types';
+import { Awaitable } from '../public-types';
 import { AsyncQueue } from '../AsyncQueue';
 import { noop } from '../utils';
 import { Job, Worker } from './Worker';

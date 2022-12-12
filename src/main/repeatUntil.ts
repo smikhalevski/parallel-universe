@@ -1,5 +1,5 @@
 import { callOrGet, createAbortError } from './utils';
-import { AsyncResult, Awaitable } from './shared-types';
+import { AsyncResult, Awaitable } from './public-types';
 import { isPromiseLike } from './isPromiseLike';
 
 /**

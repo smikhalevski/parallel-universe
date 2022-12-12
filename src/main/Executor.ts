@@ -1,4 +1,4 @@
-import { AsyncResult, Awaitable } from './shared-types';
+import { AsyncResult, Awaitable } from './public-types';
 import { isPromiseLike } from './isPromiseLike';
 import { PubSub } from './PubSub';
 

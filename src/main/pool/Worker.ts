@@ -1,4 +1,4 @@
-import { Awaitable } from '../shared-types';
+import { Awaitable } from '../public-types';
 import { isPromiseLike } from '../isPromiseLike';
 import { AsyncQueue } from '../AsyncQueue';
 

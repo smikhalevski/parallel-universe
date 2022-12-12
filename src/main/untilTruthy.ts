@@ -1,5 +1,5 @@
 import { repeatUntil } from './repeatUntil';
-import { AsyncResult, Awaitable } from './shared-types';
+import { AsyncResult, Awaitable } from './public-types';
 
 /**
  * Returns a promise that is fulfilled when a callback returns a truthy value, or a promise that is fulfilled with a
