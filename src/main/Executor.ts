@@ -26,6 +26,13 @@ export interface Execution<T = any> extends AsyncResult<T> {
   promise: Promise<void> | null;
 
   /**
+   * Returns a result if the executor is fulfilled, or the default value otherwise.
+   *
+   * @param defaultValue The default value.
+   */
+  getOrDefault(defaultValue: T): T;
+
+  /**
    * Subscribes a listener to the execution state changes.
    *
    * @param listener The listener that would be notified.
@@ -50,17 +57,10 @@ export class Executor<T = any> implements Execution<T> {
   private _pubSub = new PubSub();
   private _abortController: AbortController | null = null;
 
-  /**
-   * `true` is an executor was {@linkcode fulfilled} with a {@linkcode result}, or {@linkcode rejected} with a
-   * {@linkcode reason}, or `false` otherwise.
-   */
   get settled() {
     return this.fulfilled || this.rejected;
   }
 
-  /**
-   * `true` if an executor has a pending promise, or `false` otherwise.
-   */
   get pending() {
     return this.promise != null;
   }
@@ -101,6 +101,10 @@ export class Executor<T = any> implements Execution<T> {
     this._pubSub.publish();
 
     return promise;
+  }
+
+  getOrDefault(defaultValue: T): T {
+    return this.fulfilled ? this.result! : defaultValue;
   }
 
   /**
