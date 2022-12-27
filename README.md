@@ -34,7 +34,7 @@ throw an error.
 const pubSub = new PubSub<string>();
 
 pubSub.subscribe(message => {
-  message === 'Pluto' // → true
+  message === 'Pluto' // ⮕ true
 });
 
 pubSub.publish('Pluto');
@@ -50,7 +50,7 @@ const pubSub = new PubSub<string>(100);
 pubSub.publish('Mars');
 
 pubSub.subscribe(message => {
-  message === 'Mars' // → true
+  message === 'Mars' // ⮕ true
 });
 ```
 
@@ -68,7 +68,7 @@ const queue = new AsyncQueue();
 queue.add('Mars');
 
 // Consumer takes a value
-queue.take(); // → Promise<'Mars'>
+queue.take(); // ⮕ Promise<'Mars'>
 ```
 
 `add` appends the value to the queue, while `take` removes the value from the queue as soon as it is available. If there
@@ -78,7 +78,7 @@ are no values in the queue upon `take` call then the returned promise is resolve
 const queue = new AsyncQueue();
 
 // The returned promise would be resolved after the add call
-queue.take(); // → Promise<'Mars'>
+queue.take(); // ⮕ Promise<'Mars'>
 
 queue.add('Mars');
 ```
@@ -91,8 +91,8 @@ const queue = new AsyncQueue();
 queue.add('Mars');
 queue.add('Venus');
 
-queue.take(); // → Promise<'Mars'>
-queue.take(); // → Promise<'Venus'>
+queue.take(); // ⮕ Promise<'Mars'>
+queue.take(); // ⮕ Promise<'Venus'>
 ```
 
 ## Acknowledgements
@@ -135,7 +135,7 @@ queue.takeAck(([value, ack]) => {
   ack(false); // Tells queue to retain the value
 });
 
-queue.take(); // → Promise<'Pluto'>
+queue.take(); // ⮕ Promise<'Pluto'>
 ```
 
 ## Blocking vs non-blocking acknowledgements
@@ -196,13 +196,13 @@ wait in the queue.
 const pool = new WorkPool(5);
 
 pool.submit(async signal => doSomething());
-// → Promise<ReturnType<typeof doSomething>>
+// ⮕ Promise<ReturnType<typeof doSomething>>
 ```
 
 You can change how many callbacks can the pool process in parallel:
 
 ```ts
-pool.resize(2); // → Promise<void>
+pool.resize(2); // ⮕ Promise<void>
 ```
 
 `resize` returns the promise that is resolved when there are no excessive callbacks being processed in parallel.
@@ -214,13 +214,13 @@ To abort all callbacks that are being processed by the pool and wait for their c
 
 ```ts
 // Resolved when all pending callbacks are fulfilled
-pool.resize(0); // → Promise<void>
+pool.resize(0); // ⮕ Promise<void>
 ```
 
 # `Executor`
 
-Manages async callback execution process and provides ways to access execution results, abort or replace an execution,
-and subscribe to state changes.
+Executor manages an async callback execution process and provides ways to access execution results, abort or replace an
+execution, and subscribe to its state changes.
 
 Create an `Executor` instance and submit a callback for execution:
 
@@ -228,19 +228,18 @@ Create an `Executor` instance and submit a callback for execution:
 const executor = new Executor();
 
 executor.execute(doSomething);
-// → Promise<void> | void
+// ⮕ Promise<void> | null
 ```
 
-The `execute` method returns a promise if a passed callback is returns a promise, or `undefined` otherwise. The returned
-promise is fulfilled when the promise returned from the callback is settled.
+The `execute` method returns a promise that is fulfilled when the promise returned from the callback is settled.
 
 If there's a pending execution, it is aborted and the new execution is started.
 
 To check that executor is currently executing a callback check
 [`pending`](https://smikhalevski.github.io/parallel-universe/classes/Executor.html#pending).
 
-After a promise returned from the executed callback is settled, the execution result (or rejection reason) are available
-through [`result`](https://smikhalevski.github.io/parallel-universe/classes/Executor.html#result) and
+After a promise returned from the executed callback is settled, the execution result and rejection reason are available
+via [`result`](https://smikhalevski.github.io/parallel-universe/classes/Executor.html#result) and
 [`reason`](https://smikhalevski.github.io/parallel-universe/classes/Executor.html#reason).
 
 You can check whether the promise was
@@ -297,7 +296,7 @@ previous lock owner invokes their release callback.
 const lock = new Lock();
 
 lock.acquire();
-// → Promise<() => void>
+// ⮕ Promise<() => void>
 ```
 
 You can check that the lock is [`locked`](https://smikhalevski.github.io/parallel-universe/classes/Lock.html#locked)
@@ -331,7 +330,7 @@ Provides a mechanism for blocking an async process and unblocking it from the ou
 const blocker = new Blocker<string>();
 
 blocker.block();
-// → Promise<string>
+// ⮕ Promise<string>
 ```
 
 You can later unblock it passing a value that would fulfill the promise returned from the `block` call:
@@ -347,7 +346,7 @@ truthy value.
 
 ```ts
 untilTruthy(doSomeChecks);
-// → Promise<ReturnType<typeof doSomeChecks>>
+// ⮕ Promise<ReturnType<typeof doSomeChecks>>
 ```
 
 If you don't want `untilTruthy` to invoke the callback too frequently, provide a delay in milliseconds:
@@ -405,7 +404,7 @@ repeatUntil(
   // Optional signal that can abort the loop from the outside
   abortController.signal,
 );
-// → Promise<ReturnType<typeof doSomething>>
+// ⮕ Promise<ReturnType<typeof doSomething>>
 ```
 
 You can combine `repeatUntil` with [`timeout`](#timeout) to limit the repeat duration:
@@ -421,7 +420,7 @@ timeout(
     ),
   5000
 );
-// → Promise<ReturnType<typeof doSomething>>
+// ⮕ Promise<ReturnType<typeof doSomething>>
 ```
 
 # `sleep`
@@ -431,7 +430,7 @@ an [`AbortError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#
 
 ```ts
 sleep(100, abortController.signal);
-// → Promise<undefined>
+// ⮕ Promise<undefined>
 ```
 
 # `timeout`
@@ -450,5 +449,5 @@ timeout(
   // Optional signal that can abort the execution from the outside
   abortController.signal,
 );
-// → Promise<ReturnType<typeof doSomething>>
+// ⮕ Promise<ReturnType<typeof doSomething>>
 ```
