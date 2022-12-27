@@ -4,9 +4,12 @@ import { AsyncQueue } from '../AsyncQueue';
 
 export interface Job {
   __abortController: AbortController | null;
-  __callback: (signal: AbortSignal) => Awaitable<unknown>;
-  __resolve: (result: any) => void;
-  __reject: (reason: any) => void;
+
+  __callback(signal: AbortSignal): Awaitable<unknown>;
+
+  __resolve(result: any): void;
+
+  __reject(reason: any): void;
 }
 
 /**
@@ -15,7 +18,7 @@ export interface Job {
 export class Worker {
   __terminated = false;
   __terminationPromise;
-  __activeJob: Job | undefined;
+  __activeJob: Job | null = null;
 
   private __jobs: AsyncQueue<Job>;
   private __resolveTermination!: () => void;
@@ -31,7 +34,7 @@ export class Worker {
   __terminate(): void {
     this.__terminated = true;
 
-    if (this.__activeJob) {
+    if (this.__activeJob !== null) {
       this.__activeJob.__abortController?.abort();
     } else {
       this.__resolveTermination();
@@ -39,7 +42,7 @@ export class Worker {
   }
 
   private __cycle = (): Awaitable<void> => {
-    this.__activeJob = undefined;
+    this.__activeJob = null;
 
     if (this.__terminated) {
       this.__resolveTermination();

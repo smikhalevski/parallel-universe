@@ -14,7 +14,7 @@ export class Blocker<T = void> {
    * `true` if {@linkcode Blocker} was blocked and wasn't unblocked yet.
    */
   get blocked() {
-    return this._release != null;
+    return this._release !== undefined;
   }
 
   /**

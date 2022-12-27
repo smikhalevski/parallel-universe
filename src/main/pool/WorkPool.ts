@@ -71,7 +71,7 @@ export class WorkPool {
         worker.__terminate();
       }
 
-      if (worker.__activeJob) {
+      if (worker.__activeJob !== null) {
         terminationPromises.push(worker.__terminationPromise);
       } else {
         _workers.splice(i--, 1);
@@ -83,6 +83,10 @@ export class WorkPool {
       _workers.push(new Worker(this._jobs));
     }
 
-    return terminationPromises.length ? Promise.all(terminationPromises).then(noop) : Promise.resolve();
+    if (terminationPromises.length !== 0) {
+      return Promise.all(terminationPromises).then(noop);
+    }
+
+    return Promise.resolve();
   }
 }

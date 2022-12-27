@@ -20,7 +20,7 @@ describe('Worker', () => {
 
   test('creates a blank worker', () => {
     expect(worker.__terminated).toBe(false);
-    expect(worker.__activeJob).toBeUndefined();
+    expect(worker.__activeJob).toBe(null);
     expect(worker.__terminationPromise).toBeInstanceOf(Promise);
   });
 
@@ -32,7 +32,7 @@ describe('Worker', () => {
 
     await Promise.resolve().then(noop);
 
-    expect(worker.__activeJob).toBeUndefined();
+    expect(worker.__activeJob).toBe(null);
     expect(cbMock).toHaveBeenCalledTimes(1);
     expect(cbMock.mock.calls[0][0].aborted).toBe(false);
     expect(job.__resolve).toHaveBeenCalledTimes(1);
@@ -50,7 +50,7 @@ describe('Worker', () => {
 
     await Promise.resolve().then(noop);
 
-    expect(worker.__activeJob).toBeUndefined();
+    expect(worker.__activeJob).toBe(null);
     expect(cbMock).toHaveBeenCalledTimes(1);
     expect(cbMock.mock.calls[0][0].aborted).toBe(false);
     expect(job.__resolve).not.toHaveBeenCalled();
@@ -84,7 +84,7 @@ describe('Worker', () => {
 
     queue.add(job);
 
-    await sleep(50);
+    await sleep(0);
 
     expect(job.__callback).toHaveBeenCalledTimes(1);
     expect(job.__resolve).not.toHaveBeenCalled();
@@ -130,7 +130,7 @@ describe('Worker', () => {
     queue.add(job);
     queue.add(job2);
 
-    await sleep(50);
+    await sleep(0);
 
     expect(job2.__callback).toHaveBeenCalledTimes(1);
   });
@@ -141,7 +141,7 @@ describe('Worker', () => {
 
     expect(worker.__terminated).toBe(true);
 
-    await sleep(50);
+    await sleep(0);
 
     expect(job.__callback).not.toHaveBeenCalled();
   });
@@ -173,7 +173,7 @@ describe('Worker', () => {
 
     queue.add(job);
 
-    await sleep(50);
+    await sleep(0);
 
     worker.__terminate();
 

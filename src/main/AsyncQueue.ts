@@ -18,7 +18,6 @@ export class AsyncQueue<T = any> {
 
   /**
    * Notifies the consumer that a value is available in the queue.
-   * @private
    */
   private _notifyConsumer?: () => void;
 
