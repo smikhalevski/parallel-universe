@@ -1,5 +1,5 @@
 import { createAbortError, createTimeoutError } from './utils';
-import { Awaitable } from './public-types';
+import { ExecutorCallback } from './shared-types';
 import { isPromiseLike } from './isPromiseLike';
 
 /**
@@ -14,7 +14,7 @@ import { isPromiseLike } from './isPromiseLike';
  * @returns The fulfilled value.
  */
 export function timeout<T>(
-  cb: PromiseLike<T> | ((signal: AbortSignal) => Awaitable<T>),
+  cb: PromiseLike<T> | ExecutorCallback<T>,
   ms: number,
   signal?: AbortSignal | null
 ): Promise<T> {

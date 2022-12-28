@@ -1,79 +1,83 @@
-import { Awaitable } from '../public-types';
+import { Awaitable } from '../shared-types';
 import { isPromiseLike } from '../isPromiseLike';
 import { AsyncQueue } from '../AsyncQueue';
 
 export interface Job {
-  __abortController: AbortController | null;
+  abortController: AbortController | null;
 
-  __callback(signal: AbortSignal): Awaitable<unknown>;
+  callback(signal: AbortSignal): Awaitable<unknown>;
 
-  __resolve(result: any): void;
+  resolve(result: any): void;
 
-  __reject(reason: any): void;
+  reject(reason: any): void;
 }
 
 /**
  * Worker picks jobs from the queue, invokes associated callbacks and fulfills the promise.
  */
 export class Worker {
-  __terminated = false;
-  __terminationPromise;
-  __activeJob: Job | null = null;
+  terminated = false;
+  terminationPromise;
+  activeJob: Job | null = null;
 
-  private __jobs: AsyncQueue<Job>;
-  private __resolveTermination!: () => void;
+  private _jobs: AsyncQueue<Job>;
+  private _resolveTermination!: () => void;
 
   constructor(jobs: AsyncQueue<Job>) {
-    this.__jobs = jobs;
-    this.__terminationPromise = new Promise<void>(resolve => {
-      this.__resolveTermination = resolve;
+    this._jobs = jobs;
+    this.terminationPromise = new Promise<void>(resolve => {
+      this._resolveTermination = resolve;
     });
-    this.__cycle();
+    this._cycle();
   }
 
-  __terminate(): void {
-    this.__terminated = true;
+  terminate(): void {
+    this.terminated = true;
 
-    if (this.__activeJob !== null) {
-      this.__activeJob.__abortController?.abort();
+    if (this.activeJob !== null) {
+      this.activeJob.abortController?.abort();
     } else {
-      this.__resolveTermination();
+      this._resolveTermination();
     }
   }
 
-  private __cycle = (): Awaitable<void> => {
-    this.__activeJob = null;
+  private _cycle = (): Awaitable<void> => {
+    this.activeJob = null;
 
-    if (this.__terminated) {
-      this.__resolveTermination();
+    if (this.terminated) {
+      this._resolveTermination();
       return;
     }
 
-    return this.__jobs.takeAck().then(([job, ack]) => {
-      if (this.__terminated) {
+    return this._jobs.takeAck().then(([job, ack]) => {
+      if (this.terminated) {
         return;
       }
 
       ack();
 
-      const { __resolve, __reject } = (this.__activeJob = job);
-      const abortController = (job.__abortController = new AbortController());
+      this.activeJob = job;
+
+      const { resolve, reject } = job;
+      const abortController = new AbortController();
+
+      job.abortController = abortController;
 
       let result;
       try {
-        result = job.__callback(abortController.signal);
+        result = job.callback(abortController.signal);
       } catch (error) {
-        __reject(error);
-        return this.__cycle();
+        reject(error);
+        return this._cycle();
       }
 
       if (isPromiseLike(result)) {
-        return result.then(__resolve, __reject).then(this.__cycle);
+        return result.then(resolve, reject).then(this._cycle);
       } else {
-        __resolve(result);
+        resolve(result);
       }
 
-      return this.__cycle();
+      return this._cycle();
     });
   };
 }

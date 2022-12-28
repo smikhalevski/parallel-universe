@@ -10,9 +10,7 @@
     "lib"
   ],
   "scripts": {
-    "build": "tsc && npm run rollup && npm run terser && prettier './lib' --write --loglevel=warn",
-    "rollup": "rollup --input ./lib/index.js --file ./lib/index-cjs.js --format cjs --plugin @rollup/plugin-node-resolve",
-    "terser": "t=$(mktemp) && rm $t && for file in $(find ./lib -name '*.js'); do terser --name-cache $t --compress --mangle-props reserved=[__esModule],regex=/^__/ --output $file -- $file; done && rm $t || exit 1",
+    "build": "tsc && rollup --input ./lib/index.js --file ./lib/index-cjs.js --format cjs --plugin @rollup/plugin-node-resolve",
     "clean": "rimraf './lib' './docs'",
     "test": "jest --detectOpenHandles --forceExit",
     "docs:build": "typedoc './src/main/index.ts' && cp ./spaceman.png ./docs",
@@ -54,7 +52,6 @@
     "prettier": "^2.8.1",
     "rimraf": "^3.0.2",
     "rollup": "^3.7.0",
-    "terser": "^5.16.1",
     "ts-jest": "^29.0.3",
     "typedoc": "^0.23.21",
     "typescript": "^4.9.4"

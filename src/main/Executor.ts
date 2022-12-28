@@ -1,13 +1,6 @@
-import { AsyncResult, Awaitable } from './public-types';
+import { AsyncResult, Awaitable, ExecutorCallback } from './shared-types';
 import { isPromiseLike } from './isPromiseLike';
 import { PubSub } from './PubSub';
-
-/**
- * The callback that receives a signal that is aborted when execution must be stopped, and returns the execution result.
- *
- * @template T The returned result.
- */
-export type ExecutorCallback<T> = (signal: AbortSignal) => Awaitable<T>;
 
 /**
  * The async result that may be updated over time.
@@ -26,7 +19,7 @@ export interface Execution<T = any> extends AsyncResult<T> {
   promise: Promise<void> | null;
 
   /**
-   * Returns a result if the executor is fulfilled, or the default value otherwise.
+   * Returns a {@linkcode result}, or the default value otherwise.
    *
    * @param defaultValue The default value.
    */

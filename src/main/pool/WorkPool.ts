@@ -1,4 +1,4 @@
-import { Awaitable } from '../public-types';
+import { ExecutorCallback } from '../shared-types';
 import { AsyncQueue } from '../AsyncQueue';
 import { noop } from '../utils';
 import { Job, Worker } from './Worker';
@@ -32,13 +32,13 @@ export class WorkPool {
    * @template T The callback result.
    * @returns The promise that is fulfilled with the `cb` result.
    */
-  submit<T>(cb: (signal: AbortSignal) => Awaitable<T>): Promise<T> {
+  submit<T>(cb: ExecutorCallback<T>): Promise<T> {
     return new Promise((resolve, reject) => {
       this._jobs.add({
-        __abortController: null,
-        __callback: cb,
-        __resolve: resolve,
-        __reject: reject,
+        abortController: null,
+        callback: cb,
+        resolve: resolve,
+        reject: reject,
       });
     });
   }
@@ -62,17 +62,17 @@ export class WorkPool {
     for (let i = 0; i < _workers.length; ++i) {
       const worker = _workers[i];
 
-      if (!worker.__terminated) {
+      if (!worker.terminated) {
         --size;
 
         if (size >= 0) {
           continue;
         }
-        worker.__terminate();
+        worker.terminate();
       }
 
-      if (worker.__activeJob !== null) {
-        terminationPromises.push(worker.__terminationPromise);
+      if (worker.activeJob !== null) {
+        terminationPromises.push(worker.terminationPromise);
       } else {
         _workers.splice(i--, 1);
       }

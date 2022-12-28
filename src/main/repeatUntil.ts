@@ -1,5 +1,5 @@
 import { callOrGet, createAbortError } from './utils';
-import { AsyncResult, Awaitable } from './public-types';
+import { AsyncResult, ExecutorCallback } from './shared-types';
 import { isPromiseLike } from './isPromiseLike';
 
 /**
@@ -17,7 +17,7 @@ import { isPromiseLike } from './isPromiseLike';
  * @returns The promise that is fulfilled with the `cb` result.
  */
 export function repeatUntil<I, O extends I>(
-  cb: (signal: AbortSignal) => Awaitable<I>,
+  cb: ExecutorCallback<I>,
   until: (result: AsyncResult<I>) => result is AsyncResult<O>,
   ms?: ((result: AsyncResult<O>) => number) | number | null,
   signal?: AbortSignal | null
@@ -37,14 +37,14 @@ export function repeatUntil<I, O extends I>(
  * @returns The promise that is fulfilled with the `cb` result.
  */
 export function repeatUntil<T>(
-  cb: (signal: AbortSignal) => Awaitable<T>,
+  cb: ExecutorCallback<T>,
   until: (result: AsyncResult<T>) => boolean,
   ms?: ((result: AsyncResult<T>) => number) | number | null,
   signal?: AbortSignal | null
 ): Promise<T>;
 
 export function repeatUntil(
-  cb: (signal: AbortSignal) => Awaitable<unknown>,
+  cb: ExecutorCallback<unknown>,
   until: (result: AsyncResult<unknown>) => boolean,
   ms?: ((result: AsyncResult<unknown>) => number) | number | null,
   signal?: AbortSignal | null

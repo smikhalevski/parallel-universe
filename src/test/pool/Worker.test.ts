@@ -11,38 +11,38 @@ describe('Worker', () => {
     queue = new AsyncQueue();
     worker = new Worker(queue);
     job = {
-      __abortController: null,
-      __callback: jest.fn(),
-      __resolve: jest.fn(),
-      __reject: jest.fn(),
+      abortController: null,
+      callback: jest.fn(),
+      resolve: jest.fn(),
+      reject: jest.fn(),
     };
   });
 
   test('creates a blank worker', () => {
-    expect(worker.__terminated).toBe(false);
-    expect(worker.__activeJob).toBe(null);
-    expect(worker.__terminationPromise).toBeInstanceOf(Promise);
+    expect(worker.terminated).toBe(false);
+    expect(worker.activeJob).toBe(null);
+    expect(worker.terminationPromise).toBeInstanceOf(Promise);
   });
 
   test('takes jobs from the queue and resolves sync', async () => {
     const result = 111;
-    const cbMock = (job.__callback = jest.fn(abortController => result));
+    const cbMock = (job.callback = jest.fn(abortController => result));
 
     queue.add(job);
 
     await Promise.resolve().then(noop);
 
-    expect(worker.__activeJob).toBe(null);
+    expect(worker.activeJob).toBe(null);
     expect(cbMock).toHaveBeenCalledTimes(1);
     expect(cbMock.mock.calls[0][0].aborted).toBe(false);
-    expect(job.__resolve).toHaveBeenCalledTimes(1);
-    expect(job.__resolve).toHaveBeenCalledWith(111);
-    expect(job.__reject).not.toHaveBeenCalled();
+    expect(job.resolve).toHaveBeenCalledTimes(1);
+    expect(job.resolve).toHaveBeenCalledWith(111);
+    expect(job.reject).not.toHaveBeenCalled();
   });
 
   test('takes jobs from the queue and rejects sync', async () => {
     const error = new Error();
-    const cbMock = (job.__callback = jest.fn(abortController => {
+    const cbMock = (job.callback = jest.fn(abortController => {
       throw error;
     }));
 
@@ -50,56 +50,56 @@ describe('Worker', () => {
 
     await Promise.resolve().then(noop);
 
-    expect(worker.__activeJob).toBe(null);
+    expect(worker.activeJob).toBe(null);
     expect(cbMock).toHaveBeenCalledTimes(1);
     expect(cbMock.mock.calls[0][0].aborted).toBe(false);
-    expect(job.__resolve).not.toHaveBeenCalled();
-    expect(job.__reject).toHaveBeenCalledTimes(1);
-    expect(job.__reject).toHaveBeenCalledWith(error);
+    expect(job.resolve).not.toHaveBeenCalled();
+    expect(job.reject).toHaveBeenCalledTimes(1);
+    expect(job.reject).toHaveBeenCalledWith(error);
   });
 
   test('takes jobs from the queue and resolves async', async () => {
     const promise = Promise.resolve(111);
-    const cbMock = (job.__callback = jest.fn(abortController => promise));
+    const cbMock = (job.callback = jest.fn(abortController => promise));
 
     queue.add(job);
 
     await Promise.resolve().then(noop);
 
-    expect(worker.__activeJob).toBe(job);
+    expect(worker.activeJob).toBe(job);
     expect(cbMock).toHaveBeenCalledTimes(1);
     expect(cbMock.mock.calls[0][0].aborted).toBe(false);
-    expect(job.__resolve).not.toHaveBeenCalled();
-    expect(job.__reject).not.toHaveBeenCalled();
+    expect(job.resolve).not.toHaveBeenCalled();
+    expect(job.reject).not.toHaveBeenCalled();
 
     await promise;
 
-    expect(job.__resolve).toHaveBeenCalledTimes(1);
-    expect(job.__resolve).toHaveBeenCalledWith(111);
-    expect(job.__reject).not.toHaveBeenCalled();
+    expect(job.resolve).toHaveBeenCalledTimes(1);
+    expect(job.resolve).toHaveBeenCalledWith(111);
+    expect(job.reject).not.toHaveBeenCalled();
   });
 
   test('takes jobs from the queue and rejects async', async () => {
-    job.__callback = jest.fn(() => Promise.reject(111));
+    job.callback = jest.fn(() => Promise.reject(111));
 
     queue.add(job);
 
     await sleep(0);
 
-    expect(job.__callback).toHaveBeenCalledTimes(1);
-    expect(job.__resolve).not.toHaveBeenCalled();
-    expect(job.__reject).toHaveBeenCalledTimes(1);
-    expect(job.__reject).toHaveBeenCalledWith(111);
+    expect(job.callback).toHaveBeenCalledTimes(1);
+    expect(job.resolve).not.toHaveBeenCalled();
+    expect(job.reject).toHaveBeenCalledTimes(1);
+    expect(job.reject).toHaveBeenCalledWith(111);
   });
 
   test('takes next job after completion', async () => {
-    job.__callback = jest.fn(() => Promise.resolve());
+    job.callback = jest.fn(() => Promise.resolve());
 
     const job2: Job = {
-      __abortController: null,
-      __callback: jest.fn(() => Promise.resolve()),
-      __resolve: jest.fn(),
-      __reject: jest.fn(),
+      abortController: null,
+      callback: jest.fn(() => Promise.resolve()),
+      resolve: jest.fn(),
+      reject: jest.fn(),
     };
 
     queue.add(job);
@@ -107,24 +107,24 @@ describe('Worker', () => {
 
     await Promise.resolve().then(noop);
 
-    expect(worker.__activeJob).toBe(job);
+    expect(worker.activeJob).toBe(job);
 
     // Resolve job and take job2
     await Promise.resolve().then(noop).then(noop).then(noop);
 
-    expect(worker.__activeJob).toBe(job2);
+    expect(worker.activeJob).toBe(job2);
   });
 
   test('takes next job after job that thrown error', async () => {
-    job.__callback = jest.fn(() => {
+    job.callback = jest.fn(() => {
       throw new Error();
     });
 
     const job2: Job = {
-      __abortController: null,
-      __callback: jest.fn(),
-      __resolve: jest.fn(),
-      __reject: jest.fn(),
+      abortController: null,
+      callback: jest.fn(),
+      resolve: jest.fn(),
+      reject: jest.fn(),
     };
 
     queue.add(job);
@@ -132,24 +132,24 @@ describe('Worker', () => {
 
     await sleep(0);
 
-    expect(job2.__callback).toHaveBeenCalledTimes(1);
+    expect(job2.callback).toHaveBeenCalledTimes(1);
   });
 
   test('does not pick jobs after termination', async () => {
-    worker.__terminate();
+    worker.terminate();
     queue.add(job);
 
-    expect(worker.__terminated).toBe(true);
+    expect(worker.terminated).toBe(true);
 
     await sleep(0);
 
-    expect(job.__callback).not.toHaveBeenCalled();
+    expect(job.callback).not.toHaveBeenCalled();
   });
 
   test('aborts the job signal when terminated', async () => {
     let jobSignal: AbortSignal | undefined;
 
-    job.__callback = jest.fn(async signal => {
+    job.callback = jest.fn(async signal => {
       await Promise.resolve();
       jobSignal = signal;
     });
@@ -158,7 +158,7 @@ describe('Worker', () => {
 
     await Promise.resolve().then(noop).then(noop);
 
-    worker.__terminate();
+    worker.terminate();
 
     expect(jobSignal?.aborted).toBe(true);
   });
@@ -166,7 +166,7 @@ describe('Worker', () => {
   test('does not abort the signal of the completed job', async () => {
     let jobSignal: AbortSignal | undefined;
 
-    job.__callback = jest.fn(async signal => {
+    job.callback = jest.fn(async signal => {
       await Promise.resolve();
       jobSignal = signal;
     });
@@ -175,7 +175,7 @@ describe('Worker', () => {
 
     await sleep(0);
 
-    worker.__terminate();
+    worker.terminate();
 
     expect(jobSignal?.aborted).toBe(false);
   });
@@ -183,7 +183,7 @@ describe('Worker', () => {
   test('does not abort the sync job', async () => {
     let jobSignal: AbortSignal | undefined;
 
-    job.__callback = jest.fn(signal => {
+    job.callback = jest.fn(signal => {
       jobSignal = signal;
     });
 
@@ -191,7 +191,7 @@ describe('Worker', () => {
 
     await Promise.resolve().then(noop);
 
-    worker.__terminate();
+    worker.terminate();
 
     expect(jobSignal?.aborted).toBe(false);
 
@@ -201,20 +201,20 @@ describe('Worker', () => {
   });
 
   test('resolves the termination promise when idle', async () => {
-    worker.__terminate();
+    worker.terminate();
 
-    await expect(worker.__terminationPromise).resolves.toBeUndefined();
+    await expect(worker.terminationPromise).resolves.toBeUndefined();
   });
 
   test('resolves the termination promise after an async job is completed', async () => {
-    job.__callback = jest.fn(() => Promise.resolve());
+    job.callback = jest.fn(() => Promise.resolve());
 
     queue.add(job);
 
     await Promise.resolve().then(noop);
 
-    worker.__terminate();
+    worker.terminate();
 
-    await expect(worker.__terminationPromise).resolves.toBeUndefined();
+    await expect(worker.terminationPromise).resolves.toBeUndefined();
   });
 });

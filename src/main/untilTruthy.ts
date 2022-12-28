@@ -1,5 +1,5 @@
 import { repeatUntil } from './repeatUntil';
-import { AsyncResult, Awaitable } from './public-types';
+import { AsyncResult, ExecutorCallback } from './shared-types';
 
 /**
  * Returns a promise that is fulfilled when a callback returns a truthy value, or a promise that is fulfilled with a
@@ -14,7 +14,7 @@ import { AsyncResult, Awaitable } from './public-types';
  * @returns The truthy value.
  */
 export function untilTruthy<T>(
-  cb: (signal: AbortSignal) => Awaitable<T>,
+  cb: ExecutorCallback<T>,
   ms?: ((result: AsyncResult<T>) => number) | number | null,
   signal?: AbortSignal | null
 ): Promise<Exclude<T, 0 | '' | false | null | undefined>> {
