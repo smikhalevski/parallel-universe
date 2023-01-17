@@ -29,6 +29,32 @@ describe('Executor', () => {
     expect(cbMock.mock.calls[0][0].aborted).toBe(false);
   });
 
+  test('synchronously resolves execution', () => {
+    executor.execute(() => 111);
+
+    expect(listenerMock).toHaveBeenCalledTimes(1);
+    expect(executor.pending).toBe(false);
+    expect(executor.fulfilled).toBe(true);
+    expect(executor.rejected).toBe(false);
+    expect(executor.result).toBe(111);
+    expect(executor.reason).toBe(undefined);
+    expect(executor.promise).toBe(null);
+  });
+
+  test('synchronously rejects execution', () => {
+    executor.execute(() => {
+      throw 222;
+    });
+
+    expect(listenerMock).toHaveBeenCalledTimes(1);
+    expect(executor.pending).toBe(false);
+    expect(executor.fulfilled).toBe(false);
+    expect(executor.rejected).toBe(true);
+    expect(executor.result).toBe(undefined);
+    expect(executor.reason).toBe(222);
+    expect(executor.promise).toBe(null);
+  });
+
   test('asynchronously resolves after execute', async () => {
     const promise = executor.execute(() => Promise.resolve(111));
 
@@ -85,7 +111,7 @@ describe('Executor', () => {
 
     executor.execute(cbMock);
 
-    const promise = executor.execute(() => 222);
+    const promise = executor.execute(() => Promise.resolve(222));
 
     expect(cbMock.mock.calls[0][0].aborted).toBe(true);
     expect(listenerMock).toHaveBeenCalledTimes(2);
@@ -206,6 +232,22 @@ describe('Executor', () => {
   test('does not invoke listener if reason did not change after reject', () => {
     executor.reject(222);
     executor.reject(222);
+
+    expect(listenerMock).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not invoke listener if result did not change after execute', () => {
+    executor.resolve(111);
+    executor.execute(() => 111);
+
+    expect(listenerMock).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not invoke listener if reason did not change after execute', () => {
+    executor.reject(222);
+    executor.execute(() => {
+      throw 222;
+    });
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
   });

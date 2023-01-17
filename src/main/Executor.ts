@@ -1,6 +1,6 @@
 import { AsyncResult, Awaitable, ExecutorCallback } from './shared-types';
-import { isPromiseLike } from './isPromiseLike';
 import { PubSub } from './PubSub';
+import { isPromiseLike, toPromise } from './utils';
 
 /**
  * The async result that may be updated over time.
@@ -14,7 +14,7 @@ export interface Execution<T = any> extends AsyncResult<T> {
   pending: boolean;
 
   /**
-   * The promise that is fulfilled when the execution is completed. This promise is never rejected.
+   * The promise of the pending execution, or `null` if there's no pending execution. Never rejected.
    */
   promise: Promise<void> | null;
 
@@ -55,7 +55,7 @@ export class Executor<T = any> implements Execution<T> {
   }
 
   get pending() {
-    return this.promise != null;
+    return this.promise !== null;
   }
 
   /**
@@ -68,30 +68,30 @@ export class Executor<T = any> implements Execution<T> {
    */
   execute(cb: ExecutorCallback<T | undefined>): Promise<void> {
     this._abortController?.abort();
-    this._abortController = null;
 
     const abortController = new AbortController();
     this._abortController = abortController;
 
-    const promise = new Promise<T | undefined>(resolve => {
-      resolve(cb(abortController.signal));
-    }).then(
+    const promise = toPromise(
+      () => cb(abortController.signal),
       result => {
-        if (abortController === this._abortController) {
+        if (this._abortController === abortController) {
           this._abortController = null;
           this.resolve(result);
         }
       },
       reason => {
-        if (abortController === this._abortController) {
+        if (this._abortController === abortController) {
           this._abortController = null;
           this.reject(reason);
         }
       }
     );
 
-    this.promise = promise;
-    this._pubSub.publish();
+    if (this._abortController === abortController) {
+      this.promise = promise;
+      this._pubSub.publish();
+    }
 
     return promise;
   }
@@ -104,7 +104,7 @@ export class Executor<T = any> implements Execution<T> {
    * Clears available results and doesn't affect the pending execution.
    */
   clear(): this {
-    if (this.fulfilled || this.rejected) {
+    if (this.settled) {
       this.fulfilled = this.rejected = false;
       this.result = this.reason = undefined;
       this._pubSub.publish();
@@ -130,7 +130,7 @@ export class Executor<T = any> implements Execution<T> {
    */
   resolve(result: Awaitable<T> | undefined): this {
     if (isPromiseLike(result)) {
-      void this.execute(() => result);
+      this.execute(() => result);
       return this;
     }
     if (this.promise || !this.fulfilled || !Object.is(this.result, result)) {
