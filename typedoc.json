@@ -1,6 +1,7 @@
 {
-  "name": "parallel-universe",
   "includeVersion": true,
-  "out": "./docs",
-  "excludePrivate": true
+  "excludePrivate": true,
+  "excludeExternals": true,
+  "cleanOutputDir": true,
+  "out": "./docs"
 }
