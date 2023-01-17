@@ -1,4 +1,4 @@
-import { AsyncQueue, sleep } from '../main';
+import { AsyncQueue } from '../main';
 
 describe('AsyncQueue', () => {
   test('takes an existing value', async () => {
@@ -34,8 +34,6 @@ describe('AsyncQueue', () => {
     const queue = new AsyncQueue();
 
     const promise = queue.takeAck();
-
-    await sleep(50);
 
     queue.add(111);
 
@@ -89,7 +87,7 @@ describe('AsyncQueue', () => {
 
     queue.add(111);
 
-    const ack = await queue.takeAck(true).then(([, ack]) => ack);
+    const ack = await queue.takeBlockingAck().then(([, ack]) => ack);
 
     ack();
 
@@ -134,8 +132,6 @@ describe('AsyncQueue', () => {
       ack();
       consumerMock(value);
     });
-
-    await sleep(50);
 
     queue.add(111);
     queue.add(222);

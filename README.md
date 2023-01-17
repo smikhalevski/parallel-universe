@@ -140,31 +140,32 @@ queue.take(); // ⮕ Promise<'Pluto'>
 
 ## Blocking vs non-blocking acknowledgements
 
-By default, if you didn't call `ack`, the acknowledgement would be automatically revoked on _the next tick_ after
-the promise returned by `takeAck` is resolved, and the value would remain in the queue.
+If you didn't call `ack`, the acknowledgement would be automatically revoked on _the next tick_ after the promise
+returned by `takeAck` is resolved, and the value would remain in the queue.
 
 If acknowledgement was revoked, the `ack` call would throw an error:
 
 ```ts
 queue.takeAck()
-  .then(protocol => protocol) // Extra tick
+  .then(protocol => protocol) // Add an extra tick
   .then(([value, ack]) => {
-    ack(); // Throws an error
+    ack();
+    // ❌ Error: AsyncQueue acknowledgement was revoked
   });
 ```
 
 To prevent the acknowledgement from being revoked, request a blocking acknowledgement:
 
 ```ts
-queue.takeAck(true) // Request a blocking ack
-  .then(protocol => protocol) // Extra tick
+queue.takeBlockingAck()
+  .then(protocol => protocol) // Add an extra tick
   .then(([value, ack]) => {
-    ack(); // Value acknowledged
+    ack(); // Value successfully acknowledged
     doSomething(value);
   });
 ```
 
-Blocking acknowledgement is required if the consumer has to perform asynchronous actions before processing the value.
+Blocking acknowledgement is required if the consumer has to perform asynchronous actions _before_ processing the value.
 
 To guarantee that consumers receive values in the same order as they were provided, blocking acknowledgements prevent
 subsequent consumers from being resolved until `ack` is called. Be sure to call `ack` to prevent the queue from being
