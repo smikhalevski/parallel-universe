@@ -40,22 +40,22 @@ pubSub.subscribe(message => {
 pubSub.publish('Pluto');
 ```
 
-`PubSub` can retain messages that were not processed. Message is considered not processed if all subscribers returned
-`false`, or if there are no subscribers at all. You can pass a limit of retained messages to the constructor.
+If subscriber throws an error, it is passed to an error handler callback:
 
 ```ts
-const pubSub = new PubSub<string>(100);
-
-// 🟡 Note that a message is published before a subscriber is added
-pubSub.publish('Mars');
-
-pubSub.subscribe(message => {
-  message === 'Mars' // ⮕ true
+const pubSub = new PubSub<string>(error => {
+  console.log(error);
 });
+
+pubSub.subscribe(() => {
+  throw new Error('Kaput');
+});
+
+pubSub.publish('Mars');
+// Prints an error to the console
 ```
 
-Retained messages are passed to the new subscriber when it is being subscribed for the first time. If the message wasn't
-processed but the limit is reached, then the earliest message is removed and the published message is added.
+By default, error handler is set to `PubSub.defaultErrorHandler` which logs errors to the console.
 
 # `AsyncQueue`
 
