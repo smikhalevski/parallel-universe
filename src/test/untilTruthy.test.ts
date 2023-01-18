@@ -24,11 +24,11 @@ describe('untilTruthy', () => {
     await expect(untilTruthy(() => 111)).resolves.toEqual(111);
   });
 
-  test('resolves if callback returns a fulfilled Promise', async () => {
+  test('resolves if callback returns a fulfilled promise', async () => {
     await expect(untilTruthy(() => Promise.resolve(111))).resolves.toEqual(111);
   });
 
-  test('rejects if callback returns rejected Promise', async () => {
+  test('rejects if callback returns rejected promise', async () => {
     await expect(untilTruthy(() => Promise.reject(111))).rejects.toEqual(111);
   });
 

@@ -5,7 +5,7 @@ describe('Lock', () => {
     expect(new Lock().locked).toBe(false);
   });
 
-  test('acquiring the lock returns a Promise', async () => {
+  test('acquiring the lock returns a promise', async () => {
     await expect(new Lock().acquire()).resolves.toBeInstanceOf(Function);
   });
 

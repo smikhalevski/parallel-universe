@@ -29,7 +29,7 @@ describe('repeatUntil', () => {
     ).resolves.toEqual(111);
   });
 
-  test('resolves if callback returns a fulfilled Promise', async () => {
+  test('resolves if callback returns a fulfilled promise', async () => {
     await expect(
       repeatUntil(
         () => Promise.resolve(111),
@@ -38,7 +38,7 @@ describe('repeatUntil', () => {
     ).resolves.toEqual(111);
   });
 
-  test('rejects if callback returns rejected Promise', async () => {
+  test('rejects if callback returns rejected promise', async () => {
     await expect(
       repeatUntil(
         () => Promise.reject(111),
