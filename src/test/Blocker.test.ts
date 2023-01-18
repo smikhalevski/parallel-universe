@@ -12,7 +12,7 @@ describe('Blocker', () => {
     expect(blocker.blocked).toBe(true);
   });
 
-  test('sequential blocks return the same Promise', () => {
+  test('sequential blocks return the same promise', () => {
     const blocker = new Blocker();
 
     expect(blocker.block()).toBe(blocker.block());

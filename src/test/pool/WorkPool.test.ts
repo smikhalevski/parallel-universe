@@ -1,5 +1,4 @@
 import { sleep, WorkPool } from '../../main';
-import { noop } from '../../main/utils';
 
 describe('WorkPool', () => {
   let pool: WorkPool;
@@ -8,7 +7,11 @@ describe('WorkPool', () => {
     pool = new WorkPool(1);
   });
 
-  test('submit returns a Promise', () => {
+  test('creates a pool with a single worker', () => {
+    expect(new WorkPool().size).toBe(1);
+  });
+
+  test('submit returns a promise', () => {
     expect(pool.submit(() => 111)).toBeInstanceOf(Promise);
   });
 
@@ -34,19 +37,21 @@ describe('WorkPool', () => {
     expect(cbMock2).toHaveBeenCalledTimes(1);
   });
 
-  test('resize returns a Promise', async () => {
+  test('resize returns a promise', async () => {
     expect(pool.resize(2)).toBeInstanceOf(Promise);
   });
 
-  test('spawn additional workers', async () => {
+  test('spawns additional workers', async () => {
     pool.resize(2);
 
     const cbMock1 = jest.fn();
     const cbMock2 = jest.fn();
 
     pool.submit(cbMock1);
+
     await pool.submit(cbMock2);
 
+    expect(pool['_workers'].length).toBe(2);
     expect(cbMock1).toHaveBeenCalledTimes(1);
     expect(cbMock1).toHaveBeenCalledTimes(1);
   });
@@ -63,6 +68,7 @@ describe('WorkPool', () => {
 
     await promise1;
 
+    expect(pool['_workers'].length).toBe(1);
     expect(cbMock1).toHaveBeenCalledTimes(1);
     expect(cbMock2).not.toHaveBeenCalled();
 
@@ -75,18 +81,19 @@ describe('WorkPool', () => {
   test('terminates excessive workers with pending jobs', async () => {
     const resolveMock = jest.fn();
 
-    const cbMock1 = jest.fn(() => sleep(50).then(() => resolveMock(111)));
-    const cbMock2 = jest.fn(() => sleep(50).then(() => resolveMock(222)));
+    const cbMock1 = jest.fn(() => sleep(100).then(() => resolveMock(111)));
+    const cbMock2 = jest.fn(() => sleep(100).then(() => resolveMock(222)));
 
     pool.resize(2);
 
     pool.submit(cbMock1);
     pool.submit(cbMock2);
 
-    await Promise.resolve().then(noop).then(noop).then(noop).then(noop);
+    await sleep(10);
 
     await pool.resize(1);
 
+    expect(pool['_workers'].length).toBe(1);
     expect(cbMock1).toHaveBeenCalledTimes(1);
     expect(cbMock2).toHaveBeenCalledTimes(1);
 

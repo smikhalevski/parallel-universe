@@ -1,29 +1,29 @@
-import { AsyncResult, Awaitable } from './shared-types';
-import { isPromiseLike } from './isPromiseLike';
+import { AsyncResult, Awaitable, ExecutorCallback } from './shared-types';
 import { PubSub } from './PubSub';
-
-/**
- * The callback that receives a signal that is aborted when execution must be stopped, and returns the execution result.
- *
- * @template T The result returned by the executed callback.
- */
-export type ExecutorCallback<T> = (signal: AbortSignal) => Awaitable<T | undefined>;
+import { isPromiseLike, toPromise } from './utils';
 
 /**
  * The async result that may be updated over time.
  *
- * @template T The result contained by the execution.
+ * @template T The result stored by the execution.
  */
 export interface Execution<T = any> extends AsyncResult<T> {
   /**
    * `true` if an execution is currently pending, or `false` otherwise.
    */
-  readonly pending: boolean;
+  pending: boolean;
 
   /**
-   * The promise that is fulfilled when the execution is completed. This promise is never rejected.
+   * The promise of the pending execution, or `null` if there's no pending execution. Never rejected.
    */
-  promise: Promise<void> | undefined;
+  promise: Promise<void> | null;
+
+  /**
+   * Returns a {@linkcode result}, or the default value otherwise.
+   *
+   * @param defaultValue The default value.
+   */
+  getOrDefault(defaultValue: T): T;
 
   /**
    * Subscribes a listener to the execution state changes.
@@ -38,24 +38,24 @@ export interface Execution<T = any> extends AsyncResult<T> {
  * Manages async callback execution process and provides ways to access execution results, abort or replace an
  * execution, and subscribe to state changes.
  *
- * @template T The result returned by the executed callback.
+ * @template T The result stored by the executor.
  */
 export class Executor<T = any> implements Execution<T> {
   fulfilled = false;
   rejected = false;
   result: T | undefined;
   reason: any;
-  promise: Promise<void> | undefined;
+  promise: Promise<void> | null = null;
 
   private _pubSub = new PubSub();
-  private _abortController?: AbortController;
+  private _abortController: AbortController | null = null;
 
   get settled() {
     return this.fulfilled || this.rejected;
   }
 
   get pending() {
-    return this.promise != null;
+    return this.promise !== null;
   }
 
   /**
@@ -65,57 +65,49 @@ export class Executor<T = any> implements Execution<T> {
    * and the returned result is ignored.
    *
    * The returned promise is never rejected.
+   *
+   * @param cb The callback that returns the new result for the executor to store.
+   * @returns The promise that is resolved when `cb` result is settled.
    */
-  execute(cb: ExecutorCallback<T>): Promise<void> {
-    const prevAbortController = this._abortController;
-    prevAbortController?.abort();
+  execute(cb: ExecutorCallback<T | undefined>): Promise<void> {
+    this._abortController?.abort();
 
-    this._abortController = undefined;
     const abortController = new AbortController();
+    this._abortController = abortController;
 
-    let result;
-    try {
-      result = cb(abortController.signal);
-    } catch (error) {
-      this.reject(error);
-      return Promise.resolve();
-    }
-
-    if (!isPromiseLike(result)) {
-      this.resolve(result);
-      return Promise.resolve();
-    }
-
-    const promise = result.then(
+    const promise = toPromise(
+      () => cb(abortController.signal),
       result => {
-        if (abortController === this._abortController) {
-          this._abortController = undefined;
+        if (this._abortController === abortController) {
+          this._abortController = null;
           this.resolve(result);
         }
       },
       reason => {
-        if (abortController === this._abortController) {
-          this._abortController = undefined;
+        if (this._abortController === abortController) {
+          this._abortController = null;
           this.reject(reason);
         }
       }
     );
 
-    this._abortController = abortController;
-    this.promise = Promise.resolve(promise);
-
-    if (!prevAbortController) {
+    if (this._abortController === abortController) {
+      this.promise = promise;
       this._pubSub.publish();
     }
 
-    return this.promise;
+    return promise;
+  }
+
+  getOrDefault(defaultValue: T): T {
+    return this.fulfilled ? this.result! : defaultValue;
   }
 
   /**
    * Clears available results and doesn't affect the pending execution.
    */
   clear(): this {
-    if (this.fulfilled || this.rejected) {
+    if (this.settled) {
       this.fulfilled = this.rejected = false;
       this.result = this.reason = undefined;
       this._pubSub.publish();
@@ -130,7 +122,7 @@ export class Executor<T = any> implements Execution<T> {
   abort(): this {
     if (this._abortController) {
       this._abortController.abort();
-      this._abortController = this.promise = undefined;
+      this._abortController = this.promise = null;
       this._pubSub.publish();
     }
     return this;
@@ -141,15 +133,16 @@ export class Executor<T = any> implements Execution<T> {
    */
   resolve(result: Awaitable<T> | undefined): this {
     if (isPromiseLike(result)) {
-      void this.execute(() => result);
+      this.execute(() => result);
       return this;
     }
     if (this.promise || !this.fulfilled || !Object.is(this.result, result)) {
       this._abortController?.abort();
+      this._abortController = this.promise = null;
       this.fulfilled = true;
       this.rejected = false;
       this.result = result;
-      this.reason = this._abortController = this.promise = undefined;
+      this.reason = undefined;
       this._pubSub.publish();
     }
     return this;
@@ -161,9 +154,10 @@ export class Executor<T = any> implements Execution<T> {
   reject(reason: any): this {
     if (this.promise || !this.rejected || !Object.is(this.reason, reason)) {
       this._abortController?.abort();
+      this._abortController = this.promise = null;
       this.fulfilled = false;
       this.rejected = true;
-      this.result = this._abortController = this.promise = undefined;
+      this.result = undefined;
       this.reason = reason;
       this._pubSub.publish();
     }

@@ -13,14 +13,21 @@ export type AckProtocol<T> = [value: T, ack: (ok?: boolean) => void];
  * @template T The value stored in the queue.
  */
 export class AsyncQueue<T = any> {
-  private readonly _values: T[] = [];
+  /**
+   * The list of values in the queue.
+   */
+  private _values: T[] = [];
+
+  /**
+   * The promise that was returned for the most recent take.
+   */
   private _promise = Promise.resolve();
 
   /**
-   * Notifies the consumer that a value is available in the queue.
-   * @private
+   * Resolves a pending acknowledgement promise, so the consumer can obtain the value from the queue. `undefined` if
+   * there's no pending consumer.
    */
-  private _notifyConsumer?: () => void;
+  private _notify?: () => void;
 
   /**
    * Returns the number of values stored in this queue.
@@ -36,18 +43,47 @@ export class AsyncQueue<T = any> {
    * @returns The promise that is fulfilled with a value that was added to the queue.
    */
   take(): Promise<T> {
-    return this.takeAck().then(okAckValue);
+    return this._takeAck(false).then(okAckValue);
   }
 
   /**
    * Returns a promise that is fulfilled with an {@linkcode AckProtocol} when a value is available.
    *
-   * @param [blocking = false] If set to `true` then consequent consumers would be blocked until `ack` is called,
-   * otherwise the acknowledgement is automatically revoked on _the next tick_ after returned promise is fulfilled
-   * and value remains in the queue.
-   * @return The promise that fulfilled with the acknowledgement protocol.
+   * The acknowledgement is automatically revoked on _the next tick_ after returned promise is fulfilled. Value
+   * remains in the queue is the acknowledgement wasn't called.
    */
-  takeAck(blocking?: boolean): Promise<AckProtocol<T>> {
+  takeAck(): Promise<AckProtocol<T>> {
+    return this._takeAck(false);
+  }
+
+  /**
+   * Returns a promise that is fulfilled with an {@linkcode AckProtocol} when a value is available.
+   *
+   * Consequent consumers are blocked until the acknowledgement is called.
+   */
+  takeBlockingAck(): Promise<AckProtocol<T>> {
+    return this._takeAck(true);
+  }
+
+  /**
+   * Appends the new value to the end of the queue.
+   *
+   * @param value The value to append.
+   */
+  add(value: T): this {
+    this._values.push(value);
+    this._notify?.();
+    return this;
+  }
+
+  /**
+   * Iterates over elements that are available in the queue.
+   */
+  [Symbol.iterator](): IterableIterator<T> {
+    return this._values[Symbol.iterator]();
+  }
+
+  private _takeAck(blocking: boolean): Promise<AckProtocol<T>> {
     const { _values } = this;
 
     let ackSettled = false;
@@ -59,7 +95,7 @@ export class AsyncQueue<T = any> {
         return;
       }
       if (ackRevoked) {
-        throw new Error('Acknowledgement was revoked');
+        throw new Error('AsyncQueue acknowledgement was revoked');
       }
       if (ok) {
         _values.shift();
@@ -69,13 +105,13 @@ export class AsyncQueue<T = any> {
     };
 
     const promise = this._promise.then<AckProtocol<T>>(() => {
-      if (_values.length) {
+      if (_values.length !== 0) {
         return [_values[0], ack];
       }
 
       return new Promise(resolve => {
-        this._notifyConsumer = () => {
-          this._notifyConsumer = undefined;
+        this._notify = () => {
+          this._notify = undefined;
           resolve([_values[0], ack]);
         };
       });
@@ -94,24 +130,6 @@ export class AsyncQueue<T = any> {
     }
 
     return promise;
-  }
-
-  /**
-   * Appends the new value to the end of the queue.
-   *
-   * @param value The value to append.
-   */
-  add(value: T): this {
-    this._values.push(value);
-    this._notifyConsumer?.();
-    return this;
-  }
-
-  /**
-   * Iterates over elements that are available in the queue.
-   */
-  [Symbol.iterator](): IterableIterator<T> {
-    return this._values[Symbol.iterator]();
   }
 }
 

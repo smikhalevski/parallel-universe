@@ -5,21 +5,30 @@
  * @template T The published message.
  */
 export class PubSub<T = void> {
-  private _messages: T[] = [];
+  /**
+   * The error handler that by {@linkcode PubSub} instances by default.
+   *
+   * @param error An error thrown by a subscriber.
+   */
+  static defaultErrorHandler = (error: unknown): void => {
+    console.error(error);
+  };
+
+  /**
+   * The list of subscribers.
+   */
   private _subscribers: Array<(value: T) => unknown> = [];
 
   /**
    * Creates a new {@linkcode PubSub} instance.
    *
-   * @param [retainableSize = 0] The maximum number of messages that are retained if they weren't processed by at least
-   * one subscriber. If the message wasn't processed but the retainable size is reached, then the earliest message is
-   * removed and the latest message is added.
+   * @param errorHandler The callback that is invoked if a subscriber throws an error.
    */
   constructor(
     /**
-     * The maximum number of messages that are retained if they weren't processed by at least one subscriber.
+     * The callback that is invoked if a subscriber throws an error.
      */
-    public retainableSize = 0
+    public errorHandler = PubSub.defaultErrorHandler
   ) {}
 
   /**
@@ -29,32 +38,16 @@ export class PubSub<T = void> {
    * @param message The published message. If `undefined` is passed as a message then it is never retained.
    */
   publish(message: T): void {
-    const { retainableSize, _messages } = this;
-
-    let processed = message === undefined;
-    let errored = false;
-    let error;
-
     for (const subscriber of this._subscribers) {
       try {
-        processed = subscriber(message) !== false || processed;
-      } catch (e) {
-        if (!errored) {
-          errored = true;
-          error = e;
+        subscriber(message);
+      } catch (error) {
+        try {
+          this.errorHandler(error);
+        } catch (error) {
+          console.error(error);
         }
       }
-    }
-
-    if (!processed && retainableSize > 0) {
-      if (_messages.length >= retainableSize) {
-        _messages.splice(0, _messages.length - retainableSize + 1);
-      }
-      _messages.push(message);
-    }
-
-    if (errored) {
-      throw error;
     }
   }
 
@@ -65,30 +58,19 @@ export class PubSub<T = void> {
    * @returns The callback that unsubscribes the subscriber.
    */
   subscribe(subscriber: (message: T) => any): () => void {
-    const { _messages, _subscribers } = this;
+    const { _subscribers } = this;
 
-    if (_subscribers.indexOf(subscriber) === -1) {
-      for (let i = 0; i < _messages.length; ++i) {
-        if (subscriber(_messages[i]) !== false) {
-          _messages.splice(i--, 1);
-        }
-      }
-      _subscribers.push(subscriber);
-    }
-
-    return () => {
+    const unsubscribe = () => {
       const index = _subscribers.indexOf(subscriber);
 
       if (index !== -1) {
         _subscribers.splice(index, 1);
       }
     };
-  }
 
-  /**
-   * Iterates over retained messages.
-   */
-  [Symbol.iterator](): IterableIterator<T> {
-    return this._messages[Symbol.iterator]();
+    if (_subscribers.indexOf(subscriber) === -1) {
+      _subscribers.push(subscriber);
+    }
+    return unsubscribe;
   }
 }

@@ -1,23 +1,36 @@
-function createDOMException(name: string, code: number, message?: string): Error {
-  if (typeof DOMException !== 'undefined') {
-    return new DOMException(message, name);
-  }
-  const error: Error & { code?: number } = new Error(message);
-  error.name = name;
-  error.code = code;
-  return error;
-}
-
-export function createAbortError(message?: string): Error {
-  return createDOMException('AbortError', 20, message);
-}
-
-export function createTimeoutError(message?: string): Error {
-  return createDOMException('TimeoutError', 23, message);
-}
-
-export function callOrGet<T, A extends any[]>(value: ((...args: A) => T) | T, ...args: A): T {
-  return typeof value === 'function' ? (value as Function)(...args) : value;
-}
+import { Awaitable } from './shared-types';
 
 export function noop() {}
+
+/**
+ * Returns `true` is value has `then` property that is a function.
+ */
+export function isPromiseLike<T>(value: any): value is PromiseLike<T> {
+  return value !== null && typeof value === 'object' && typeof value.then === 'function';
+}
+
+/**
+ * Invokes the callback and wraps it in a promise. `resolve` and `reject` callbacks are invoked synchronously if the
+ * `cb` returns non-promise-like value.
+ */
+export function toPromise<T, R1, R2>(
+  cb: () => Awaitable<T>,
+  resolve: (result: T) => R1,
+  reject: (reason: any) => R2
+): Promise<R1 | R2> {
+  return new Promise(next => {
+    let result;
+
+    try {
+      result = cb();
+    } catch (error) {
+      next(reject(error));
+      return;
+    }
+    if (isPromiseLike(result)) {
+      next(result.then(resolve, reject));
+    } else {
+      next(resolve(result));
+    }
+  });
+}

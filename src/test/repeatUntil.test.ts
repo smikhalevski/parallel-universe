@@ -1,31 +1,6 @@
 import { repeatUntil } from '../main';
-import { createAbortError } from '../main/utils';
 
 describe('repeatUntil', () => {
-  test('aborts if an aborted signal is provided', async () => {
-    const cbMock = jest.fn();
-    const untilMock = jest.fn();
-    const abortController = new AbortController();
-    abortController.abort();
-
-    await expect(repeatUntil(cbMock, untilMock, 0, abortController.signal)).rejects.toEqual(createAbortError());
-    expect(cbMock).not.toHaveBeenCalled();
-  });
-
-  test('aborts when signal is aborted', async () => {
-    const cbMock = jest.fn();
-    const untilMock = jest.fn();
-    const abortController = new AbortController();
-
-    const promise = repeatUntil(cbMock, untilMock, 0, abortController.signal);
-
-    abortController.abort();
-
-    await expect(promise).rejects.toEqual(createAbortError());
-
-    expect(cbMock).toHaveBeenCalled();
-  });
-
   test('first callback invocation in synchronous', () => {
     const cbMock = jest.fn();
 
@@ -54,7 +29,7 @@ describe('repeatUntil', () => {
     ).resolves.toEqual(111);
   });
 
-  test('resolves if callback returns a fulfilled Promise', async () => {
+  test('resolves if callback returns a fulfilled promise', async () => {
     await expect(
       repeatUntil(
         () => Promise.resolve(111),
@@ -63,7 +38,7 @@ describe('repeatUntil', () => {
     ).resolves.toEqual(111);
   });
 
-  test('rejects if callback returns rejected Promise', async () => {
+  test('rejects if callback returns rejected promise', async () => {
     await expect(
       repeatUntil(
         () => Promise.reject(111),
@@ -83,7 +58,7 @@ describe('repeatUntil', () => {
     ).rejects.toEqual(222);
   });
 
-  test('rejects if delay callback throws', async () => {
+  test('rejects if ms callback throws', async () => {
     await expect(
       repeatUntil(
         () => 111,
@@ -96,13 +71,16 @@ describe('repeatUntil', () => {
   });
 
   test('resolves when until callback returns true', async () => {
-    let i = 0;
-    await repeatUntil(
-      () => 111,
-      () => ++i === 3
-    );
+    const cbMock = jest.fn();
+    const untilMock = jest.fn();
 
-    expect(i).toBe(3);
+    untilMock.mockReturnValueOnce(false);
+    untilMock.mockReturnValueOnce(false);
+    untilMock.mockReturnValueOnce(true);
+
+    await repeatUntil(cbMock, untilMock);
+
+    expect(cbMock).toHaveBeenCalledTimes(3);
   });
 
   test('passes result to until callback on resolve', async () => {
@@ -139,18 +117,17 @@ describe('repeatUntil', () => {
     });
   });
 
-  test('passes result to delay callback on resolve', async () => {
-    const delayMock = jest.fn();
+  test('passes result to ms callback on resolve', async () => {
+    const msMock = jest.fn();
+    const untilMock = jest.fn();
 
-    let i = 0;
-    await repeatUntil(
-      () => 111,
-      () => ++i === 2,
-      delayMock
-    );
+    untilMock.mockReturnValueOnce(false);
+    untilMock.mockReturnValueOnce(true);
 
-    expect(delayMock).toHaveBeenCalledTimes(1);
-    expect(delayMock).toHaveBeenCalledWith({
+    await repeatUntil(() => 111, untilMock, msMock);
+
+    expect(msMock).toHaveBeenCalledTimes(1);
+    expect(msMock).toHaveBeenCalledWith({
       settled: true,
       fulfilled: true,
       rejected: false,
@@ -159,22 +136,25 @@ describe('repeatUntil', () => {
     });
   });
 
-  test('passes reason to delay callback on reject', async () => {
-    const delayMock = jest.fn();
+  test('passes reason to ms callback on reject', async () => {
+    const msMock = jest.fn();
+    const untilMock = jest.fn();
 
-    let i = 0;
+    untilMock.mockReturnValueOnce(false);
+    untilMock.mockReturnValueOnce(true);
+
     await expect(
       repeatUntil(
         () => {
           throw 111;
         },
-        () => ++i === 2,
-        delayMock
+        untilMock,
+        msMock
       )
     ).rejects.toBe(111);
 
-    expect(delayMock).toHaveBeenCalledTimes(1);
-    expect(delayMock).toHaveBeenCalledWith({
+    expect(msMock).toHaveBeenCalledTimes(1);
+    expect(msMock).toHaveBeenCalledWith({
       settled: true,
       fulfilled: false,
       rejected: true,
