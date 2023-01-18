@@ -1,29 +1,39 @@
-import { sleep } from '../main';
-import { createAbortError } from '../main/utils';
+import { AbortError, sleep } from '../main';
+
+jest.useFakeTimers();
 
 describe('sleep', () => {
-  test('aborts if an aborted signal is provided', async () => {
+  test('instantly aborts if an aborted signal is provided', async () => {
     const abortController = new AbortController();
     abortController.abort();
 
-    await expect(sleep(1, abortController.signal)).rejects.toEqual(createAbortError());
+    await expect(sleep(200, abortController.signal)).rejects.toBeInstanceOf(AbortError);
   });
 
-  test('resolves after timeout', async () => {
-    const now = Date.now();
-    await sleep(200);
+  test('resolves after a timeout passes', async () => {
+    const listenerMock = jest.fn();
 
-    expect(Date.now() - now).toBeGreaterThanOrEqual(199);
+    sleep(200).then(() => {
+      listenerMock();
+    });
+
+    jest.advanceTimersByTime(100);
+    await Promise.resolve();
+
+    expect(listenerMock).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(100);
+    await Promise.resolve();
+
+    expect(listenerMock).toHaveBeenCalledTimes(1);
   });
 
   test('rejects when signal is aborted', async () => {
     const abortController = new AbortController();
-    const promise = sleep(500, abortController.signal);
-    const now = Date.now();
+    const promise = sleep(200, abortController.signal);
 
     abortController.abort();
 
-    await expect(promise).rejects.toEqual(createAbortError());
-    expect(Date.now() - now).toBeLessThan(10);
+    await expect(promise).rejects.toBeInstanceOf(AbortError);
   });
 });
