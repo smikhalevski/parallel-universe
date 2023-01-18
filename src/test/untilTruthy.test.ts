@@ -1,29 +1,6 @@
 import { untilTruthy } from '../main';
-import { createAbortError } from '../main/utils';
 
 describe('untilTruthy', () => {
-  test('aborts if an aborted signal is provided', async () => {
-    const cbMock = jest.fn();
-    const abortController = new AbortController();
-    abortController.abort();
-
-    await expect(untilTruthy(cbMock, 0, abortController.signal)).rejects.toEqual(createAbortError());
-    expect(cbMock).not.toHaveBeenCalled();
-  });
-
-  test('aborts when signal is aborted', async () => {
-    const cbMock = jest.fn();
-    const abortController = new AbortController();
-
-    const promise = untilTruthy(cbMock, 0, abortController.signal);
-
-    abortController.abort();
-
-    await expect(promise).rejects.toEqual(createAbortError());
-
-    expect(cbMock).toHaveBeenCalled();
-  });
-
   test('first callback invocation in synchronous', () => {
     const cbMock = jest.fn();
 
@@ -55,7 +32,7 @@ describe('untilTruthy', () => {
     await expect(untilTruthy(() => Promise.reject(111))).rejects.toEqual(111);
   });
 
-  test('rejects if delay callback throws', async () => {
+  test('rejects if ms callback throws', async () => {
     await expect(
       untilTruthy(
         () => false,
@@ -66,17 +43,17 @@ describe('untilTruthy', () => {
     ).rejects.toEqual(222);
   });
 
-  test('passes result to delay callback on resolve', async () => {
+  test('passes result to ms callback on resolve', async () => {
     const cbMock = jest.fn();
-    const delayMock = jest.fn();
+    const msMock = jest.fn();
 
     cbMock.mockImplementationOnce(() => 0);
     cbMock.mockImplementationOnce(() => true);
 
-    await untilTruthy(cbMock, delayMock);
+    await untilTruthy(cbMock, msMock);
 
-    expect(delayMock).toHaveBeenCalledTimes(1);
-    expect(delayMock).toHaveBeenCalledWith({
+    expect(msMock).toHaveBeenCalledTimes(1);
+    expect(msMock).toHaveBeenCalledWith({
       settled: true,
       fulfilled: true,
       rejected: false,

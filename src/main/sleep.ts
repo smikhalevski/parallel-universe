@@ -7,7 +7,7 @@ import { AbortError } from './AbortError';
  * @param signal The optional signal that instantly aborts the sleep with {@linkcode AbortError}.
  * @returns The promise that is fulfilled after a timeout.
  */
-export function sleep(ms: number, signal?: AbortSignal | null): Promise<void> {
+export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (!signal) {
       setTimeout(resolve, ms);
