@@ -24,7 +24,8 @@ export class AsyncQueue<T = any> {
   private _promise = Promise.resolve();
 
   /**
-   * Notifies the consumer that a value is available in the queue.
+   * Resolves a pending acknowledgement promise, so the consumer can obtain the value from the queue. `undefined` if
+   * there's no pending consumer.
    */
   private _notifyConsumer?: () => void;
 

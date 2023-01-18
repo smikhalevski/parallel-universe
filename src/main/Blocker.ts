@@ -11,7 +11,7 @@ export class Blocker<T = void> {
   private _release?: (result: T) => void;
 
   /**
-   * `true` if {@linkcode Blocker} was blocked and wasn't unblocked yet.
+   * `true` if {@linkcode Blocker} is blocked and wasn't unblocked yet.
    */
   get blocked() {
     return this._release !== undefined;
