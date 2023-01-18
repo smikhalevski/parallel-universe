@@ -65,6 +65,9 @@ export class Executor<T = any> implements Execution<T> {
    * and the returned result is ignored.
    *
    * The returned promise is never rejected.
+   *
+   * @param cb The callback that returns the new result for the executor to store.
+   * @returns The promise that is resolved when `cb` result is settled.
    */
   execute(cb: ExecutorCallback<T | undefined>): Promise<void> {
     this._abortController?.abort();

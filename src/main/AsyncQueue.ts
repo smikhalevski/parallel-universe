@@ -27,7 +27,7 @@ export class AsyncQueue<T = any> {
    * Resolves a pending acknowledgement promise, so the consumer can obtain the value from the queue. `undefined` if
    * there's no pending consumer.
    */
-  private _notifyConsumer?: () => void;
+  private _notify?: () => void;
 
   /**
    * Returns the number of values stored in this queue.
@@ -72,7 +72,7 @@ export class AsyncQueue<T = any> {
    */
   add(value: T): this {
     this._values.push(value);
-    this._notifyConsumer?.();
+    this._notify?.();
     return this;
   }
 
@@ -110,8 +110,8 @@ export class AsyncQueue<T = any> {
       }
 
       return new Promise(resolve => {
-        this._notifyConsumer = () => {
-          this._notifyConsumer = undefined;
+        this._notify = () => {
+          this._notify = undefined;
           resolve([_values[0], ack]);
         };
       });

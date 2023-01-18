@@ -1,83 +1,113 @@
-import { Awaitable } from '../shared-types';
-import { isPromiseLike } from '../isPromiseLike';
 import { AsyncQueue } from '../AsyncQueue';
+import { toPromise } from '../utils';
 
+/**
+ * The job that a worker can execute.
+ */
 export interface Job {
-  abortController: AbortController | null;
+  /**
+   * The callback that the worker must execute.
+   *
+   * @param signal The signal that is aborted when the job must be aborted.
+   */
+  callback: (signal: AbortSignal) => unknown;
 
-  callback(signal: AbortSignal): Awaitable<unknown>;
+  /**
+   * The callback that receives the callback result.
+   */
+  resolve: (result: any) => void;
 
-  resolve(result: any): void;
-
-  reject(reason: any): void;
+  /**
+   * The callback that receives an error thrown by the callback.
+   */
+  reject: (reason: any) => void;
 }
 
 /**
- * Worker picks jobs from the queue, invokes associated callbacks and fulfills the promise.
+ * The worker picks a job from the queue and invokes its callbacks to fulfill or reject the underlying promise.
  */
 export class Worker {
-  terminated = false;
-  terminationPromise;
-  activeJob: Job | null = null;
+  /**
+   * The controller that aborts the active job if the worker is terminated. If `undefined` then there's no active job.
+   */
+  private _abortController?: AbortController;
 
-  private _jobs: AsyncQueue<Job>;
-  private _resolveTermination!: () => void;
+  /**
+   * The worker EOL promise, created if termination was requested during active job processing.
+   */
+  private _promise?: Promise<void>;
 
-  constructor(jobs: AsyncQueue<Job>) {
-    this._jobs = jobs;
-    this.terminationPromise = new Promise<void>(resolve => {
-      this._resolveTermination = resolve;
-    });
-    this._cycle();
+  /**
+   * Resolves the EOL {@linkcode _promise}.
+   */
+  private _notify?: () => void;
+
+  /**
+   * `true` if the worker won't consume any new jobs, or `false` otherwise.
+   */
+  get terminated(): boolean {
+    return this._promise !== undefined;
   }
 
-  terminate(): void {
-    this.terminated = true;
-
-    if (this.activeJob !== null) {
-      this.activeJob.abortController?.abort();
-    } else {
-      this._resolveTermination();
-    }
-  }
-
-  private _cycle = (): Awaitable<void> => {
-    this.activeJob = null;
-
-    if (this.terminated) {
-      this._resolveTermination();
-      return;
-    }
-
-    return this._jobs.takeAck().then(([job, ack]) => {
+  /**
+   * Creates a new {@linkcode Worker} instance.
+   *
+   * @param jobQueue The queue from which the worker takes jobs.
+   */
+  constructor(jobQueue: AsyncQueue<Job>) {
+    const next = (): void => {
       if (this.terminated) {
+        this._notify!();
         return;
       }
 
-      ack();
+      jobQueue.takeAck().then(([job, ack]) => {
+        if (this.terminated) {
+          return;
+        }
 
-      this.activeJob = job;
+        ack();
 
-      const { resolve, reject } = job;
-      const abortController = new AbortController();
+        const abortController = new AbortController();
+        this._abortController = abortController;
 
-      job.abortController = abortController;
+        toPromise(
+          () => job.callback(abortController.signal),
+          result => {
+            this._abortController = undefined;
+            job.resolve(result);
+            next();
+          },
+          reason => {
+            this._abortController = undefined;
+            job.reject(reason);
+            next();
+          }
+        );
+      });
+    };
 
-      let result;
-      try {
-        result = job.callback(abortController.signal);
-      } catch (error) {
-        reject(error);
-        return this._cycle();
-      }
+    next();
+  }
 
-      if (isPromiseLike(result)) {
-        return result.then(resolve, reject).then(this._cycle);
-      } else {
-        resolve(result);
-      }
+  /**
+   * Terminates the worker and aborts the active job.
+   *
+   * @returns The promise that is resolved when an active job is completed and worker is terminated.
+   */
+  terminate(): Promise<void> {
+    const { _promise, _abortController } = this;
 
-      return this._cycle();
-    });
-  };
+    if (_promise) {
+      return _promise;
+    }
+    if (_abortController) {
+      return (this._promise = new Promise(resolve => {
+        this._notify = resolve;
+        _abortController.abort();
+      }));
+    } else {
+      return (this._promise = Promise.resolve());
+    }
+  }
 }
