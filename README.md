@@ -52,7 +52,7 @@ pubSub.subscribe(() => {
 });
 
 pubSub.publish('Mars');
-// Prints an error to the console
+// Prints 'Error: Kaput' to the console
 ```
 
 By default, error handler is set to `PubSub.defaultErrorHandler` which logs errors to the console.

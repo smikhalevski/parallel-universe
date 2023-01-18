@@ -11,3 +11,4 @@ export * from './sleep';
 export * from './TimeoutError';
 export * from './untilTruthy';
 export * from './shared-types';
+export { isPromiseLike, toPromise } from './utils';

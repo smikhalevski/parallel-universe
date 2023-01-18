@@ -7,6 +7,10 @@ describe('WorkPool', () => {
     pool = new WorkPool(1);
   });
 
+  test('creates a pool with a single worker', () => {
+    expect(new WorkPool().size).toBe(1);
+  });
+
   test('submit returns a promise', () => {
     expect(pool.submit(() => 111)).toBeInstanceOf(Promise);
   });
@@ -47,6 +51,7 @@ describe('WorkPool', () => {
 
     await pool.submit(cbMock2);
 
+    expect(pool['_workers'].length).toBe(2);
     expect(cbMock1).toHaveBeenCalledTimes(1);
     expect(cbMock1).toHaveBeenCalledTimes(1);
   });
@@ -63,6 +68,7 @@ describe('WorkPool', () => {
 
     await promise1;
 
+    expect(pool['_workers'].length).toBe(1);
     expect(cbMock1).toHaveBeenCalledTimes(1);
     expect(cbMock2).not.toHaveBeenCalled();
 
@@ -87,6 +93,7 @@ describe('WorkPool', () => {
 
     await pool.resize(1);
 
+    expect(pool['_workers'].length).toBe(1);
     expect(cbMock1).toHaveBeenCalledTimes(1);
     expect(cbMock2).toHaveBeenCalledTimes(1);
 
