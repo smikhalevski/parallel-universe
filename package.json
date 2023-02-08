@@ -2,8 +2,8 @@
   "name": "parallel-universe",
   "version": "2.0.0",
   "description": "The set of async flow control structures and promise utils.",
-  "main": "./lib/index-cjs.js",
-  "module": "./lib/index.js",
+  "main": "./lib/index.js",
+  "module": "./lib/index.mjs",
   "types": "./lib/index.d.ts",
   "sideEffects": false,
   "files": [
@@ -13,8 +13,7 @@
     "build": "rollup --config --configPlugin typescript",
     "clean": "rimraf './lib' './docs' './coverage'",
     "test": "jest --detectOpenHandles --forceExit",
-    "docs:build": "typedoc './src/main/index.ts' && cp ./spaceman.png ./docs",
-    "docs:release": "npm run docs:build && SHA=$(git rev-parse --short HEAD) && ORIGIN=$(git config --get remote.origin.url) && TEMP=$(mktemp -d) && FROM=$(pwd) && git clone -b ghpages --single-branch $ORIGIN $TEMP && cd $TEMP && ls -A | grep -wv .git | xargs rm -rf && cp -R $FROM/docs/ $TEMP && git add . && git commit -m \"Updated docs ($SHA)\" && git push && rm -rf $TEMP"
+    "docs": "typedoc './src/main/index.ts' && cp ./spaceman.png ./docs"
   },
   "repository": {
     "type": "git",
