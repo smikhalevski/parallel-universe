@@ -1,5 +1,4 @@
 export * from './pool';
-export * from './AbortError';
 export * from './AsyncQueue';
 export * from './Blocker';
 export * from './Executor';
@@ -8,7 +7,6 @@ export * from './PubSub';
 export * from './raceTimeout';
 export * from './repeatUntil';
 export * from './sleep';
-export * from './TimeoutError';
 export * from './untilTruthy';
 export * from './shared-types';
 export { isPromiseLike, toPromise } from './utils';

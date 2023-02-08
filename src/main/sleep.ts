@@ -1,5 +1,3 @@
-import { AbortError } from './AbortError';
-
 /**
  * Returns a promise that is fulfilled after a timeout.
  *
@@ -15,13 +13,13 @@ export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
     }
 
     if (signal.aborted) {
-      reject(new AbortError());
+      reject(new Error('Aborted'));
       return;
     }
 
     const abort = () => {
       clearTimeout(timeout);
-      reject(new AbortError());
+      reject(new Error('Aborted'));
     };
 
     signal.addEventListener('abort', abort);

@@ -1,4 +1,4 @@
-import { AbortError, sleep } from '../main';
+import { sleep } from '../main';
 
 jest.useFakeTimers();
 
@@ -7,7 +7,7 @@ describe('sleep', () => {
     const abortController = new AbortController();
     abortController.abort();
 
-    await expect(sleep(200, abortController.signal)).rejects.toBeInstanceOf(AbortError);
+    await expect(sleep(200, abortController.signal)).rejects.toEqual(new Error('Aborted'));
   });
 
   test('resolves after a timeout passes', async () => {
@@ -34,6 +34,6 @@ describe('sleep', () => {
 
     abortController.abort();
 
-    await expect(promise).rejects.toBeInstanceOf(AbortError);
+    await expect(promise).rejects.toEqual(new Error('Aborted'));
   });
 });
