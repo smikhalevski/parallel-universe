@@ -1,4 +1,4 @@
-# parallel-universe [![build](https://github.com/smikhalevski/parallel-universe/actions/workflows/master.yml/badge.svg?branch=master&event=push)](https://github.com/smikhalevski/parallel-universe/actions/workflows/master.yml)
+# parallel-universe [![build](https://github.com/smikhalevski/parallel-universe/actions/workflows/test.yml/badge.svg?branch=master&event=push)](https://github.com/smikhalevski/parallel-universe/actions/workflows/test.yml)
 
 <a href="#readme">
   <img alt="Spaceman" src="./spaceman.png"/>
@@ -27,7 +27,7 @@ npm install --save-prod parallel-universe
 
 # `PubSub`
 
-Publish–subscribe pattern implementation that guarantees that published messages are delivered even if some subscribers
+Publish–subscribe pattern implementation that guarantees that published messages are delivered even if some listeners
 throw an error.
 
 ```ts
@@ -40,7 +40,7 @@ pubSub.subscribe(message => {
 pubSub.publish('Pluto');
 ```
 
-If subscriber throws an error, it is passed to an error handler callback:
+If listener throws an error, it is passed to an error handler callback:
 
 ```ts
 const pubSub = new PubSub<string>(error => {

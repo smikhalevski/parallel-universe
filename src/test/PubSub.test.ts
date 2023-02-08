@@ -2,42 +2,42 @@ import { PubSub } from '../main';
 
 describe('PubSub', () => {
   test('publishes a message', () => {
-    const subscriberMock = jest.fn();
+    const listenerMock = jest.fn();
     const pubSub = new PubSub<number>();
 
-    pubSub.subscribe(subscriberMock);
+    pubSub.subscribe(listenerMock);
 
     pubSub.publish(111);
 
-    expect(subscriberMock).toHaveBeenCalledTimes(1);
-    expect(subscriberMock).toHaveBeenCalledWith(111);
+    expect(listenerMock).toHaveBeenCalledTimes(1);
+    expect(listenerMock).toHaveBeenCalledWith(111);
   });
 
-  test('does not add the same subscriber twice', () => {
-    const subscriberMock = jest.fn();
+  test('does not add the same listener twice', () => {
+    const listenerMock = jest.fn();
     const pubSub = new PubSub<number>();
 
-    pubSub.subscribe(subscriberMock);
-    pubSub.subscribe(subscriberMock);
+    pubSub.subscribe(listenerMock);
+    pubSub.subscribe(listenerMock);
 
     pubSub.publish(111);
 
-    expect(subscriberMock).toHaveBeenCalledTimes(1);
+    expect(listenerMock).toHaveBeenCalledTimes(1);
   });
 
-  test('delivers to all subscribers and invokes error handler', () => {
+  test('delivers to all listeners and invokes error handler', () => {
     const errorHandlerMock = jest.fn();
 
-    const subscriberMock1 = jest.fn(() => {
+    const listenerMock1 = jest.fn(() => {
       throw new Error('expected1');
     });
-    const subscriberMock2 = jest.fn(() => {
+    const listenerMock2 = jest.fn(() => {
       throw new Error('expected2');
     });
     const pubSub = new PubSub(errorHandlerMock);
 
-    pubSub.subscribe(subscriberMock1);
-    pubSub.subscribe(subscriberMock2);
+    pubSub.subscribe(listenerMock1);
+    pubSub.subscribe(listenerMock2);
 
     pubSub.publish();
 
@@ -45,37 +45,37 @@ describe('PubSub', () => {
     expect(errorHandlerMock).toHaveBeenNthCalledWith(1, new Error('expected1'));
     expect(errorHandlerMock).toHaveBeenNthCalledWith(2, new Error('expected2'));
 
-    expect(subscriberMock1).toHaveBeenCalledTimes(1);
-    expect(subscriberMock2).toHaveBeenCalledTimes(1);
+    expect(listenerMock1).toHaveBeenCalledTimes(1);
+    expect(listenerMock2).toHaveBeenCalledTimes(1);
   });
 
-  test('unsubscribes a subscriber', () => {
-    const subscriberMock = jest.fn();
+  test('unsubscribes a listener', () => {
+    const listenerMock = jest.fn();
     const pubSub = new PubSub<number>();
 
-    const unsubscribe = pubSub.subscribe(subscriberMock);
+    const unsubscribe = pubSub.subscribe(listenerMock);
 
     unsubscribe();
 
     pubSub.publish(111);
 
-    expect(subscriberMock).toHaveBeenCalledTimes(0);
+    expect(listenerMock).toHaveBeenCalledTimes(0);
   });
 
   test('calling unsubscribe multiple times is a noop', () => {
-    const subscriberMock1 = jest.fn();
-    const subscriberMock2 = jest.fn();
+    const listenerMock1 = jest.fn();
+    const listenerMock2 = jest.fn();
     const pubSub = new PubSub<number>();
 
-    const unsubscribe = pubSub.subscribe(subscriberMock1);
-    pubSub.subscribe(subscriberMock2);
+    const unsubscribe = pubSub.subscribe(listenerMock1);
+    pubSub.subscribe(listenerMock2);
 
     unsubscribe();
     unsubscribe();
 
     pubSub.publish(111);
 
-    expect(subscriberMock1).toHaveBeenCalledTimes(0);
-    expect(subscriberMock2).toHaveBeenCalledTimes(1);
+    expect(listenerMock1).toHaveBeenCalledTimes(0);
+    expect(listenerMock2).toHaveBeenCalledTimes(1);
   });
 });
