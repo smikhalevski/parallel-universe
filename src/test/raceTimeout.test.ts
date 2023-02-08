@@ -1,4 +1,4 @@
-import { raceTimeout, TimeoutError } from '../main';
+import { raceTimeout } from '../main';
 
 jest.useFakeTimers();
 
@@ -12,7 +12,7 @@ describe('timeout', () => {
 
     jest.advanceTimersByTime(100);
 
-    await expect(promise).rejects.toBeInstanceOf(TimeoutError);
+    await expect(promise).rejects.toEqual(new Error('Timeout'));
   });
 
   test('rejects if a promise is rejected runs out', async () => {

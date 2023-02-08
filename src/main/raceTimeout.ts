@@ -1,4 +1,3 @@
-import { TimeoutError } from './TimeoutError';
 import { ExecutorCallback } from './shared-types';
 import { toPromise } from './utils';
 
@@ -15,7 +14,7 @@ export function raceTimeout<T>(cb: ExecutorCallback<T>, ms: number): Promise<T> 
 
     const timeout = setTimeout(() => {
       abortController.abort();
-      reject(new TimeoutError());
+      reject(new Error('Timeout'));
     }, ms);
 
     toPromise(
