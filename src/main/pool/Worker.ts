@@ -38,7 +38,7 @@ export class Worker {
   private _promise?: Promise<void>;
 
   /**
-   * Resolves the EOL {@linkcode _promise}.
+   * Resolves the EOL {@link _promise}.
    */
   private _notify?: () => void;
 
@@ -50,7 +50,7 @@ export class Worker {
   }
 
   /**
-   * Creates a new {@linkcode Worker} instance.
+   * Creates a new {@link Worker} instance.
    *
    * @param jobQueue The queue from which the worker takes jobs.
    */

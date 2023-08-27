@@ -3,7 +3,7 @@ import { PubSub } from './PubSub';
 /**
  * Provides mechanism for blocking async processes and unblocking them from an external context.
  *
- * @template T The value that can be passed to {@linkcode unblock} to resolve the {@linkcode block} promise.
+ * @template T The value that can be passed to {@link unblock} to resolve the {@link block} promise.
  */
 export class Blocker<T = void> {
   private _pubSub = new PubSub();
@@ -11,14 +11,14 @@ export class Blocker<T = void> {
   private _release?: (result: T) => void;
 
   /**
-   * `true` if {@linkcode Blocker} is blocked and wasn't unblocked yet.
+   * `true` if {@link Blocker} is blocked and wasn't unblocked yet.
    */
   get blocked() {
     return this._release !== undefined;
   }
 
   /**
-   * Returns promises that is fulfilled with the result passed to {@linkcode unblock}. If blocker is already blocked
+   * Returns promises that is fulfilled with the result passed to {@link unblock}. If blocker is already blocked
    * then the same promise is returned.
    */
   block(): Promise<T> {
@@ -32,7 +32,7 @@ export class Blocker<T = void> {
   }
 
   /**
-   * Fulfills the promise returned from {@linkcode block}. If the blocker isn't blocked then no-op.
+   * Fulfills the promise returned from {@link block}. If the blocker isn't blocked then no-op.
    */
   unblock(result: T): void {
     const { _release } = this;
@@ -45,7 +45,7 @@ export class Blocker<T = void> {
   }
 
   /**
-   * Subscribes a listener to {@linkcode blocked} status changes.
+   * Subscribes a listener to {@link blocked} status changes.
    *
    * @param listener The listener that would be notified.
    * @returns The callback to unsubscribe the listener.

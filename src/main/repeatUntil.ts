@@ -44,12 +44,10 @@ export function repeatUntil(
   ms?: ((result: AsyncResult<unknown>) => number) | number
 ): Promise<unknown> {
   return new Promise((resolve, reject) => {
-    let timeout: NodeJS.Timeout | number;
-
     const next = (result: AsyncResult) => {
       try {
         if (!until(result)) {
-          timeout = setTimeout(execute, typeof ms === 'function' ? ms(result) : ms);
+          setTimeout(execute, typeof ms === 'function' ? ms(result) : ms);
           return;
         }
       } catch (error) {

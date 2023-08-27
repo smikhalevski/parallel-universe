@@ -6,7 +6,7 @@
  */
 export class PubSub<T = void> {
   /**
-   * The error handler that by {@linkcode PubSub} instances by default.
+   * The error handler that by {@link PubSub} instances by default.
    *
    * @param error An error thrown by a listener.
    */
@@ -18,7 +18,7 @@ export class PubSub<T = void> {
   private _errorHandler;
 
   /**
-   * Creates a new {@linkcode PubSub} instance.
+   * Creates a new {@link PubSub} instance.
    *
    * @param errorHandler The callback that is invoked if a listener throws an error.
    */
@@ -47,7 +47,7 @@ export class PubSub<T = void> {
   }
 
   /**
-   * Adds a listener that would receive all messages published via {@linkcode publish}.
+   * Adds a listener that would receive all messages published via {@link publish}.
    *
    * @param listener The callback.
    * @returns The callback that unsubscribes the listener.
