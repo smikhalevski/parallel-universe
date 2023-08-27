@@ -19,7 +19,7 @@ export interface Execution<T = any> extends AsyncResult<T> {
   promise: Promise<void> | null;
 
   /**
-   * Returns a {@linkcode result}, or the default value otherwise.
+   * Returns a {@link result}, or the default value otherwise.
    *
    * @param defaultValue The default value.
    */

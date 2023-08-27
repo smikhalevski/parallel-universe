@@ -5,7 +5,7 @@ import { toPromise } from './utils';
  * Returns a promise that is rejected after the timeout elapses.
  *
  * @param cb The callback receives a signal that is aborted if the timeout elapses.
- * @param ms The timeout after which the promise is rejected with a {@linkcode TimeoutError}.
+ * @param ms The timeout after which the promise is rejected with a {@link TimeoutError}.
  * @returns The fulfilled value.
  */
 export function raceTimeout<T>(cb: ExecutorCallback<T>, ms: number): Promise<T> {

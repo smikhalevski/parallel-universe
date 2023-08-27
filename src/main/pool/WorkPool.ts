@@ -24,7 +24,7 @@ export class WorkPool {
   private _workers: Worker[] = [];
 
   /**
-   * Creates a new {@linkcode WorkPool} instance that uses given number of workers.
+   * Creates a new {@link WorkPool} instance that uses given number of workers.
    *
    * @param [size = 1] The number of workers in the pool.
    */

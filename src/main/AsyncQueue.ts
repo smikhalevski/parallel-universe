@@ -1,7 +1,7 @@
 import { noop } from './utils';
 
 /**
- * The protocol provided to the {@linkcode AsyncQueue} consumer, so it can acknowledge that the value would be processed.
+ * The protocol provided to the {@link AsyncQueue} consumer, so it can acknowledge that the value would be processed.
  *
  * @template T The taken value.
  */
@@ -47,7 +47,7 @@ export class AsyncQueue<T = any> {
   }
 
   /**
-   * Returns a promise that is fulfilled with an {@linkcode AckProtocol} when a value is available.
+   * Returns a promise that is fulfilled with an {@link AckProtocol} when a value is available.
    *
    * The acknowledgement is automatically revoked on _the next tick_ after returned promise is fulfilled. Value
    * remains in the queue is the acknowledgement wasn't called.
@@ -57,7 +57,7 @@ export class AsyncQueue<T = any> {
   }
 
   /**
-   * Returns a promise that is fulfilled with an {@linkcode AckProtocol} when a value is available.
+   * Returns a promise that is fulfilled with an {@link AckProtocol} when a value is available.
    *
    * Consequent consumers are blocked until the acknowledgement is called.
    */

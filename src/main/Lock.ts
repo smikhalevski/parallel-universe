@@ -3,8 +3,8 @@ import { PubSub } from './PubSub';
 /**
  * Promise-based lock implementation.
  *
- * When someone tries to acquire a {@linkcode Lock} they receive a promise for a release callback that is fulfilled as
- * soon as previous lock owner invokes their release callback.
+ * When someone tries to acquire a {@link Lock} they receive a promise for a release callback that is fulfilled as soon
+ * as previous lock owner invokes their release callback.
  *
  * @see https://en.wikipedia.org/wiki/Lock_(computer_science) Lock (computer science)
  */
@@ -13,14 +13,14 @@ export class Lock {
   private _promise?: Promise<() => void>;
 
   /**
-   * `true` if {@linkcode Lock} was acquired and wasn't released yet.
+   * `true` if {@link Lock} was acquired and wasn't released yet.
    */
   get locked() {
     return this._promise != null;
   }
 
   /**
-   * Waits for the {@linkcode Lock} to become available and fulfills it with the callback that releases the lock.
+   * Waits for the {@link Lock} to become available and fulfills it with the callback that releases the lock.
    */
   acquire(): Promise<() => void> {
     const { _promise } = this;
@@ -45,7 +45,7 @@ export class Lock {
   }
 
   /**
-   * Subscribes a listener to the {@linkcode locked} status changes.
+   * Subscribes a listener to the {@link locked} status changes.
    *
    * @param listener The listener that would be notified.
    * @returns The callback to unsubscribe the listener.
