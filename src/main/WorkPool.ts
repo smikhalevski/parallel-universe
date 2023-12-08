@@ -1,11 +1,11 @@
 import { AbortableCallback } from './shared-types';
-import { AsyncQueue } from './AsyncQueue';
+import { Topic } from './Topic';
 import { noop } from './utils';
 import { Job, Worker } from './Worker';
 
 /**
  * The callback execution pool that can execute limited number of callbacks in parallel while other submitted callbacks
- * wait in the queue.
+ * wait in the topic.
  */
 export class WorkPool {
   /**
@@ -14,9 +14,9 @@ export class WorkPool {
   private _size!: number;
 
   /**
-   * The queue that holds submitted jobs.
+   * The topic that holds submitted jobs.
    */
-  private _jobQueue = new AsyncQueue<Job>();
+  private _topic = new Topic<Job>();
 
   /**
    * Active workers and workers with pending termination.
@@ -48,7 +48,7 @@ export class WorkPool {
    */
   submit<T>(cb: AbortableCallback<T>): Promise<T> {
     return new Promise((resolve, reject) => {
-      this._jobQueue.add({ callback: cb, resolve, reject });
+      this._topic.add({ callback: cb, resolve, reject });
     });
   }
 
@@ -89,7 +89,7 @@ export class WorkPool {
 
     // Spawn additional workers
     for (let i = 0; i < size; ++i) {
-      _workers.push(new Worker(this._jobQueue));
+      _workers.push(new Worker(this._topic));
     }
 
     return Promise.all(promises).then(noop);

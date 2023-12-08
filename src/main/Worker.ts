@@ -1,4 +1,4 @@
-import { AsyncQueue } from './AsyncQueue';
+import { Topic } from './Topic';
 
 /**
  * The job that a worker can execute.
@@ -23,7 +23,7 @@ export interface Job {
 }
 
 /**
- * The worker picks a job from the queue and invokes its callbacks to fulfill or reject the underlying promise.
+ * The worker picks a job from the topic and invokes its callbacks to fulfill or reject the underlying promise.
  */
 export class Worker {
   /**
@@ -51,16 +51,16 @@ export class Worker {
   /**
    * Creates a new {@link Worker} instance.
    *
-   * @param jobQueue The queue from which the worker takes jobs.
+   * @param topic The topic from which the worker takes jobs.
    */
-  constructor(jobQueue: AsyncQueue<Job>) {
+  constructor(topic: Topic<Job>) {
     const next = (): void => {
       if (this.isTerminated) {
         this._notify!();
         return;
       }
 
-      jobQueue.takeAck().then(([job, ack]) => {
+      topic.takeAck().then(([job, ack]) => {
         if (this.isTerminated) {
           return;
         }

@@ -13,7 +13,7 @@ npm install --save-prod parallel-universe
 🚀 [API documentation is available here.](https://smikhalevski.github.io/parallel-universe/)
 
 - [`PubSub`](#pubsub)
-- [`AsyncQueue`](#asyncqueue)
+- [`Topic`](#asynctopic)
     - [Acknowledgements](#acknowledgements)
     - [Blocking vs non-blocking acknowledgements](#blocking-vs-non-blocking-acknowledgements)
 - [`WorkPool`](#workpool)
@@ -57,56 +57,56 @@ pubSub.publish('Mars');
 
 By default, error handler is set to `PubSub.defaultErrorHandler` which logs errors to the console.
 
-# `AsyncQueue`
+# `Topic`
 
-Asynchronous queue decouples value providers and value consumers.
+Asynchronous topic decouples value providers and value consumers.
 
 ```ts
-const queue = new AsyncQueue();
+const topic = new Topic();
 
 // Provider adds a value
-queue.add('Mars');
+topic.add('Mars');
 
 // Consumer takes a value
-queue.take();
+topic.take();
 // ⮕ Promise<'Mars'>
 ```
 
-`add` appends the value to the queue, while `take` removes the value from the queue as soon as it is available. If there
-are no values in the queue upon `take` call then the returned promise is resolved after the next `add` call.
+`add` appends the value to the topic, while `take` removes the value from the topic as soon as it is available. If there
+are no values in the topic upon `take` call then the returned promise is resolved after the next `add` call.
 
 ```ts
-const queue = new AsyncQueue();
+const topic = new Topic();
 
 // The returned promise would be resolved after the add call
-queue.take();
+topic.take();
 // ⮕ Promise<'Mars'>
 
-queue.add('Mars');
+topic.add('Mars');
 ```
 
-Consumers receive values from the queue in the same order they were added by providers:
+Consumers receive values from the topic in the same order they were added by providers:
 
 ```ts
-const queue = new AsyncQueue();
+const topic = new Topic();
 
-queue.add('Mars');
-queue.add('Venus');
+topic.add('Mars');
+topic.add('Venus');
 
-queue.take();
+topic.take();
 // ⮕ Promise<'Mars'>
 
-queue.take();
+topic.take();
 // ⮕ Promise<'Venus'>
 ```
 
 ## Acknowledgements
 
-In some cases removing the value from the queue isn't the desirable behavior, since the consumer may not be able to
+In some cases removing the value from the topic isn't the desirable behavior, since the consumer may not be able to
 process the taken value. Use `takeAck` to examine available value and acknowledge that it can be processed.
 
 ```ts
-queue.takeAck().then(([value, ack]) => {
+topic.takeAck().then(([value, ack]) => {
   if (doSomeChecks()) {
     ack();
     doSomething(value);
@@ -115,56 +115,56 @@ queue.takeAck().then(([value, ack]) => {
 ```
 
 `takeAck` returns a tuple of the available value and the acknowledgement callback. The consumer should call `ack` to
-notify the queue on weather to remove the value from the queue or to retain it.
+notify the topic on weather to remove the value from the topic or to retain it.
 
-To acknowledge that the consumer can process the value, and the value must be removed from the queue use:
+To acknowledge that the consumer can process the value, and the value must be removed from the topic use:
 
 ```ts
 ack();
 // or ack(true)
 ```
 
-To acknowledge that the value should be retained by the queue use:
+To acknowledge that the value should be retained by the topic use:
 
 ```ts
 ack(false);
 ```
 
-The value that was retained in the queue becomes available for the subsequent consumer.
+The value that was retained in the topic becomes available for the subsequent consumer.
 
 ```ts
-const queue = new AsyncQueue();
+const topic = new Topic();
 
-queue.add('Pluto');
+topic.add('Pluto');
 
-queue.takeAck(([value, ack]) => {
-  ack(false); // Tells queue to retain the value
+topic.takeAck(([value, ack]) => {
+  ack(false); // Tells topic to retain the value
 });
 
-queue.take();
+topic.take();
 // ⮕ Promise<'Pluto'>
 ```
 
 ## Blocking vs non-blocking acknowledgements
 
 If you didn't call `ack`, the acknowledgement would be automatically revoked on _the next tick_ after the promise
-returned by `takeAck` is resolved, and the value would remain in the queue.
+returned by `takeAck` is resolved, and the value would remain in the topic.
 
 If acknowledgement was revoked, the `ack` call would throw an error:
 
 ```ts
-queue.takeAck()
+topic.takeAck()
   .then(protocol => protocol) // Add an extra tick
   .then(([value, ack]) => {
     ack();
-    // ❌ Error: AsyncQueue acknowledgement was revoked
+    // ❌ Error: Topic acknowledgement was revoked
   });
 ```
 
 To prevent the acknowledgement from being revoked, request a blocking acknowledgement:
 
 ```ts
-queue.takeBlockingAck()
+topic.takeBlockingAck()
   .then(protocol => protocol) // Add an extra tick
   .then(([value, ack]) => {
     ack(); // Value successfully acknowledged
@@ -175,12 +175,12 @@ queue.takeBlockingAck()
 Blocking acknowledgement is required if the consumer has to perform asynchronous actions _before_ processing the value.
 
 To guarantee that consumers receive values in the same order as they were provided, blocking acknowledgements prevent
-subsequent consumers from being resolved until `ack` is called. Be sure to call `ack` to prevent the queue from being
+subsequent consumers from being resolved until `ack` is called. Be sure to call `ack` to prevent the topic from being
 stuck indefinitely.
 
 ```ts
 async function blockingConsumer() {
-  const [value, ack] = queue.takeAck(true);
+  const [value, ack] = topic.takeAck(true);
 
   try {
     if (await doSomeChecks()) {
