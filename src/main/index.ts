@@ -7,6 +7,5 @@ export { WorkPool } from './WorkPool';
 export { raceTimeout } from './raceTimeout';
 export { repeatUntil } from './repeatUntil';
 export { sleep } from './sleep';
-export { untilTruthy } from './untilTruthy';
 export { AsyncResult, Awaitable, AbortableCallback } from './types';
 export { isPromiseLike } from './utils';
