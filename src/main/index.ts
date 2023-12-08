@@ -1,6 +1,6 @@
 export { Topic, AckProtocol } from './Topic';
 export { Blocker } from './Blocker';
-export { Executor, Execution } from './Executor';
+export { Executor } from './Executor';
 export { Lock } from './Lock';
 export { PubSub } from './PubSub';
 export { WorkPool } from './WorkPool';

@@ -66,10 +66,22 @@ export function repeatUntil(
         resolve(cb());
       }).then(
         result => {
-          next({ isSettled: true, isFulfilled: true, isRejected: false, result, reason: undefined });
+          next({
+            isSettled: true,
+            isFulfilled: true,
+            isRejected: false,
+            result,
+            reason: undefined,
+          });
         },
         reason => {
-          next({ isSettled: true, isFulfilled: false, isRejected: true, result: undefined, reason });
+          next({
+            isSettled: true,
+            isFulfilled: false,
+            isRejected: true,
+            result: undefined,
+            reason,
+          });
         }
       );
     };

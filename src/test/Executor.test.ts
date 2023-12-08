@@ -21,12 +21,19 @@ describe('Executor', () => {
     expect(executor.promise).toBe(null);
   });
 
-  test('synchronously invokes a callback with signal', () => {
+  test('synchronously invokes a callback with signal', async () => {
     const cbMock = jest.fn();
-    executor.execute(cbMock);
+    const promise = executor.execute(cbMock);
 
     expect(cbMock).toHaveBeenCalledTimes(1);
     expect(cbMock.mock.calls[0][0].aborted).toBe(false);
+    await expect(promise).resolves.toEqual({
+      isSettled: true,
+      isFulfilled: true,
+      isRejected: false,
+      result: undefined,
+      reason: undefined,
+    });
   });
 
   test('resolves synchronous callback', async () => {
@@ -40,7 +47,13 @@ describe('Executor', () => {
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(promise);
 
-    await promise;
+    await expect(promise).resolves.toEqual({
+      isSettled: true,
+      isFulfilled: true,
+      isRejected: false,
+      result: 111,
+      reason: undefined,
+    });
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(executor.isPending).toBe(false);
@@ -64,7 +77,13 @@ describe('Executor', () => {
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(promise);
 
-    await promise;
+    await expect(promise).resolves.toEqual({
+      isSettled: true,
+      isFulfilled: false,
+      isRejected: true,
+      result: undefined,
+      reason: 222,
+    });
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(executor.isPending).toBe(false);
@@ -86,7 +105,13 @@ describe('Executor', () => {
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(promise);
 
-    await promise;
+    await expect(promise).resolves.toEqual({
+      isSettled: true,
+      isFulfilled: true,
+      isRejected: false,
+      result: 111,
+      reason: undefined,
+    });
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(executor.isPending).toBe(false);
@@ -108,7 +133,13 @@ describe('Executor', () => {
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(promise);
 
-    await promise;
+    await expect(promise).resolves.toEqual({
+      isSettled: true,
+      isFulfilled: false,
+      isRejected: true,
+      result: undefined,
+      reason: 222,
+    });
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(executor.isPending).toBe(false);
@@ -129,16 +160,30 @@ describe('Executor', () => {
   test('aborts pending execution if new execution is submitted', async () => {
     const cbMock = jest.fn(signal => Promise.resolve(111));
 
-    executor.execute(cbMock);
+    const promise1 = executor.execute(cbMock);
 
-    const promise = executor.execute(() => Promise.resolve(222));
+    const promise2 = executor.execute(() => Promise.resolve(222));
 
     expect(cbMock.mock.calls[0][0].aborted).toBe(true);
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(executor.isSettled).toBe(false);
     expect(executor.result).toBe(undefined);
 
-    await promise;
+    await expect(promise2).resolves.toEqual({
+      isSettled: true,
+      isFulfilled: true,
+      isRejected: false,
+      result: 222,
+      reason: undefined,
+    });
+
+    await expect(promise1).resolves.toEqual({
+      isSettled: true,
+      isFulfilled: false,
+      isRejected: true,
+      result: undefined,
+      reason: new Error('Aborted'),
+    });
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
     expect(executor.result).toBe(222);

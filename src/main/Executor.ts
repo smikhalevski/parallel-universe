@@ -3,49 +3,21 @@ import { PubSub } from './PubSub';
 import { isEqual, isPromiseLike } from './utils';
 
 /**
- * The async result that may be updated over time.
- *
- * @template T The result stored by the execution.
- */
-export interface Execution<T = any> extends AsyncResult<T> {
-  /**
-   * `true` if an execution is currently pending, or `false` otherwise.
-   */
-  isPending: boolean;
-
-  /**
-   * The promise of the pending execution, or `null` if there's no pending execution. Never rejected.
-   */
-  promise: Promise<void> | null;
-
-  /**
-   * Returns a {@link result}, or the default value if the result isn't available.
-   *
-   * @param defaultValue The default value.
-   */
-  getOrDefault(defaultValue: T): T;
-
-  /**
-   * Subscribes a listener to the execution state changes.
-   *
-   * @param listener The listener that would be notified.
-   * @returns The callback to unsubscribe the listener.
-   */
-  subscribe(listener: () => void): () => void;
-}
-
-/**
  * Manages async callback execution process and provides ways to access execution results, abort or replace an
  * execution, and subscribe to state changes.
  *
  * @template T The result stored by the executor.
  */
-export class Executor<T = any> implements Execution<T> {
+export class Executor<T = any> implements AsyncResult<T> {
   isFulfilled = false;
   isRejected = false;
   result: T | undefined;
   reason: any;
-  promise: Promise<void> | null = null;
+
+  /**
+   * The promise of the pending execution, or `null` if there's no pending execution.
+   */
+  promise: Promise<AsyncResult<T>> | null = null;
 
   private _pubSub = new PubSub();
   private _abortController: AbortController | null = null;
@@ -54,6 +26,9 @@ export class Executor<T = any> implements Execution<T> {
     return this.isFulfilled || this.isRejected;
   }
 
+  /**
+   * `true` if an execution is currently pending, or `false` otherwise.
+   */
   get isPending() {
     return this.promise !== null;
   }
@@ -64,31 +39,51 @@ export class Executor<T = any> implements Execution<T> {
    * If other execution was started before the promise returned by the callback is fulfilled then the signal is aborted
    * and the returned result is ignored.
    *
-   * The returned promise is never rejected.
-   *
    * @param cb The callback that returns the new result for the executor to store.
-   * @returns The promise that is resolved when `cb` result is settled.
+   * @returns The result of callback execution.
    */
-  execute(cb: AbortableCallback<T | undefined>): Promise<void> {
+  execute(cb: AbortableCallback<T>): Promise<AsyncResult<T>> {
     this._abortController?.abort();
 
     const abortController = new AbortController();
     this._abortController = abortController;
 
-    const promise = new Promise<T | undefined>(resolve => {
+    const promise = new Promise<T>(resolve => {
       resolve(cb(abortController.signal));
-    }).then(
+    }).then<AsyncResult<T>, AsyncResult<T>>(
       result => {
         if (this._abortController === abortController) {
           this._abortController = null;
           this.resolve(result);
+
+          return {
+            isSettled: true,
+            isFulfilled: true,
+            isRejected: false,
+            result,
+            reason: undefined,
+          };
         }
+        return {
+          isSettled: true,
+          isFulfilled: false,
+          isRejected: true,
+          result: undefined,
+          reason: new Error('Aborted'),
+        };
       },
       reason => {
         if (this._abortController === abortController) {
           this._abortController = null;
           this.reject(reason);
         }
+        return {
+          isSettled: true,
+          isFulfilled: false,
+          isRejected: true,
+          result: undefined,
+          reason,
+        };
       }
     );
 
@@ -100,6 +95,11 @@ export class Executor<T = any> implements Execution<T> {
     return promise;
   }
 
+  /**
+   * Returns a {@link result}, or the default value if the result isn't available.
+   *
+   * @param defaultValue The default value.
+   */
   getOrDefault(defaultValue: T): T {
     return this.isFulfilled ? this.result! : defaultValue;
   }
@@ -132,7 +132,7 @@ export class Executor<T = any> implements Execution<T> {
   /**
    * Aborts pending execution and fulfills it with the given result.
    */
-  resolve(result: Awaitable<T> | undefined): this {
+  resolve(result: Awaitable<T>): this {
     if (isPromiseLike(result)) {
       this.execute(() => result);
       return this;
@@ -165,6 +165,12 @@ export class Executor<T = any> implements Execution<T> {
     return this;
   }
 
+  /**
+   * Subscribes a listener to the execution state changes.
+   *
+   * @param listener The listener that would be notified.
+   * @returns The callback to unsubscribe the listener.
+   */
   subscribe(listener: () => void): () => void {
     return this._pubSub.subscribe(listener);
   }
