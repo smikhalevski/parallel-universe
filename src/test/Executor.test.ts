@@ -12,10 +12,10 @@ describe('Executor', () => {
 
   test('creates a blank executor', () => {
     expect(listenerMock).not.toHaveBeenCalled();
-    expect(executor.settled).toBe(false);
-    expect(executor.pending).toBe(false);
-    expect(executor.fulfilled).toBe(false);
-    expect(executor.rejected).toBe(false);
+    expect(executor.isSettled).toBe(false);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(false);
     expect(executor.result).toBe(undefined);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
@@ -33,9 +33,9 @@ describe('Executor', () => {
     executor.execute(() => 111);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(executor.pending).toBe(false);
-    expect(executor.fulfilled).toBe(true);
-    expect(executor.rejected).toBe(false);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(true);
+    expect(executor.isRejected).toBe(false);
     expect(executor.result).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
@@ -47,9 +47,9 @@ describe('Executor', () => {
     });
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(executor.pending).toBe(false);
-    expect(executor.fulfilled).toBe(false);
-    expect(executor.rejected).toBe(true);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(true);
     expect(executor.result).toBe(undefined);
     expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(null);
@@ -59,9 +59,9 @@ describe('Executor', () => {
     const promise = executor.execute(() => Promise.resolve(111));
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(executor.pending).toBe(true);
-    expect(executor.fulfilled).toBe(false);
-    expect(executor.rejected).toBe(false);
+    expect(executor.isPending).toBe(true);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(false);
     expect(executor.result).toBe(undefined);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(promise);
@@ -69,9 +69,9 @@ describe('Executor', () => {
     await promise;
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.pending).toBe(false);
-    expect(executor.fulfilled).toBe(true);
-    expect(executor.rejected).toBe(false);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(true);
+    expect(executor.isRejected).toBe(false);
     expect(executor.result).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
@@ -81,9 +81,9 @@ describe('Executor', () => {
     const promise = executor.execute(() => Promise.reject(222));
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(executor.pending).toBe(true);
-    expect(executor.fulfilled).toBe(false);
-    expect(executor.rejected).toBe(false);
+    expect(executor.isPending).toBe(true);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(false);
     expect(executor.result).toBe(undefined);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(promise);
@@ -91,9 +91,9 @@ describe('Executor', () => {
     await promise;
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.pending).toBe(false);
-    expect(executor.fulfilled).toBe(false);
-    expect(executor.rejected).toBe(true);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(true);
     expect(executor.result).toBe(undefined);
     expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(null);
@@ -115,7 +115,7 @@ describe('Executor', () => {
 
     expect(cbMock.mock.calls[0][0].aborted).toBe(true);
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.settled).toBe(false);
+    expect(executor.isSettled).toBe(false);
     expect(executor.result).toBe(undefined);
 
     await promise;
@@ -128,9 +128,9 @@ describe('Executor', () => {
     executor.resolve(111);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(executor.pending).toBe(false);
-    expect(executor.fulfilled).toBe(true);
-    expect(executor.rejected).toBe(false);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(true);
+    expect(executor.isRejected).toBe(false);
     expect(executor.result).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
@@ -140,9 +140,9 @@ describe('Executor', () => {
     executor.resolve(Promise.resolve(111));
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(executor.pending).toBe(true);
-    expect(executor.fulfilled).toBe(false);
-    expect(executor.rejected).toBe(false);
+    expect(executor.isPending).toBe(true);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(false);
     expect(executor.result).toBe(undefined);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBeInstanceOf(Promise);
@@ -150,9 +150,9 @@ describe('Executor', () => {
     await executor.promise;
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.pending).toBe(false);
-    expect(executor.fulfilled).toBe(true);
-    expect(executor.rejected).toBe(false);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(true);
+    expect(executor.isRejected).toBe(false);
     expect(executor.result).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
@@ -162,9 +162,9 @@ describe('Executor', () => {
     executor.reject(222);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(executor.pending).toBe(false);
-    expect(executor.fulfilled).toBe(false);
-    expect(executor.rejected).toBe(true);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(true);
     expect(executor.result).toBe(undefined);
     expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(null);
@@ -175,9 +175,9 @@ describe('Executor', () => {
     executor.resolve(111);
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.pending).toBe(false);
-    expect(executor.fulfilled).toBe(true);
-    expect(executor.rejected).toBe(false);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(true);
+    expect(executor.isRejected).toBe(false);
     expect(executor.result).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
@@ -188,9 +188,9 @@ describe('Executor', () => {
     executor.reject(222);
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.pending).toBe(false);
-    expect(executor.fulfilled).toBe(false);
-    expect(executor.rejected).toBe(true);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(true);
     expect(executor.result).toBe(undefined);
     expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(null);
@@ -201,9 +201,9 @@ describe('Executor', () => {
     const promise = executor.execute(() => Promise.resolve(333));
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.pending).toBe(true);
-    expect(executor.fulfilled).toBe(true);
-    expect(executor.rejected).toBe(false);
+    expect(executor.isPending).toBe(true);
+    expect(executor.isFulfilled).toBe(true);
+    expect(executor.isRejected).toBe(false);
     expect(executor.result).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(promise);
@@ -214,9 +214,9 @@ describe('Executor', () => {
     const promise = executor.execute(() => Promise.resolve(111));
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.pending).toBe(true);
-    expect(executor.fulfilled).toBe(false);
-    expect(executor.rejected).toBe(true);
+    expect(executor.isPending).toBe(true);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(true);
     expect(executor.result).toBe(undefined);
     expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(promise);
@@ -257,9 +257,9 @@ describe('Executor', () => {
     executor.clear();
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.pending).toBe(false);
-    expect(executor.fulfilled).toBe(false);
-    expect(executor.rejected).toBe(false);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(false);
     expect(executor.result).toBe(undefined);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
@@ -270,9 +270,9 @@ describe('Executor', () => {
     executor.clear();
 
     expect(listenerMock).toHaveBeenCalledTimes(2);
-    expect(executor.pending).toBe(false);
-    expect(executor.fulfilled).toBe(false);
-    expect(executor.rejected).toBe(false);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(false);
     expect(executor.result).toBe(undefined);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
@@ -284,9 +284,9 @@ describe('Executor', () => {
     executor.clear();
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(executor.pending).toBe(true);
-    expect(executor.fulfilled).toBe(false);
-    expect(executor.rejected).toBe(false);
+    expect(executor.isPending).toBe(true);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(false);
     expect(executor.result).toBe(undefined);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(promise);
@@ -294,9 +294,9 @@ describe('Executor', () => {
     await promise;
 
     expect(listenerMock).toHaveBeenCalledTimes(4);
-    expect(executor.pending).toBe(false);
-    expect(executor.fulfilled).toBe(true);
-    expect(executor.rejected).toBe(false);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(true);
+    expect(executor.isRejected).toBe(false);
     expect(executor.result).toBe(333);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
@@ -308,9 +308,9 @@ describe('Executor', () => {
     executor.abort();
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(executor.pending).toBe(false);
-    expect(executor.fulfilled).toBe(true);
-    expect(executor.rejected).toBe(false);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(true);
+    expect(executor.isRejected).toBe(false);
     expect(executor.result).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
@@ -322,9 +322,9 @@ describe('Executor', () => {
     executor.abort();
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(executor.pending).toBe(false);
-    expect(executor.fulfilled).toBe(false);
-    expect(executor.rejected).toBe(true);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(true);
     expect(executor.result).toBe(undefined);
     expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(null);
@@ -337,9 +337,9 @@ describe('Executor', () => {
     await promise;
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(executor.pending).toBe(false);
-    expect(executor.fulfilled).toBe(true);
-    expect(executor.rejected).toBe(false);
+    expect(executor.isPending).toBe(false);
+    expect(executor.isFulfilled).toBe(true);
+    expect(executor.isRejected).toBe(false);
     expect(executor.result).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);

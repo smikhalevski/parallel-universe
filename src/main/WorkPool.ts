@@ -71,7 +71,7 @@ export class WorkPool {
     for (let i = 0; i < _workers.length; ++i) {
       const worker = _workers[i];
 
-      if (worker.terminated) {
+      if (worker.isTerminated) {
         promises.push(worker.terminate());
         continue;
       }

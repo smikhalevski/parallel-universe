@@ -2,7 +2,7 @@ import { Lock } from '../main';
 
 describe('Lock', () => {
   test('the new lock is unlocked', () => {
-    expect(new Lock().locked).toBe(false);
+    expect(new Lock().isLocked).toBe(false);
   });
 
   test('acquiring the lock returns a promise', async () => {
@@ -41,19 +41,19 @@ describe('Lock', () => {
     const releasePromise1 = lock.acquire();
     const releasePromise2 = lock.acquire();
 
-    expect(lock.locked).toBe(true);
+    expect(lock.isLocked).toBe(true);
 
     const release1 = await releasePromise1;
-    expect(lock.locked).toBe(true);
+    expect(lock.isLocked).toBe(true);
 
     release1();
-    expect(lock.locked).toBe(true);
+    expect(lock.isLocked).toBe(true);
 
     const release2 = await releasePromise2;
-    expect(lock.locked).toBe(true);
+    expect(lock.isLocked).toBe(true);
 
     release2();
-    expect(lock.locked).toBe(false);
+    expect(lock.isLocked).toBe(false);
   });
 
   test('triggers listener when locked', () => {

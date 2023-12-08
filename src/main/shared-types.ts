@@ -21,17 +21,17 @@ export interface AsyncResult<T = any> {
   /**
    * `true` if result was fulfilled or rejected, or `false` otherwise.
    */
-  settled: boolean;
+  isSettled: boolean;
 
   /**
    * `true` if the result was fulfilled with a value, or `false` otherwise.
    */
-  fulfilled: boolean;
+  isFulfilled: boolean;
 
   /**
    * `true` if the result was rejected with a reason, or `false` otherwise.
    */
-  rejected: boolean;
+  isRejected: boolean;
 
   /**
    * The result value or `undefined` if failed.

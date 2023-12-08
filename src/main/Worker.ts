@@ -45,7 +45,7 @@ export class Worker {
   /**
    * `true` if the worker won't consume any new jobs, or `false` otherwise.
    */
-  get terminated(): boolean {
+  get isTerminated(): boolean {
     return this._promise !== undefined;
   }
 
@@ -56,13 +56,13 @@ export class Worker {
    */
   constructor(jobQueue: AsyncQueue<Job>) {
     const next = (): void => {
-      if (this.terminated) {
+      if (this.isTerminated) {
         this._notify!();
         return;
       }
 
       jobQueue.takeAck().then(([job, ack]) => {
-        if (this.terminated) {
+        if (this.isTerminated) {
           return;
         }
 

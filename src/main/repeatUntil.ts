@@ -55,7 +55,7 @@ export function repeatUntil(
         return;
       }
 
-      if (result.fulfilled) {
+      if (result.isFulfilled) {
         resolve(result.result);
       } else {
         reject(result.reason);
@@ -66,10 +66,10 @@ export function repeatUntil(
       toPromise(
         cb,
         result => {
-          next({ settled: true, fulfilled: true, rejected: false, result, reason: undefined });
+          next({ isSettled: true, isFulfilled: true, isRejected: false, result, reason: undefined });
         },
         reason => {
-          next({ settled: true, fulfilled: false, rejected: true, result: undefined, reason });
+          next({ isSettled: true, isFulfilled: false, isRejected: true, result: undefined, reason });
         }
       );
     };

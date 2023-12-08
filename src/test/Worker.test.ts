@@ -25,7 +25,7 @@ describe('Worker', () => {
   });
 
   test('creates a blank worker', () => {
-    expect(worker.terminated).toBe(false);
+    expect(worker.isTerminated).toBe(false);
   });
 
   test('takes sync job from the queue and resolves', async () => {
@@ -153,7 +153,7 @@ describe('Worker', () => {
   test('does not pick jobs after termination', async () => {
     const promise = worker.terminate();
 
-    expect(worker.terminated).toBe(true);
+    expect(worker.isTerminated).toBe(true);
 
     jobQueue.add(job);
 

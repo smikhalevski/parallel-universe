@@ -90,9 +90,9 @@ describe('repeatUntil', () => {
 
     expect(untilMock).toHaveBeenCalledTimes(1);
     expect(untilMock).toHaveBeenCalledWith({
-      settled: true,
-      fulfilled: true,
-      rejected: false,
+      isSettled: true,
+      isFulfilled: true,
+      isRejected: false,
       result: 111,
       reason: undefined,
     });
@@ -109,9 +109,9 @@ describe('repeatUntil', () => {
 
     expect(untilMock).toHaveBeenCalledTimes(1);
     expect(untilMock).toHaveBeenCalledWith({
-      settled: true,
-      fulfilled: false,
-      rejected: true,
+      isSettled: true,
+      isFulfilled: false,
+      isRejected: true,
       result: undefined,
       reason: 111,
     });
@@ -128,9 +128,9 @@ describe('repeatUntil', () => {
 
     expect(msMock).toHaveBeenCalledTimes(1);
     expect(msMock).toHaveBeenCalledWith({
-      settled: true,
-      fulfilled: true,
-      rejected: false,
+      isSettled: true,
+      isFulfilled: true,
+      isRejected: false,
       result: 111,
       reason: undefined,
     });
@@ -155,9 +155,9 @@ describe('repeatUntil', () => {
 
     expect(msMock).toHaveBeenCalledTimes(1);
     expect(msMock).toHaveBeenCalledWith({
-      settled: true,
-      fulfilled: false,
-      rejected: true,
+      isSettled: true,
+      isFulfilled: false,
+      isRejected: true,
       result: undefined,
       reason: 111,
     });

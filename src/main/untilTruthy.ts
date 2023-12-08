@@ -14,5 +14,5 @@ export function untilTruthy<T>(
   cb: () => Awaitable<T>,
   ms?: ((result: AsyncResult<T>) => number) | number
 ): Promise<Exclude<T, 0 | '' | false | null | undefined>> {
-  return repeatUntil<any>(cb, result => result.rejected || result.result, ms);
+  return repeatUntil<any>(cb, result => result.isRejected || result.result, ms);
 }
