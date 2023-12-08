@@ -17,15 +17,15 @@ export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
       return;
     }
 
-    const abort = () => {
+    const abortListener = () => {
       clearTimeout(timeout);
       reject(new Error('Aborted'));
     };
 
-    signal.addEventListener('abort', abort);
+    signal.addEventListener('abort', abortListener);
 
     const timeout = setTimeout(() => {
-      signal.removeEventListener('abort', abort);
+      signal.removeEventListener('abort', abortListener);
       resolve();
     }, ms);
   });

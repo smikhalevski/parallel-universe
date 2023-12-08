@@ -1,4 +1,4 @@
-import { AbortableCallback } from './shared-types';
+import { AbortableCallback } from './types';
 import { Topic } from './Topic';
 import { noop } from './utils';
 import { Job, Worker } from './Worker';

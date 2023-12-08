@@ -1,5 +1,5 @@
 import { repeatUntil } from './repeatUntil';
-import { AsyncResult, Awaitable } from './shared-types';
+import { AsyncResult, Awaitable } from './types';
 
 /**
  * Polls the callback until it returns a truthy value.

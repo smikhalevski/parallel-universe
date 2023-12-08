@@ -8,5 +8,5 @@ export { raceTimeout } from './raceTimeout';
 export { repeatUntil } from './repeatUntil';
 export { sleep } from './sleep';
 export { untilTruthy } from './untilTruthy';
-export { AsyncResult, Awaitable, AbortableCallback } from './shared-types';
+export { AsyncResult, Awaitable, AbortableCallback } from './types';
 export { isPromiseLike } from './utils';

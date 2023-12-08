@@ -1,4 +1,4 @@
-import { AbortableCallback, AsyncResult, Awaitable } from './shared-types';
+import { AbortableCallback, AsyncResult, Awaitable } from './types';
 import { PubSub } from './PubSub';
 import { isEqual, isPromiseLike } from './utils';
 

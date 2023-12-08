@@ -1,4 +1,4 @@
-import { AsyncResult, Awaitable } from './shared-types';
+import { AsyncResult, Awaitable } from './types';
 
 /**
  * Invokes a callback periodically with the given delay between settlements of returned promises until the condition is
