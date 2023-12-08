@@ -3,7 +3,7 @@ import { noop } from './utils';
 /**
  * The protocol provided to the {@link AsyncQueue} consumer, so it can acknowledge that the value would be processed.
  *
- * @template T The taken value.
+ * @template T The value taken from the queue.
  */
 export type AckProtocol<T> = [value: T, ack: (ok?: boolean) => void];
 

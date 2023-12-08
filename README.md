@@ -420,7 +420,7 @@ sleep(100, abortController.signal);
 
 # `raceTimeout`
 
-Rejects with a `TimeoutError` if execution time exceeds the timeout.
+Rejects with an `Error` if execution time exceeds the timeout.
 
 ```ts
 raceTimeout(async () => doSomething(), 100);

@@ -1,4 +1,4 @@
-import { sleep, WorkPool } from '../../main';
+import { sleep, WorkPool } from '../main';
 
 describe('WorkPool', () => {
   let pool: WorkPool;

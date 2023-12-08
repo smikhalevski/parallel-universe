@@ -2,7 +2,7 @@
  * Returns a promise that is fulfilled after a timeout.
  *
  * @param ms The timeout in milliseconds after which to resolve.
- * @param signal The optional signal that instantly aborts the sleep with {@link AbortError}.
+ * @param signal The optional signal that instantly aborts the sleep with an {@link !Error Error}.
  * @returns The promise that is fulfilled after a timeout.
  */
 export function sleep(ms: number, signal?: AbortSignal): Promise<void> {

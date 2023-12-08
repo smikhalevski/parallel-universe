@@ -1,6 +1,6 @@
-import { ExecutorCallback } from '../shared-types';
-import { AsyncQueue } from '../AsyncQueue';
-import { noop } from '../utils';
+import { ExecutorCallback } from './shared-types';
+import { AsyncQueue } from './AsyncQueue';
+import { noop } from './utils';
 import { Job, Worker } from './Worker';
 
 /**

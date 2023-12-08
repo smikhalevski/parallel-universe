@@ -1,6 +1,6 @@
-import { AsyncQueue, sleep } from '../../main';
-import { Job, Worker } from '../../main/pool/Worker';
-import { noop } from '../../main/utils';
+import { AsyncQueue, sleep } from '../main';
+import { Job, Worker } from '../main/Worker';
+import { noop } from '../main/utils';
 
 describe('Worker', () => {
   let jobQueue: AsyncQueue<Job>;

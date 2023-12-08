@@ -1,5 +1,5 @@
-import { AsyncQueue } from '../AsyncQueue';
-import { toPromise } from '../utils';
+import { AsyncQueue } from './AsyncQueue';
+import { toPromise } from './utils';
 
 /**
  * The job that a worker can execute.
