@@ -3,7 +3,7 @@
  *
  * @template T The returned result.
  */
-export type ExecutorCallback<T> = (signal: AbortSignal) => Awaitable<T>;
+export type AbortableCallback<T> = (signal: AbortSignal) => Awaitable<T>;
 
 /**
  * The promise-like value that can be settled using `await`.

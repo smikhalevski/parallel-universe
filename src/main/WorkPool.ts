@@ -1,4 +1,4 @@
-import { ExecutorCallback } from './shared-types';
+import { AbortableCallback } from './shared-types';
 import { AsyncQueue } from './AsyncQueue';
 import { noop } from './utils';
 import { Job, Worker } from './Worker';
@@ -46,7 +46,7 @@ export class WorkPool {
    * @template T The callback result.
    * @returns The promise that is fulfilled with the `cb` result.
    */
-  submit<T>(cb: ExecutorCallback<T>): Promise<T> {
+  submit<T>(cb: AbortableCallback<T>): Promise<T> {
     return new Promise((resolve, reject) => {
       this._jobQueue.add({ callback: cb, resolve, reject });
     });

@@ -1,5 +1,4 @@
 import { AsyncResult, Awaitable } from './shared-types';
-import { toPromise } from './utils';
 
 /**
  * Invokes a callback periodically with the given delay between settlements of returned promises until the condition is
@@ -63,8 +62,9 @@ export function repeatUntil(
     };
 
     const execute = () => {
-      toPromise(
-        cb,
+      new Promise(resolve => {
+        resolve(cb());
+      }).then(
         result => {
           next({ isSettled: true, isFulfilled: true, isRejected: false, result, reason: undefined });
         },

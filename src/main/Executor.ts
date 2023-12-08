@@ -1,6 +1,6 @@
-import { AsyncResult, Awaitable, ExecutorCallback } from './shared-types';
+import { AbortableCallback, AsyncResult, Awaitable } from './shared-types';
 import { PubSub } from './PubSub';
-import { isEqual, isPromiseLike, toPromise } from './utils';
+import { isEqual, isPromiseLike } from './utils';
 
 /**
  * The async result that may be updated over time.
@@ -69,14 +69,15 @@ export class Executor<T = any> implements Execution<T> {
    * @param cb The callback that returns the new result for the executor to store.
    * @returns The promise that is resolved when `cb` result is settled.
    */
-  execute(cb: ExecutorCallback<T | undefined>): Promise<void> {
+  execute(cb: AbortableCallback<T | undefined>): Promise<void> {
     this._abortController?.abort();
 
     const abortController = new AbortController();
     this._abortController = abortController;
 
-    const promise = toPromise(
-      () => cb(abortController.signal),
+    const promise = new Promise<T | undefined>(resolve => {
+      resolve(cb(abortController.signal));
+    }).then(
       result => {
         if (this._abortController === abortController) {
           this._abortController = null;

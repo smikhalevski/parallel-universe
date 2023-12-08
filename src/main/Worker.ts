@@ -1,5 +1,4 @@
 import { AsyncQueue } from './AsyncQueue';
-import { toPromise } from './utils';
 
 /**
  * The job that a worker can execute.
@@ -71,8 +70,9 @@ export class Worker {
         const abortController = new AbortController();
         this._abortController = abortController;
 
-        toPromise(
-          () => job.callback(abortController.signal),
+        new Promise(resolve => {
+          resolve(job.callback(abortController.signal));
+        }).then(
           result => {
             this._abortController = undefined;
             job.resolve(result);

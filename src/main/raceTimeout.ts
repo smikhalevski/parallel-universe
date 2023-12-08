@@ -1,5 +1,4 @@
-import { ExecutorCallback } from './shared-types';
-import { toPromise } from './utils';
+import { AbortableCallback } from './shared-types';
 
 /**
  * Returns a promise that is rejected after the timeout elapses.
@@ -8,7 +7,7 @@ import { toPromise } from './utils';
  * @param ms The timeout after which the promise is rejected with an {@link !Error Error}.
  * @returns The fulfilled value.
  */
-export function raceTimeout<T>(cb: ExecutorCallback<T>, ms: number): Promise<T> {
+export function raceTimeout<T>(cb: AbortableCallback<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
     const abortController = new AbortController();
 
@@ -17,8 +16,9 @@ export function raceTimeout<T>(cb: ExecutorCallback<T>, ms: number): Promise<T> 
       reject(new Error('Timeout'));
     }, ms);
 
-    toPromise(
-      () => cb(abortController.signal),
+    new Promise<T>(resolve => {
+      resolve(cb(abortController.signal));
+    }).then(
       result => {
         clearTimeout(timeout);
         resolve(result);

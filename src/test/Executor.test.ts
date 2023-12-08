@@ -29,10 +29,20 @@ describe('Executor', () => {
     expect(cbMock.mock.calls[0][0].aborted).toBe(false);
   });
 
-  test('synchronously resolves execution', () => {
-    executor.execute(() => 111);
+  test('resolves synchronous callback', async () => {
+    const promise = executor.execute(() => 111);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
+    expect(executor.isPending).toBe(true);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(false);
+    expect(executor.result).toBe(undefined);
+    expect(executor.reason).toBe(undefined);
+    expect(executor.promise).toBe(promise);
+
+    await promise;
+
+    expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(true);
     expect(executor.isRejected).toBe(false);
@@ -41,12 +51,22 @@ describe('Executor', () => {
     expect(executor.promise).toBe(null);
   });
 
-  test('synchronously rejects execution', () => {
-    executor.execute(() => {
+  test('rejects synchronous callback', async () => {
+    const promise = executor.execute(() => {
       throw 222;
     });
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
+    expect(executor.isPending).toBe(true);
+    expect(executor.isFulfilled).toBe(false);
+    expect(executor.isRejected).toBe(false);
+    expect(executor.result).toBe(undefined);
+    expect(executor.reason).toBe(undefined);
+    expect(executor.promise).toBe(promise);
+
+    await promise;
+
+    expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(true);
@@ -232,22 +252,6 @@ describe('Executor', () => {
   test('does not invoke listener if reason did not change after reject', () => {
     executor.reject(222);
     executor.reject(222);
-
-    expect(listenerMock).toHaveBeenCalledTimes(1);
-  });
-
-  test('does not invoke listener if result did not change after execute', () => {
-    executor.resolve(111);
-    executor.execute(() => 111);
-
-    expect(listenerMock).toHaveBeenCalledTimes(1);
-  });
-
-  test('does not invoke listener if reason did not change after execute', () => {
-    executor.reject(222);
-    executor.execute(() => {
-      throw 222;
-    });
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
   });
