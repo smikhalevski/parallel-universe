@@ -11,7 +11,7 @@ export class WorkPool {
   /**
    * The number of active workers in the pool.
    */
-  private _size!: number;
+  private _size = 1;
 
   /**
    * The topic that holds submitted jobs.
@@ -63,7 +63,7 @@ export class WorkPool {
   resize(size: number): Promise<void> {
     const { _workers } = this;
 
-    this._size = size;
+    this._size = Math.max(size | 0, 0);
 
     const promises: Promise<void>[] = [];
 

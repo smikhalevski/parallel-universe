@@ -36,26 +36,10 @@ describe('Executor', () => {
     });
   });
 
-  test('resolves synchronous callback', async () => {
-    const promise = executor.execute(() => 111);
+  test('synchronously resolves after execute', () => {
+    executor.execute(() => 111);
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(executor.isPending).toBe(true);
-    expect(executor.isFulfilled).toBe(false);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(undefined);
-    expect(executor.reason).toBe(undefined);
-    expect(executor.promise).toBe(promise);
-
-    await expect(promise).resolves.toEqual({
-      isSettled: true,
-      isFulfilled: true,
-      isRejected: false,
-      result: 111,
-      reason: undefined,
-    });
-
-    expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(true);
     expect(executor.isRejected).toBe(false);
@@ -64,28 +48,12 @@ describe('Executor', () => {
     expect(executor.promise).toBe(null);
   });
 
-  test('rejects synchronous callback', async () => {
-    const promise = executor.execute(() => {
+  test('synchronously rejects after execute', () => {
+    executor.execute(() => {
       throw 222;
     });
 
     expect(listenerMock).toHaveBeenCalledTimes(1);
-    expect(executor.isPending).toBe(true);
-    expect(executor.isFulfilled).toBe(false);
-    expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(undefined);
-    expect(executor.reason).toBe(undefined);
-    expect(executor.promise).toBe(promise);
-
-    await expect(promise).resolves.toEqual({
-      isSettled: true,
-      isFulfilled: false,
-      isRejected: true,
-      result: undefined,
-      reason: 222,
-    });
-
-    expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(true);

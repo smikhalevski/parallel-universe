@@ -73,7 +73,10 @@ export class Topic<T = any> {
    */
   add(value: T): this {
     this._values.push(value);
-    this._notify?.();
+
+    if (this._notify) {
+      this._notify();
+    }
     return this;
   }
 
@@ -101,8 +104,12 @@ export class Topic<T = any> {
       if (ok) {
         _values.shift();
       }
+
       ackSettled = true;
-      resolveAck?.();
+
+      if (resolveAck) {
+        resolveAck();
+      }
     };
 
     const promise = this._promise.then<AckProtocol<T>>(() => {
