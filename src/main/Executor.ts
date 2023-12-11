@@ -87,7 +87,6 @@ export class Executor<T = any> implements AsyncResult<T> {
     };
 
     let result;
-    let promise;
 
     try {
       result = cb(abortController.signal);
@@ -95,17 +94,17 @@ export class Executor<T = any> implements AsyncResult<T> {
       return Promise.resolve(reject(error));
     }
 
-    if (!isPromiseLike(result)) {
-      return Promise.resolve(fulfill(result));
+    if (isPromiseLike(result)) {
+      const promise = Promise.resolve(result).then(fulfill, reject);
+
+      if (this._abortController === abortController) {
+        this.promise = promise;
+        this._pubSub.publish();
+      }
+      return promise;
     }
 
-    promise = Promise.resolve(result).then(fulfill, reject);
-
-    if (this._abortController === abortController) {
-      this.promise = promise;
-      this._pubSub.publish();
-    }
-    return promise;
+    return Promise.resolve(fulfill(result));
   }
 
   /**
