@@ -1,4 +1,4 @@
-export { Topic, AckProtocol } from './Topic';
+export { AsyncQueue, AckProtocol } from './AsyncQueue';
 export { Blocker } from './Blocker';
 export { Executor } from './Executor';
 export { Lock } from './Lock';

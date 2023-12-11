@@ -1,16 +1,16 @@
-import { sleep, Topic } from '../main';
+import { sleep, AsyncQueue } from '../main';
 import { Job, Worker } from '../main/Worker';
 import { noop } from '../main/utils';
 
 describe('Worker', () => {
-  let topic: Topic<Job>;
+  let queue: AsyncQueue<Job>;
   let worker: Worker;
   let job: Job;
   let jobPromise: Promise<void>;
 
   beforeEach(() => {
-    topic = new Topic();
-    worker = new Worker(topic);
+    queue = new AsyncQueue();
+    worker = new Worker(queue);
 
     job = {
       callback: jest.fn(),
@@ -28,16 +28,16 @@ describe('Worker', () => {
     expect(worker.isTerminated).toBe(false);
   });
 
-  test('takes sync job from the topic and resolves', async () => {
+  test('takes sync job from the queue and resolves', async () => {
     const cbMock = jest.fn(signal => 111);
 
     job.callback = cbMock;
 
-    topic.add(job);
+    queue.add(job);
 
     await jobPromise;
 
-    expect(topic.size).toBe(0);
+    expect(queue.size).toBe(0);
     expect(worker['_abortController']).toBe(undefined);
 
     expect(cbMock).toHaveBeenCalledTimes(1);
@@ -47,16 +47,16 @@ describe('Worker', () => {
     expect(job.reject).not.toHaveBeenCalled();
   });
 
-  test('takes sync job from the topic and rejects', async () => {
+  test('takes sync job from the queue and rejects', async () => {
     job.callback = jest.fn(() => {
       throw new Error('expected');
     });
 
-    topic.add(job);
+    queue.add(job);
 
     await jobPromise;
 
-    expect(topic.size).toBe(0);
+    expect(queue.size).toBe(0);
     expect(worker['_abortController']).toBe(undefined);
 
     expect(job.callback).toHaveBeenCalledTimes(1);
@@ -65,12 +65,12 @@ describe('Worker', () => {
     expect(job.reject).toHaveBeenCalledWith(new Error('expected'));
   });
 
-  test('takes async job from the topic and resolves', async () => {
+  test('takes async job from the queue and resolves', async () => {
     const cbMock = jest.fn(signal => Promise.resolve(111));
 
     job.callback = cbMock;
 
-    topic.add(job);
+    queue.add(job);
 
     await jobPromise;
 
@@ -82,10 +82,10 @@ describe('Worker', () => {
     expect(job.reject).not.toHaveBeenCalled();
   });
 
-  test('takes async job from the topic and rejects', async () => {
+  test('takes async job from the queue and rejects', async () => {
     job.callback = jest.fn(() => Promise.reject(111));
 
-    topic.add(job);
+    queue.add(job);
 
     await jobPromise;
 
@@ -108,8 +108,8 @@ describe('Worker', () => {
       job2.reject = jest.fn(resolve);
     });
 
-    topic.add(job);
-    topic.add(job2);
+    queue.add(job);
+    queue.add(job2);
 
     await jobPromise;
 
@@ -140,8 +140,8 @@ describe('Worker', () => {
       job2.reject = jest.fn(resolve);
     });
 
-    topic.add(job);
-    topic.add(job2);
+    queue.add(job);
+    queue.add(job2);
 
     await jobPromise;
     await job2Promise;
@@ -155,7 +155,7 @@ describe('Worker', () => {
 
     expect(worker.isTerminated).toBe(true);
 
-    topic.add(job);
+    queue.add(job);
 
     await promise;
     await sleep(100);
@@ -171,7 +171,7 @@ describe('Worker', () => {
       return sleep(100);
     });
 
-    topic.add(job);
+    queue.add(job);
 
     await sleep(10);
 
@@ -188,7 +188,7 @@ describe('Worker', () => {
       return Promise.resolve();
     });
 
-    topic.add(job);
+    queue.add(job);
 
     await jobPromise;
 
@@ -204,7 +204,7 @@ describe('Worker', () => {
   test('resolves the termination promise after an async job is completed', async () => {
     job.callback = jest.fn(() => sleep(100));
 
-    topic.add(job);
+    queue.add(job);
 
     await sleep(10);
 

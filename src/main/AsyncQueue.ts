@@ -1,21 +1,21 @@
 import { noop } from './utils';
 
 /**
- * The protocol passed to the {@link Topic} consumer, so it can acknowledge that the value was processed and should be
- * removed from the topic.
+ * The protocol passed to the {@link AsyncQueue} consumer, so it can acknowledge that the value was processed and should be
+ * removed from the queue.
  *
- * @template T The value taken from the topic.
+ * @template T The value taken from the queue.
  */
 export type AckProtocol<T> = [value: T, ack: (ok?: boolean) => void];
 
 /**
- * Asynchronous topic decouples value producers and value consumers.
+ * Asynchronous queue decouples value producers and value consumers.
  *
- * @template T The value stored in the topic.
+ * @template T The value stored in the queue.
  */
-export class Topic<T = any> {
+export class AsyncQueue<T = any> {
   /**
-   * The list of values in the topic.
+   * The list of values in the queue.
    */
   private _values: T[] = [];
 
@@ -25,13 +25,13 @@ export class Topic<T = any> {
   private _promise = Promise.resolve();
 
   /**
-   * Resolves a pending acknowledgement promise, so the consumer can obtain the value from the topic. `undefined` if
+   * Resolves a pending acknowledgement promise, so the consumer can obtain the value from the queue. `undefined` if
    * there's no pending consumer.
    */
   private _notify?: () => void;
 
   /**
-   * Returns the number of values stored in this topic.
+   * Returns the number of values stored in this queue.
    */
   get size() {
     return this._values.length;
@@ -39,9 +39,9 @@ export class Topic<T = any> {
 
   /**
    * Returns a promise that is fulfilled with a value when it is available. Values are taken in the same order they were
-   * added. Taken values are removed from the topic.
+   * added. Taken values are removed from the queue.
    *
-   * @returns The promise that is fulfilled with a value that was added to the topic.
+   * @returns The promise that is fulfilled with a value that was added to the queue.
    */
   take(): Promise<T> {
     return this._takeAck(false).then(okAckValue);
@@ -51,7 +51,7 @@ export class Topic<T = any> {
    * Returns a promise that is fulfilled with an {@link AckProtocol} when a value is available.
    *
    * The acknowledgement is automatically revoked on _the next tick_ after returned promise is fulfilled. Value
-   * remains in the topic is the acknowledgement wasn't called.
+   * remains in the queue is the acknowledgement wasn't called.
    */
   takeAck(): Promise<AckProtocol<T>> {
     return this._takeAck(false);
@@ -67,7 +67,7 @@ export class Topic<T = any> {
   }
 
   /**
-   * Appends the new value to the end of the topic.
+   * Appends the new value to the end of the queue.
    *
    * @param value The value to append.
    */
@@ -81,7 +81,7 @@ export class Topic<T = any> {
   }
 
   /**
-   * Iterates over elements that are available in the topic.
+   * Iterates over elements that are available in the queue.
    */
   [Symbol.iterator](): IterableIterator<T> {
     return this._values[Symbol.iterator]();
@@ -99,7 +99,7 @@ export class Topic<T = any> {
         return;
       }
       if (ackRevoked) {
-        throw new Error('Topic acknowledgement was revoked');
+        throw new Error('AsyncQueue acknowledgement was revoked');
       }
       if (ok) {
         _values.shift();

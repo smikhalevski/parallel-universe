@@ -34,7 +34,6 @@
     "lock",
     "blocker",
     "executor",
-    "topic",
     "queue",
     "concurrency",
     "parallel",
