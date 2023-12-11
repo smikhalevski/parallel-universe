@@ -44,7 +44,7 @@ export class WorkPool {
    *
    * @param cb The callback to invoke.
    * @template T The callback result.
-   * @returns The promise that is fulfilled with the `cb` result.
+   * @returns The promise that is fulfilled with the callback result.
    */
   submit<T>(cb: AbortableCallback<T>): Promise<T> {
     return new Promise((resolve, reject) => {
@@ -54,7 +54,7 @@ export class WorkPool {
 
   /**
    * Changes the size of the pool by spawning or terminating workers. When worker is terminated while processing an
-   * async task, its `signal` is aborted.
+   * async task, its signal is aborted.
    *
    * @param size The non-negative integer number of workers in the pool.
    * @returns The promise that is fulfilled when the pool reaches the requested size: excessive workers were terminated

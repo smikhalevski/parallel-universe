@@ -12,7 +12,6 @@ npm install --save-prod parallel-universe
 
 🚀 [API documentation is available here.](https://smikhalevski.github.io/parallel-universe/)
 
-- [`PubSub`](#pubsub)
 - [`AsyncQueue`](#asyncqueue)
     - [Acknowledgements](#acknowledgements)
     - [Blocking vs non-blocking acknowledgements](#blocking-vs-non-blocking-acknowledgements)
@@ -20,42 +19,11 @@ npm install --save-prod parallel-universe
 - [`Executor`](#executor)
 - [`Lock`](#lock)
 - [`Blocker`](#blocker)
+- [`PubSub`](#pubsub)
 - [`untilTruthy`](#untiltruthy)
 - [`repeatUntil`](#repeatuntil)
 - [`sleep`](#sleep)
 - [`raceTimeout`](#racetimeout)
-
-# `PubSub`
-
-Publish–subscribe pattern implementation that guarantees that published messages are delivered even if some listeners
-throw an error.
-
-```ts
-const pubSub = new PubSub<string>();
-
-pubSub.subscribe(message => {
-  message === 'Pluto' // ⮕ true
-});
-
-pubSub.publish('Pluto');
-```
-
-If listener throws an error, it is passed to an error handler callback:
-
-```ts
-const pubSub = new PubSub<string>(error => {
-  console.log(error);
-});
-
-pubSub.subscribe(() => {
-  throw new Error('Kaput');
-});
-
-pubSub.publish('Mars');
-// Prints 'Error: Kaput' to the console
-```
-
-By default, error handler is set to `PubSub.defaultErrorHandler` which logs errors to the console.
 
 # `AsyncQueue`
 
@@ -69,7 +37,7 @@ queue.add('Mars');
 
 // Consumer takes a value
 queue.take();
-// ⮕ Promise<'Mars'>
+// ⮕ Promise { 'Mars' }
 ```
 
 `add` appends the value to the queue, while `take` removes the value from the queue as soon as it is available. If there
@@ -80,7 +48,7 @@ const queue = new AsyncQueue();
 
 // The returned promise would be resolved after the add call
 queue.take();
-// ⮕ Promise<'Mars'>
+// ⮕ Promise { 'Mars' }
 
 queue.add('Mars');
 ```
@@ -94,10 +62,10 @@ queue.add('Mars');
 queue.add('Venus');
 
 queue.take();
-// ⮕ Promise<'Mars'>
+// ⮕ Promise { 'Mars' }
 
 queue.take();
-// ⮕ Promise<'Venus'>
+// ⮕ Promise { 'Venus' }
 ```
 
 ## Acknowledgements
@@ -142,7 +110,7 @@ queue.takeAck(([value, ack]) => {
 });
 
 queue.take();
-// ⮕ Promise<'Pluto'>
+// ⮕ Promise { 'Pluto' }
 ```
 
 ## Blocking vs non-blocking acknowledgements
@@ -172,7 +140,8 @@ queue.takeBlockingAck()
   });
 ```
 
-Blocking acknowledgement is required if the consumer has to perform asynchronous actions _before_ processing the value.
+Blocking acknowledgement should be used if the consumer has to perform asynchronous actions _before_ processing the
+value.
 
 To guarantee that consumers receive values in the same order as they were provided, blocking acknowledgements prevent
 subsequent consumers from being resolved until `ack` is called. Be sure to call `ack` to prevent the queue from being
@@ -241,21 +210,8 @@ executor.execute(doSomething);
 // ⮕ Promise<void>
 ```
 
-The `execute` method returns a promise that is fulfilled when the promise returned from the callback is settled.
-
-If there's a pending execution, it is aborted and the new execution is started.
-
-To check that executor is currently executing a callback check
-[`pending`](https://smikhalevski.github.io/parallel-universe/classes/Executor.html#pending).
-
-After a promise returned from the executed callback is settled, the execution result and rejection reason are available
-via [`result`](https://smikhalevski.github.io/parallel-universe/classes/Executor.html#result) and
-[`reason`](https://smikhalevski.github.io/parallel-universe/classes/Executor.html#reason).
-
-You can check whether the promise was
-[`fulfilled`](https://smikhalevski.github.io/parallel-universe/classes/Executor.html#fulfilled),
-[`rejected`](https://smikhalevski.github.io/parallel-universe/classes/Executor.html#rejected) or
-[`settled`](https://smikhalevski.github.io/parallel-universe/classes/Executor.html#settled).
+The `execute` method returns a promise that is fulfilled when the promise returned from the callback is settled. If
+there's a pending execution, it is aborted and the new execution is started.
 
 To abort the pending execution, you can use
 an [abort signal](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal)
@@ -309,10 +265,10 @@ lock.acquire();
 // ⮕ Promise<() => void>
 ```
 
-You can check that the lock is [`locked`](https://smikhalevski.github.io/parallel-universe/classes/Lock.html#locked)
+You can check that the lock is [locked](https://smikhalevski.github.io/parallel-universe/classes/Lock.html#isLocked)
 before acquiring a lock.
 
-For example, if you want to force an async callback executions to be sequential you can use ane external lock:
+For example, if you want to force an async callback executions to be sequential you can use an external lock:
 
 ```ts
 const lock = new Lock();
@@ -349,46 +305,36 @@ You can later unblock it passing a value that would fulfill the promise returned
 blocker.unblock('Mars');
 ```
 
-# `untilTruthy`
+# `PubSub`
 
-Returns a promise that is fulfilled when a callback returns a truthy value, or a promise that is fulfilled with a
-truthy value.
-
-```ts
-untilTruthy(async () => doSomething());
-// ⮕ Promise<ReturnType<typeof doSomething>>
-```
-
-If you don't want `untilTruthy` to invoke the callback too frequently, provide a delay in milliseconds:
+Publish–subscribe pattern implementation:
 
 ```ts
-untilTruthy(doSomething, 1_000);
-```
+const pubSub = new PubSub<string>();
 
-Instead of a fixed delay you can pass a function that returns a delay:
+pubSub.subscribe(message => {
+  // Process the message
+});
 
-```ts
-untilTruthy(
-  doSomething,
-  result => result.rejected ? 1_000 : 0
-);
+pubSub.publish('Pluto');
 ```
 
 # `repeatUntil`
 
-Much like a [`untilTruthy`](#untiltruthy) and provides more control when the callback polling is fulfilled.
+Invokes a callback until the condition is met.
 
 ```ts
 repeatUntil(
   // The callback that is invoked repeatedly
   async () => doSomething(),
 
-  // The until clause must return a truthy value to stop the loop
-  result => result.fulfilled,
+  // The condition clause must return a truthy value to stop
+  // the loop
+  result => result.isFulfilled,
 
-  // Optional delay between callback invokations
+  // An optional callback that returns a delay in milliseconds
+  // between iterations
   result => 100,
-  // or just pass a literal number of milliseconds
 );
 // ⮕ Promise<ReturnType<typeof doSomething>>
 ```
@@ -400,7 +346,7 @@ raceTimeout(
   signal =>
     repeatUntil(
       () => doSomething(),
-      result => signal.aborted || result.fulfilled,
+      result => signal.aborted || result.isFulfilled,
       100
     ),
   5000
@@ -411,7 +357,7 @@ raceTimeout(
 # `sleep`
 
 Returns a promise that resolves after a timeout. If signal is aborted then the returned promise is rejected with an
-`AbortError`.
+error.
 
 ```ts
 sleep(100, abortController.signal);
@@ -420,9 +366,16 @@ sleep(100, abortController.signal);
 
 # `raceTimeout`
 
-Rejects with an `Error` if execution time exceeds the timeout.
+Rejects with an error if the execution time exceeds the timeout.
 
 ```ts
-raceTimeout(async () => doSomething(), 100);
+raceTimeout(async signal => doSomething(), 100);
 // ⮕ Promise<ReturnType<typeof doSomething>>
+
+raceTimeout(
+  new Promise(resolve => {
+    // Resolve the promise value
+  }),
+  100
+);
 ```

@@ -72,24 +72,24 @@ describe('repeatUntil', () => {
 
   test('resolves when until callback returns true', async () => {
     const cbMock = jest.fn();
-    const untilMock = jest.fn();
+    const conditionMock = jest.fn();
 
-    untilMock.mockReturnValueOnce(false);
-    untilMock.mockReturnValueOnce(false);
-    untilMock.mockReturnValueOnce(true);
+    conditionMock.mockReturnValueOnce(false);
+    conditionMock.mockReturnValueOnce(false);
+    conditionMock.mockReturnValueOnce(true);
 
-    await repeatUntil(cbMock, untilMock);
+    await repeatUntil(cbMock, conditionMock);
 
     expect(cbMock).toHaveBeenCalledTimes(3);
   });
 
   test('passes result to until callback on resolve', async () => {
-    const untilMock = jest.fn(() => true);
+    const conditionMock = jest.fn(() => true);
 
-    await repeatUntil(() => 111, untilMock);
+    await repeatUntil(() => 111, conditionMock);
 
-    expect(untilMock).toHaveBeenCalledTimes(1);
-    expect(untilMock).toHaveBeenCalledWith({
+    expect(conditionMock).toHaveBeenCalledTimes(1);
+    expect(conditionMock).toHaveBeenCalledWith({
       isSettled: true,
       isFulfilled: true,
       isRejected: false,
@@ -99,16 +99,16 @@ describe('repeatUntil', () => {
   });
 
   test('passes reason to until callback on reject', async () => {
-    const untilMock = jest.fn(() => true);
+    const conditionMock = jest.fn(() => true);
 
     await expect(
       repeatUntil(() => {
         throw 111;
-      }, untilMock)
+      }, conditionMock)
     ).rejects.toBe(111);
 
-    expect(untilMock).toHaveBeenCalledTimes(1);
-    expect(untilMock).toHaveBeenCalledWith({
+    expect(conditionMock).toHaveBeenCalledTimes(1);
+    expect(conditionMock).toHaveBeenCalledWith({
       isSettled: true,
       isFulfilled: false,
       isRejected: true,
@@ -119,12 +119,12 @@ describe('repeatUntil', () => {
 
   test('passes result to ms callback on resolve', async () => {
     const msMock = jest.fn();
-    const untilMock = jest.fn();
+    const conditionMock = jest.fn();
 
-    untilMock.mockReturnValueOnce(false);
-    untilMock.mockReturnValueOnce(true);
+    conditionMock.mockReturnValueOnce(false);
+    conditionMock.mockReturnValueOnce(true);
 
-    await repeatUntil(() => 111, untilMock, msMock);
+    await repeatUntil(() => 111, conditionMock, msMock);
 
     expect(msMock).toHaveBeenCalledTimes(1);
     expect(msMock).toHaveBeenCalledWith({
@@ -138,17 +138,17 @@ describe('repeatUntil', () => {
 
   test('passes reason to ms callback on reject', async () => {
     const msMock = jest.fn();
-    const untilMock = jest.fn();
+    const conditionMock = jest.fn();
 
-    untilMock.mockReturnValueOnce(false);
-    untilMock.mockReturnValueOnce(true);
+    conditionMock.mockReturnValueOnce(false);
+    conditionMock.mockReturnValueOnce(true);
 
     await expect(
       repeatUntil(
         () => {
           throw 111;
         },
-        untilMock,
+        conditionMock,
         msMock
       )
     ).rejects.toBe(111);
