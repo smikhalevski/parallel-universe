@@ -1,16 +1,16 @@
-import { AsyncQueue, sleep } from '../../main';
-import { Job, Worker } from '../../main/pool/Worker';
-import { noop } from '../../main/utils';
+import { sleep, AsyncQueue } from '../main';
+import { Job, Worker } from '../main/Worker';
+import { noop } from '../main/utils';
 
 describe('Worker', () => {
-  let jobQueue: AsyncQueue<Job>;
+  let queue: AsyncQueue<Job>;
   let worker: Worker;
   let job: Job;
   let jobPromise: Promise<void>;
 
   beforeEach(() => {
-    jobQueue = new AsyncQueue();
-    worker = new Worker(jobQueue);
+    queue = new AsyncQueue();
+    worker = new Worker(queue);
 
     job = {
       callback: jest.fn(),
@@ -25,7 +25,7 @@ describe('Worker', () => {
   });
 
   test('creates a blank worker', () => {
-    expect(worker.terminated).toBe(false);
+    expect(worker.isTerminated).toBe(false);
   });
 
   test('takes sync job from the queue and resolves', async () => {
@@ -33,11 +33,11 @@ describe('Worker', () => {
 
     job.callback = cbMock;
 
-    jobQueue.add(job);
+    queue.add(job);
 
     await jobPromise;
 
-    expect(jobQueue.size).toBe(0);
+    expect(queue.size).toBe(0);
     expect(worker['_abortController']).toBe(undefined);
 
     expect(cbMock).toHaveBeenCalledTimes(1);
@@ -52,11 +52,11 @@ describe('Worker', () => {
       throw new Error('expected');
     });
 
-    jobQueue.add(job);
+    queue.add(job);
 
     await jobPromise;
 
-    expect(jobQueue.size).toBe(0);
+    expect(queue.size).toBe(0);
     expect(worker['_abortController']).toBe(undefined);
 
     expect(job.callback).toHaveBeenCalledTimes(1);
@@ -70,7 +70,7 @@ describe('Worker', () => {
 
     job.callback = cbMock;
 
-    jobQueue.add(job);
+    queue.add(job);
 
     await jobPromise;
 
@@ -85,7 +85,7 @@ describe('Worker', () => {
   test('takes async job from the queue and rejects', async () => {
     job.callback = jest.fn(() => Promise.reject(111));
 
-    jobQueue.add(job);
+    queue.add(job);
 
     await jobPromise;
 
@@ -108,8 +108,8 @@ describe('Worker', () => {
       job2.reject = jest.fn(resolve);
     });
 
-    jobQueue.add(job);
-    jobQueue.add(job2);
+    queue.add(job);
+    queue.add(job2);
 
     await jobPromise;
 
@@ -140,8 +140,8 @@ describe('Worker', () => {
       job2.reject = jest.fn(resolve);
     });
 
-    jobQueue.add(job);
-    jobQueue.add(job2);
+    queue.add(job);
+    queue.add(job2);
 
     await jobPromise;
     await job2Promise;
@@ -153,9 +153,9 @@ describe('Worker', () => {
   test('does not pick jobs after termination', async () => {
     const promise = worker.terminate();
 
-    expect(worker.terminated).toBe(true);
+    expect(worker.isTerminated).toBe(true);
 
-    jobQueue.add(job);
+    queue.add(job);
 
     await promise;
     await sleep(100);
@@ -171,7 +171,7 @@ describe('Worker', () => {
       return sleep(100);
     });
 
-    jobQueue.add(job);
+    queue.add(job);
 
     await sleep(10);
 
@@ -188,7 +188,7 @@ describe('Worker', () => {
       return Promise.resolve();
     });
 
-    jobQueue.add(job);
+    queue.add(job);
 
     await jobPromise;
 
@@ -204,7 +204,7 @@ describe('Worker', () => {
   test('resolves the termination promise after an async job is completed', async () => {
     job.callback = jest.fn(() => sleep(100));
 
-    jobQueue.add(job);
+    queue.add(job);
 
     await sleep(10);
 

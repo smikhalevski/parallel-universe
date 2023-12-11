@@ -1,5 +1,5 @@
 import { repeatUntil } from './repeatUntil';
-import { AsyncResult, Awaitable } from './shared-types';
+import { AsyncResult, Awaitable } from './types';
 
 /**
  * Polls the callback until it returns a truthy value.
@@ -10,9 +10,9 @@ import { AsyncResult, Awaitable } from './shared-types';
  * @template T The value returned by the callback.
  * @returns The truthy value.
  */
-export function untilTruthy<T>(
+export function waitFor<T>(
   cb: () => Awaitable<T>,
   ms?: ((result: AsyncResult<T>) => number) | number
 ): Promise<Exclude<T, 0 | '' | false | null | undefined>> {
-  return repeatUntil<any>(cb, result => result.rejected || result.result, ms);
+  return repeatUntil<any>(cb, result => result.isRejected || result.result, ms);
 }

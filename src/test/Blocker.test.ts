@@ -2,14 +2,14 @@ import { Blocker } from '../main';
 
 describe('Blocker', () => {
   test('unblocked by default', () => {
-    expect(new Blocker().blocked).toBe(false);
+    expect(new Blocker().isBlocked).toBe(false);
   });
 
   test('blocks', () => {
     const blocker = new Blocker();
 
     expect(blocker.block()).toBeInstanceOf(Promise);
-    expect(blocker.blocked).toBe(true);
+    expect(blocker.isBlocked).toBe(true);
   });
 
   test('sequential blocks return the same promise', () => {
@@ -26,7 +26,7 @@ describe('Blocker', () => {
     blocker.unblock(111);
 
     await expect(promise).resolves.toBe(111);
-    expect(blocker.blocked).toBe(false);
+    expect(blocker.isBlocked).toBe(false);
   });
 
   test('no-op multiple unblocks', () => {
@@ -37,7 +37,7 @@ describe('Blocker', () => {
     blocker.unblock();
     blocker.unblock();
 
-    expect(blocker.blocked).toBe(false);
+    expect(blocker.isBlocked).toBe(false);
   });
 
   test('triggers listener when blocked', () => {

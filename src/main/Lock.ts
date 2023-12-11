@@ -15,7 +15,7 @@ export class Lock {
   /**
    * `true` if {@link Lock} was acquired and wasn't released yet.
    */
-  get locked() {
+  get isLocked() {
     return this._promise != null;
   }
 
@@ -45,7 +45,7 @@ export class Lock {
   }
 
   /**
-   * Subscribes a listener to the {@link locked} status changes.
+   * Subscribes a listener to the {@link isLocked} status changes.
    *
    * @param listener The listener that would be notified.
    * @returns The callback to unsubscribe the listener.

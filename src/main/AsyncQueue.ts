@@ -1,14 +1,15 @@
 import { noop } from './utils';
 
 /**
- * The protocol provided to the {@link AsyncQueue} consumer, so it can acknowledge that the value would be processed.
+ * The protocol passed to the {@link AsyncQueue} consumer, so it can acknowledge that the value was processed and should be
+ * removed from the queue.
  *
- * @template T The taken value.
+ * @template T The value taken from the queue.
  */
 export type AckProtocol<T> = [value: T, ack: (ok?: boolean) => void];
 
 /**
- * Asynchronous queue decouples value providers and value consumers.
+ * Asynchronous queue decouples value producers and value consumers.
  *
  * @template T The value stored in the queue.
  */
@@ -72,7 +73,10 @@ export class AsyncQueue<T = any> {
    */
   add(value: T): this {
     this._values.push(value);
-    this._notify?.();
+
+    if (this._notify) {
+      this._notify();
+    }
     return this;
   }
 
@@ -100,8 +104,12 @@ export class AsyncQueue<T = any> {
       if (ok) {
         _values.shift();
       }
+
       ackSettled = true;
-      resolveAck?.();
+
+      if (resolveAck) {
+        resolveAck();
+      }
     };
 
     const promise = this._promise.then<AckProtocol<T>>(() => {

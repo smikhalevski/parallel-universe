@@ -1,18 +1,10 @@
-const nodeResolve = require('@rollup/plugin-node-resolve');
-const dts = require('rollup-plugin-dts');
+const typescript = require('@rollup/plugin-typescript');
 
-module.exports = [
-  {
-    input: './gen/index.js',
-    output: [
-      { file: './lib/index.js', format: 'cjs' },
-      { file: './lib/index.mjs', format: 'es' },
-    ],
-    plugins: [nodeResolve()],
-  },
-  {
-    input: './gen/index.d.ts',
-    output: { file: './lib/index.d.ts', format: 'es' },
-    plugins: [dts.default()],
-  },
-];
+module.exports = {
+  input: './lib/index.ts',
+  output: [
+    { format: 'cjs', entryFileNames: '[name].js', dir: './lib', preserveModules: true, sourcemap: 'inline' },
+    { format: 'es', entryFileNames: '[name].mjs', dir: './lib', preserveModules: true, sourcemap: 'inline' },
+  ],
+  plugins: [typescript({ tsconfig: './tsconfig.build.json' })],
+};

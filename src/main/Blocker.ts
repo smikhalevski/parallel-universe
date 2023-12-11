@@ -11,9 +11,9 @@ export class Blocker<T = void> {
   private _release?: (result: T) => void;
 
   /**
-   * `true` if {@link Blocker} is blocked and wasn't unblocked yet.
+   * `true` if {@link Blocker} is blocked and wasn't unblocked yet, or `false` otherwise.
    */
-  get blocked() {
+  get isBlocked() {
     return this._release !== undefined;
   }
 
@@ -45,7 +45,7 @@ export class Blocker<T = void> {
   }
 
   /**
-   * Subscribes a listener to {@link blocked} status changes.
+   * Subscribes a listener to {@link isBlocked} status changes.
    *
    * @param listener The listener that would be notified.
    * @returns The callback to unsubscribe the listener.

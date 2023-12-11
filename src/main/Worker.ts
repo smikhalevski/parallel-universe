@@ -1,5 +1,4 @@
-import { AsyncQueue } from '../AsyncQueue';
-import { toPromise } from '../utils';
+import { AsyncQueue } from './AsyncQueue';
 
 /**
  * The job that a worker can execute.
@@ -45,7 +44,7 @@ export class Worker {
   /**
    * `true` if the worker won't consume any new jobs, or `false` otherwise.
    */
-  get terminated(): boolean {
+  get isTerminated(): boolean {
     return this._promise !== undefined;
   }
 
@@ -56,13 +55,13 @@ export class Worker {
    */
   constructor(jobQueue: AsyncQueue<Job>) {
     const next = (): void => {
-      if (this.terminated) {
+      if (this.isTerminated) {
         this._notify!();
         return;
       }
 
       jobQueue.takeAck().then(([job, ack]) => {
-        if (this.terminated) {
+        if (this.isTerminated) {
           return;
         }
 
@@ -71,8 +70,9 @@ export class Worker {
         const abortController = new AbortController();
         this._abortController = abortController;
 
-        toPromise(
-          () => job.callback(abortController.signal),
+        new Promise(resolve => {
+          resolve(job.callback(abortController.signal));
+        }).then(
           result => {
             this._abortController = undefined;
             job.resolve(result);

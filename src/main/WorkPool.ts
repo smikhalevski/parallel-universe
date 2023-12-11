@@ -1,6 +1,6 @@
-import { ExecutorCallback } from '../shared-types';
-import { AsyncQueue } from '../AsyncQueue';
-import { noop } from '../utils';
+import { AbortableCallback } from './types';
+import { AsyncQueue } from './AsyncQueue';
+import { noop } from './utils';
 import { Job, Worker } from './Worker';
 
 /**
@@ -11,7 +11,7 @@ export class WorkPool {
   /**
    * The number of active workers in the pool.
    */
-  private _size!: number;
+  private _size = 1;
 
   /**
    * The queue that holds submitted jobs.
@@ -44,9 +44,9 @@ export class WorkPool {
    *
    * @param cb The callback to invoke.
    * @template T The callback result.
-   * @returns The promise that is fulfilled with the `cb` result.
+   * @returns The promise that is fulfilled with the callback result.
    */
-  submit<T>(cb: ExecutorCallback<T>): Promise<T> {
+  submit<T>(cb: AbortableCallback<T>): Promise<T> {
     return new Promise((resolve, reject) => {
       this._jobQueue.add({ callback: cb, resolve, reject });
     });
@@ -54,7 +54,7 @@ export class WorkPool {
 
   /**
    * Changes the size of the pool by spawning or terminating workers. When worker is terminated while processing an
-   * async task, its `signal` is aborted.
+   * async task, its signal is aborted.
    *
    * @param size The non-negative integer number of workers in the pool.
    * @returns The promise that is fulfilled when the pool reaches the requested size: excessive workers were terminated
@@ -63,7 +63,7 @@ export class WorkPool {
   resize(size: number): Promise<void> {
     const { _workers } = this;
 
-    this._size = size;
+    this._size = Math.max(size | 0, 0);
 
     const promises: Promise<void>[] = [];
 
@@ -71,7 +71,7 @@ export class WorkPool {
     for (let i = 0; i < _workers.length; ++i) {
       const worker = _workers[i];
 
-      if (worker.terminated) {
+      if (worker.isTerminated) {
         promises.push(worker.terminate());
         continue;
       }

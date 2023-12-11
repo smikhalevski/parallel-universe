@@ -1,6 +1,6 @@
 import { untilTruthy } from '../main';
 
-describe('untilTruthy', () => {
+describe('waitFor', () => {
   test('first callback invocation in synchronous', () => {
     const cbMock = jest.fn();
 
@@ -54,9 +54,9 @@ describe('untilTruthy', () => {
 
     expect(msMock).toHaveBeenCalledTimes(1);
     expect(msMock).toHaveBeenCalledWith({
-      settled: true,
-      fulfilled: true,
-      rejected: false,
+      isSettled: true,
+      isFulfilled: true,
+      isRejected: false,
       result: 0,
       reason: undefined,
     });
