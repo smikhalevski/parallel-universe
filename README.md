@@ -21,6 +21,7 @@ npm install --save-prod parallel-universe
 - [`Blocker`](#blocker)
 - [`PubSub`](#pubsub)
 - [`repeatUntil`](#repeatuntil)
+- [`waitFor`](#waitfor)
 - [`sleep`](#sleep)
 - [`raceTimeout`](#racetimeout)
 
@@ -351,6 +352,21 @@ raceTimeout(
   5000
 );
 // ⮕ Promise<ReturnType<typeof doSomething>>
+```
+
+# `waitFor`
+
+Returns a promise that is fulfilled when a callback returns a truthy value:
+
+```ts
+waitFor(async () => doSomething());
+// ⮕ Promise<ReturnType<typeof doSomething>>
+```
+
+If you don't want `waitFor` to invoke the callback too frequently, provide a delay in milliseconds:
+
+```ts
+waitFor(doSomething, 1_000);
 ```
 
 # `sleep`
