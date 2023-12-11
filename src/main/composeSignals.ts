@@ -3,7 +3,7 @@
  *
  * @param signals The signals to observe.
  */
-export function raceSignals(signals: AbortSignal[]): AbortSignal {
+export function composeSignals(signals: AbortSignal[]): AbortSignal {
   const abortController = new AbortController();
 
   const abortListener = () => {

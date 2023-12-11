@@ -1,11 +1,11 @@
-import { raceSignals } from '../main';
+import { composeSignals } from '../main';
 
-describe('raceSignals', () => {
+describe('composeSignals', () => {
   test('aborts if any of signals is aborted', () => {
     const abortController1 = new AbortController();
     const abortController2 = new AbortController();
 
-    const signal = raceSignals([abortController1.signal, abortController2.signal]);
+    const signal = composeSignals([abortController1.signal, abortController2.signal]);
 
     expect(signal.aborted).toBe(false);
 
@@ -20,7 +20,7 @@ describe('raceSignals', () => {
 
     abortController2.abort();
 
-    const signal = raceSignals([abortController1.signal, abortController2.signal]);
+    const signal = composeSignals([abortController1.signal, abortController2.signal]);
 
     expect(signal.aborted).toBe(true);
   });

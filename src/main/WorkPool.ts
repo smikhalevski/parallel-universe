@@ -16,7 +16,7 @@ export class WorkPool {
   /**
    * The queue that holds submitted jobs.
    */
-  private _queue = new AsyncQueue<Job>();
+  private _jobQueue = new AsyncQueue<Job>();
 
   /**
    * Active workers and workers with pending termination.
@@ -48,7 +48,7 @@ export class WorkPool {
    */
   submit<T>(cb: AbortableCallback<T>): Promise<T> {
     return new Promise((resolve, reject) => {
-      this._queue.add({ callback: cb, resolve, reject });
+      this._jobQueue.add({ callback: cb, resolve, reject });
     });
   }
 
@@ -89,7 +89,7 @@ export class WorkPool {
 
     // Spawn additional workers
     for (let i = 0; i < size; ++i) {
-      _workers.push(new Worker(this._queue));
+      _workers.push(new Worker(this._jobQueue));
     }
 
     return Promise.all(promises).then(noop);

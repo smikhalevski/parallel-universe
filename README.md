@@ -20,7 +20,6 @@ npm install --save-prod parallel-universe
 - [`Lock`](#lock)
 - [`Blocker`](#blocker)
 - [`PubSub`](#pubsub)
-- [`untilTruthy`](#untiltruthy)
 - [`repeatUntil`](#repeatuntil)
 - [`sleep`](#sleep)
 - [`raceTimeout`](#racetimeout)
@@ -321,7 +320,7 @@ pubSub.publish('Pluto');
 
 # `repeatUntil`
 
-Invokes a callback until the condition is met.
+Invokes a callback multiple times until the condition is met.
 
 ```ts
 repeatUntil(
