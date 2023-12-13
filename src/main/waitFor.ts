@@ -2,7 +2,8 @@ import { repeatUntil } from './repeatUntil';
 import { AsyncResult, Awaitable } from './types';
 
 /**
- * Polls the callback until it returns a truthy value.
+ * Polls the callback until it returns a truthy value. If callback throws an error or returns a rejected promise, then
+ * the loop proceeds to the next iteration.
  *
  * @param cb The callback that is periodically invoked.
  * @param ms The number of milliseconds between the settlement of the last promise returned by the `cb` and the next
@@ -14,5 +15,5 @@ export function waitFor<T>(
   cb: () => Awaitable<T>,
   ms?: ((result: AsyncResult<T>) => number) | number
 ): Promise<Exclude<T, 0 | '' | false | null | undefined>> {
-  return repeatUntil<any>(cb, result => result.isRejected || result.result, ms);
+  return repeatUntil<any>(cb, result => result.result, ms);
 }

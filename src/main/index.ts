@@ -8,5 +8,6 @@ export { composeSignals } from './composeSignals';
 export { raceTimeout } from './raceTimeout';
 export { repeatUntil } from './repeatUntil';
 export { sleep } from './sleep';
+export { waitFor } from './waitFor';
 export { AsyncResult, Awaitable, AbortableCallback } from './types';
 export { isPromiseLike } from './utils';

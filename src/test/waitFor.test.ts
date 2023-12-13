@@ -1,4 +1,4 @@
-import { untilTruthy } from '../main';
+import { waitFor } from '../main';
 
 describe('waitFor', () => {
   test('first callback invocation in synchronous', () => {
@@ -7,34 +7,42 @@ describe('waitFor', () => {
     cbMock.mockImplementationOnce(() => false);
     cbMock.mockImplementationOnce(() => true);
 
-    untilTruthy(cbMock);
+    waitFor(cbMock);
 
     expect(cbMock).toHaveBeenCalledTimes(1);
   });
 
-  test('rejects if callback throws synchronously', async () => {
-    await expect(
-      untilTruthy(() => {
-        throw 111;
-      })
-    ).rejects.toEqual(111);
+  test('does not reject if callback throws synchronously', async () => {
+    const cbMock = jest.fn();
+
+    cbMock.mockImplementationOnce(() => {
+      throw 111;
+    });
+    cbMock.mockImplementationOnce(() => 222);
+
+    await expect(waitFor(cbMock)).resolves.toEqual(222);
   });
 
   test('resolves with returned value', async () => {
-    await expect(untilTruthy(() => 111)).resolves.toEqual(111);
+    await expect(waitFor(() => 111)).resolves.toEqual(111);
   });
 
   test('resolves if callback returns a fulfilled promise', async () => {
-    await expect(untilTruthy(() => Promise.resolve(111))).resolves.toEqual(111);
+    await expect(waitFor(() => Promise.resolve(111))).resolves.toEqual(111);
   });
 
-  test('rejects if callback returns rejected promise', async () => {
-    await expect(untilTruthy(() => Promise.reject(111))).rejects.toEqual(111);
+  test('does not reject if callback returns rejected promise', async () => {
+    const cbMock = jest.fn();
+
+    cbMock.mockImplementationOnce(() => Promise.reject(111));
+    cbMock.mockImplementationOnce(() => Promise.resolve(222));
+
+    await expect(waitFor(cbMock)).resolves.toEqual(222);
   });
 
   test('rejects if ms callback throws', async () => {
     await expect(
-      untilTruthy(
+      waitFor(
         () => false,
         () => {
           throw 222;
@@ -50,7 +58,7 @@ describe('waitFor', () => {
     cbMock.mockImplementationOnce(() => 0);
     cbMock.mockImplementationOnce(() => true);
 
-    await untilTruthy(cbMock, msMock);
+    await waitFor(cbMock, msMock);
 
     expect(msMock).toHaveBeenCalledTimes(1);
     expect(msMock).toHaveBeenCalledWith({
