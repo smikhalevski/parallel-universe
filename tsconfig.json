@@ -1,8 +1,6 @@
 {
   "compilerOptions": {
     "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
     "importHelpers": true,
     "moduleResolution": "Node",
     "esModuleInterop": true,
