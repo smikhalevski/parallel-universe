@@ -1,4 +1,4 @@
-export { AsyncQueue, AckProtocol } from './AsyncQueue';
+export { AsyncQueue } from './AsyncQueue';
 export { Blocker } from './Blocker';
 export { Executor } from './Executor';
 export { Lock } from './Lock';
@@ -9,5 +9,7 @@ export { raceTimeout } from './raceTimeout';
 export { repeatUntil } from './repeatUntil';
 export { sleep } from './sleep';
 export { waitFor } from './waitFor';
-export { AsyncResult, Awaitable, AbortableCallback } from './types';
 export { isPromiseLike } from './utils';
+
+export type { AckProtocol } from './AsyncQueue';
+export type { AsyncResult, Awaitable, AbortableCallback } from './types';
