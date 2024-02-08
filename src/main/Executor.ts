@@ -19,9 +19,17 @@ export class Executor<T = any> implements AsyncResult<T> {
    */
   promise: Promise<AsyncResult<T>> | null = null;
 
+  /**
+   * The last callback that was executed by the executor.
+   */
+  executee: AbortableCallback<T> | null = null;
+
   private _pubSub = new PubSub();
   private _abortController: AbortController | null = null;
 
+  /**
+   * `true` if result was fulfilled or rejected, or `false` otherwise.
+   */
   get isSettled() {
     return this.isFulfilled || this.isRejected;
   }
@@ -43,6 +51,8 @@ export class Executor<T = any> implements AsyncResult<T> {
    * @returns The promise that is resolved with the result of the callback execution.
    */
   execute(cb: AbortableCallback<T>): Promise<AsyncResult<T>> {
+    this.executee = cb;
+
     if (this._abortController) {
       this._abortController.abort();
     }
@@ -56,7 +66,6 @@ export class Executor<T = any> implements AsyncResult<T> {
         this.resolve(result);
 
         return {
-          isSettled: true,
           isFulfilled: true,
           isRejected: false,
           result,
@@ -64,7 +73,6 @@ export class Executor<T = any> implements AsyncResult<T> {
         };
       }
       return {
-        isSettled: true,
         isFulfilled: false,
         isRejected: true,
         result: undefined,
@@ -78,7 +86,6 @@ export class Executor<T = any> implements AsyncResult<T> {
         this.reject(reason);
       }
       return {
-        isSettled: true,
         isFulfilled: false,
         isRejected: true,
         result: undefined,

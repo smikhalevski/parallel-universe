@@ -1,32 +1,32 @@
+import { Deferred } from './Deferred';
+
 /**
- * Returns a promise that is fulfilled after a timeout.
+ * Returns a {@link Deferred} that is fulfilled after a timeout.
+ *
+ * Sleep operation can be prematurely {@link Deferred.resolve fulfilled} or {@link Deferred.reject rejected}.
  *
  * @param ms The timeout in milliseconds after which to resolve.
- * @param signal The optional signal that instantly aborts the sleep with an {@link !Error Error}.
- * @returns The promise that is fulfilled after a timeout.
+ * @returns The deferred that is fulfilled after a timeout.
  */
-export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (!signal) {
-      setTimeout(resolve, ms);
-      return;
-    }
+export function sleep(ms: number): Deferred<void>;
 
-    if (signal.aborted) {
-      reject(new Error('Aborted'));
-      return;
-    }
+/**
+ * Returns a {@link Deferred} that is fulfilled after a timeout with the given result.
+ *
+ * Sleep operation can be prematurely {@link Deferred.resolve fulfilled} or {@link Deferred.reject rejected}.
+ *
+ * @param ms The timeout in milliseconds after which to resolve.
+ * @param result The fulfillment result.
+ * @returns The deferred that is fulfilled after a timeout.
+ * @template T The fulfillment result.
+ */
+export function sleep<T>(ms: number, result: T): Deferred<T>;
 
-    const abortListener = () => {
-      clearTimeout(timeout);
-      reject(new Error('Aborted'));
-    };
+export function sleep(ms: number, result?: unknown): Deferred<any> {
+  const deferred = new Deferred();
+  const cancel = clearTimeout.bind(undefined, setTimeout(deferred.resolve, ms, result));
 
-    signal.addEventListener('abort', abortListener);
+  deferred.then(cancel, cancel);
 
-    const timeout = setTimeout(() => {
-      signal.removeEventListener('abort', abortListener);
-      resolve();
-    }, ms);
-  });
+  return deferred;
 }

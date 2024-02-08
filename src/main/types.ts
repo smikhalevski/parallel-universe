@@ -19,11 +19,6 @@ export type Awaitable<T> = PromiseLike<T> | T;
  */
 export interface AsyncResult<T = any> {
   /**
-   * `true` if result was fulfilled or rejected, or `false` otherwise.
-   */
-  isSettled: boolean;
-
-  /**
    * `true` if the result was fulfilled with a value, or `false` otherwise.
    */
   isFulfilled: boolean;

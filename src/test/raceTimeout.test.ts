@@ -1,14 +1,14 @@
-import { raceTimeout } from '../main';
+import { timeout } from '../main';
 
 jest.useFakeTimers();
 
 describe('timeout', () => {
   test('resolves if a promise if fulfilled before a timeout runs out', async () => {
-    await expect(raceTimeout(() => Promise.resolve(111), 1)).resolves.toEqual(111);
+    await expect(timeout(() => Promise.resolve(111), 1)).resolves.toEqual(111);
   });
 
   test('rejects if a timeout runs out', async () => {
-    const promise = raceTimeout(() => new Promise(() => undefined), 100);
+    const promise = timeout(() => new Promise(() => undefined), 100);
 
     jest.advanceTimersByTime(100);
 
@@ -16,6 +16,6 @@ describe('timeout', () => {
   });
 
   test('rejects if a promise is rejected runs out', async () => {
-    await expect(raceTimeout(() => Promise.reject(111), 1)).rejects.toBe(111);
+    await expect(timeout(() => Promise.reject(111), 1)).rejects.toBe(111);
   });
 });

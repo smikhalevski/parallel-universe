@@ -1,5 +1,9 @@
 import { AsyncResult, Awaitable } from './types';
 
+// export function until<T>(cb: AbortableCallback<T>,): AbortablePromise<T> {
+//
+// }
+
 /**
  * Invokes a callback periodically with the given delay between settlements of returned promises until the condition is
  * met.
@@ -67,7 +71,6 @@ export function repeatUntil(
       }).then(
         result => {
           next({
-            isSettled: true,
             isFulfilled: true,
             isRejected: false,
             result,
@@ -76,7 +79,6 @@ export function repeatUntil(
         },
         reason => {
           next({
-            isSettled: true,
             isFulfilled: false,
             isRejected: true,
             result: undefined,

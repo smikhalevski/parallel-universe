@@ -23,7 +23,7 @@ npm install --save-prod parallel-universe
 - [`repeatUntil`](#repeatuntil)
 - [`waitFor`](#waitfor)
 - [`sleep`](#sleep)
-- [`raceTimeout`](#racetimeout)
+- [`timeout`](#racetimeout)
 
 # `AsyncQueue`
 
@@ -339,10 +339,10 @@ repeatUntil(
 // ⮕ Promise<ReturnType<typeof doSomething>>
 ```
 
-You can combine `repeatUntil` with [`raceTimeout`](#racetimeout) to limit the repeat duration:
+You can combine `repeatUntil` with [`timeout`](#racetimeout) to limit the repeat duration:
 
 ```ts
-raceTimeout(
+timeout(
   signal =>
     repeatUntil(
       () => doSomething(),
@@ -379,15 +379,15 @@ sleep(100, abortController.signal);
 // ⮕ Promise<void>
 ```
 
-# `raceTimeout`
+# `timeout`
 
 Rejects with an error if the execution time exceeds the timeout.
 
 ```ts
-raceTimeout(async signal => doSomething(), 100);
+timeout(async signal => doSomething(), 100);
 // ⮕ Promise<ReturnType<typeof doSomething>>
 
-raceTimeout(
+timeout(
   new Promise(resolve => {
     // Resolve the promise value
   }),
