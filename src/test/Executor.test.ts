@@ -16,7 +16,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(undefined);
+    expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
   });
@@ -43,7 +43,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(true);
     expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(111);
+    expect(executor.value).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
   });
@@ -57,7 +57,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(true);
-    expect(executor.result).toBe(undefined);
+    expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(null);
   });
@@ -69,7 +69,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(true);
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(undefined);
+    expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(promise);
 
@@ -85,7 +85,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(true);
     expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(111);
+    expect(executor.value).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
   });
@@ -97,7 +97,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(true);
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(undefined);
+    expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(promise);
 
@@ -113,7 +113,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(true);
-    expect(executor.result).toBe(undefined);
+    expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(null);
   });
@@ -135,7 +135,7 @@ describe('Executor', () => {
     expect(cbMock.mock.calls[0][0].aborted).toBe(true);
     expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(executor.isSettled).toBe(false);
-    expect(executor.result).toBe(undefined);
+    expect(executor.value).toBe(undefined);
 
     await expect(promise2).resolves.toEqual({
       isSettled: true,
@@ -154,7 +154,7 @@ describe('Executor', () => {
     });
 
     expect(listenerMock).toHaveBeenCalledTimes(3);
-    expect(executor.result).toBe(222);
+    expect(executor.value).toBe(222);
   });
 
   test('synchronously resolves', () => {
@@ -164,7 +164,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(true);
     expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(111);
+    expect(executor.value).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
   });
@@ -176,7 +176,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(true);
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(undefined);
+    expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBeInstanceOf(Promise);
 
@@ -186,7 +186,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(true);
     expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(111);
+    expect(executor.value).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
   });
@@ -198,12 +198,12 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(true);
-    expect(executor.result).toBe(undefined);
+    expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(null);
   });
 
-  test('stores only last result', () => {
+  test('stores only last value', () => {
     executor.reject(222);
     executor.resolve(111);
 
@@ -211,7 +211,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(true);
     expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(111);
+    expect(executor.value).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
   });
@@ -224,12 +224,12 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(true);
-    expect(executor.result).toBe(undefined);
+    expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(null);
   });
 
-  test('preserves previous result on execute', () => {
+  test('preserves previous value on execute', () => {
     executor.resolve(111);
     const promise = executor.execute(() => Promise.resolve(333));
 
@@ -237,7 +237,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(true);
     expect(executor.isFulfilled).toBe(true);
     expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(111);
+    expect(executor.value).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(promise);
   });
@@ -250,12 +250,12 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(true);
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(true);
-    expect(executor.result).toBe(undefined);
+    expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(promise);
   });
 
-  test('does not invoke listener if result did not change after resolve', () => {
+  test('does not invoke listener if value did not change after resolve', () => {
     executor.resolve(111);
     executor.resolve(111);
 
@@ -277,7 +277,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(undefined);
+    expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
   });
@@ -290,7 +290,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(undefined);
+    expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
   });
@@ -304,7 +304,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(true);
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(undefined);
+    expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(promise);
 
@@ -314,12 +314,12 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(true);
     expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(333);
+    expect(executor.value).toBe(333);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
   });
 
-  test('abort preserves result intact', () => {
+  test('abort preserves value intact', () => {
     executor.resolve(111);
     executor.execute(() => Promise.resolve(333));
     executor.abort();
@@ -328,7 +328,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(true);
     expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(111);
+    expect(executor.value).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
   });
@@ -342,7 +342,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(true);
-    expect(executor.result).toBe(undefined);
+    expect(executor.value).toBe(undefined);
     expect(executor.reason).toBe(222);
     expect(executor.promise).toBe(null);
   });
@@ -357,7 +357,7 @@ describe('Executor', () => {
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(true);
     expect(executor.isRejected).toBe(false);
-    expect(executor.result).toBe(111);
+    expect(executor.value).toBe(111);
     expect(executor.reason).toBe(undefined);
     expect(executor.promise).toBe(null);
   });
@@ -366,7 +366,7 @@ describe('Executor', () => {
     expect(executor.getOrDefault(222)).toBe(222);
   });
 
-  test('returns a result if an executor is fulfilled', () => {
+  test('returns a value if an executor is fulfilled', () => {
     executor.resolve(111);
     expect(executor.getOrDefault(222)).toBe(111);
   });

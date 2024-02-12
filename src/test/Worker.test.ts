@@ -1,4 +1,4 @@
-import { sleep, AsyncQueue } from '../main';
+import { delay, AsyncQueue } from '../main';
 import { Job, Worker } from '../main/Worker';
 import { noop } from '../main/utils';
 
@@ -158,7 +158,7 @@ describe('Worker', () => {
     queue.add(job);
 
     await promise;
-    await sleep(100);
+    await delay(100);
 
     expect(job.callback).not.toHaveBeenCalled();
   });
@@ -168,12 +168,12 @@ describe('Worker', () => {
 
     job.callback = jest.fn(signal => {
       jobSignal = signal;
-      return sleep(100);
+      return delay(100);
     });
 
     queue.add(job);
 
-    await sleep(10);
+    await delay(10);
 
     await worker.terminate();
 
@@ -202,11 +202,11 @@ describe('Worker', () => {
   });
 
   test('resolves the termination promise after an async job is completed', async () => {
-    job.callback = jest.fn(() => sleep(100));
+    job.callback = jest.fn(() => delay(100));
 
     queue.add(job);
 
-    await sleep(10);
+    await delay(10);
 
     await expect(worker.terminate()).resolves.toBe(undefined);
 

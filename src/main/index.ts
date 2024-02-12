@@ -8,8 +8,8 @@ export { PubSub } from './PubSub';
 export { WorkPool } from './WorkPool';
 export { composeSignals } from './composeSignals';
 export { timeout } from './timeout';
-export { repeatUntil } from './repeatUntil';
-export { sleep } from './sleep';
+export { repeatUntil } from './repeat';
+export { delay } from './delay';
 export { waitFor } from './waitFor';
 export { isPromiseLike } from './utils';
 

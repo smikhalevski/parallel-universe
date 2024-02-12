@@ -1,17 +1,17 @@
-import { AbortableCallback, AsyncResult, Awaitable } from './types';
 import { PubSub } from './PubSub';
+import { AbortableCallback, AsyncResult, Awaitable } from './types';
 import { isEqual, isPromiseLike } from './utils';
 
 /**
  * Manages async callback execution process and provides ways to access execution results, abort or replace an
  * execution, and subscribe to state changes.
  *
- * @template T The result stored by the executor.
+ * @template T The value stored by the executor.
  */
 export class Executor<T = any> implements AsyncResult<T> {
   isFulfilled = false;
   isRejected = false;
-  result: T | undefined;
+  value: T | undefined;
   reason: any;
 
   /**
@@ -68,14 +68,14 @@ export class Executor<T = any> implements AsyncResult<T> {
         return {
           isFulfilled: true,
           isRejected: false,
-          result,
+          value: result,
           reason: undefined,
         };
       }
       return {
         isFulfilled: false,
         isRejected: true,
-        result: undefined,
+        value: undefined,
         reason: new Error('Aborted'),
       };
     };
@@ -88,7 +88,7 @@ export class Executor<T = any> implements AsyncResult<T> {
       return {
         isFulfilled: false,
         isRejected: true,
-        result: undefined,
+        value: undefined,
         reason,
       };
     };
@@ -115,12 +115,12 @@ export class Executor<T = any> implements AsyncResult<T> {
   }
 
   /**
-   * Returns a {@link result}, or the default value if the result isn't available.
+   * Returns a {@link value}, or the default value if the value isn't available.
    *
    * @param defaultValue The default value.
    */
   getOrDefault(defaultValue: T): T {
-    return this.isFulfilled ? this.result! : defaultValue;
+    return this.isFulfilled ? this.value! : defaultValue;
   }
 
   /**
@@ -129,7 +129,7 @@ export class Executor<T = any> implements AsyncResult<T> {
   clear(): this {
     if (this.isSettled) {
       this.isFulfilled = this.isRejected = false;
-      this.result = this.reason = undefined;
+      this.value = this.reason = undefined;
       this._pubSub.publish();
     }
     return this;
@@ -149,21 +149,21 @@ export class Executor<T = any> implements AsyncResult<T> {
   }
 
   /**
-   * Aborts pending execution and fulfills it with the given result.
+   * Aborts pending execution and fulfills it with the given value.
    */
   resolve(result: Awaitable<T>): this {
     if (isPromiseLike(result)) {
       this.execute(() => result);
       return this;
     }
-    if (this.promise || !this.isFulfilled || !isEqual(this.result, result)) {
+    if (this.promise || !this.isFulfilled || !isEqual(this.value, result)) {
       if (this._abortController) {
         this._abortController.abort();
       }
       this._abortController = this.promise = null;
       this.isFulfilled = true;
       this.isRejected = false;
-      this.result = result;
+      this.value = result;
       this.reason = undefined;
       this._pubSub.publish();
     }
@@ -181,7 +181,7 @@ export class Executor<T = any> implements AsyncResult<T> {
       this._abortController = this.promise = null;
       this.isFulfilled = false;
       this.isRejected = true;
-      this.result = undefined;
+      this.value = undefined;
       this.reason = reason;
       this._pubSub.publish();
     }

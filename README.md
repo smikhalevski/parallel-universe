@@ -22,7 +22,7 @@ npm install --save-prod parallel-universe
 - [`PubSub`](#pubsub)
 - [`repeatUntil`](#repeatuntil)
 - [`waitFor`](#waitfor)
-- [`sleep`](#sleep)
+- [`delay`](#sleep)
 - [`timeout`](#racetimeout)
 
 # `AsyncQueue`
@@ -225,7 +225,7 @@ executor.execute(async signal => {
 executor.abort();
 ```
 
-When execution is aborted the current `result` and `reason` remain intact.
+When execution is aborted the current `value` and `reason` remain intact.
 
 To reset the executor to the initial state use:
 
@@ -369,13 +369,13 @@ If you don't want `waitFor` to invoke the callback too frequently, provide a del
 waitFor(doSomething, 1_000);
 ```
 
-# `sleep`
+# `delay`
 
 Returns a promise that resolves after a timeout. If signal is aborted then the returned promise is rejected with an
 error.
 
 ```ts
-sleep(100, abortController.signal);
+delay(100, abortController.signal);
 // ⮕ Promise<void>
 ```
 

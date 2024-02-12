@@ -51,7 +51,7 @@ describe('waitFor', () => {
     ).rejects.toEqual(222);
   });
 
-  test('passes result to ms callback on resolve', async () => {
+  test('passes value to ms callback on resolve', async () => {
     const cbMock = jest.fn();
     const msMock = jest.fn();
 

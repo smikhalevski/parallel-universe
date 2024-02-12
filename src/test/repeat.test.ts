@@ -83,7 +83,7 @@ describe('repeatUntil', () => {
     expect(cbMock).toHaveBeenCalledTimes(3);
   });
 
-  test('passes result to until callback on resolve', async () => {
+  test('passes value to until callback on resolve', async () => {
     const conditionMock = jest.fn(() => true);
 
     await repeatUntil(() => 111, conditionMock);
@@ -117,7 +117,7 @@ describe('repeatUntil', () => {
     });
   });
 
-  test('passes result to ms callback on resolve', async () => {
+  test('passes value to ms callback on resolve', async () => {
     const msMock = jest.fn();
     const conditionMock = jest.fn();
 

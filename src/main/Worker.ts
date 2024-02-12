@@ -12,7 +12,7 @@ export interface Job {
   callback: (signal: AbortSignal) => unknown;
 
   /**
-   * The callback that receives the callback result.
+   * The callback that receives the callback value.
    */
   resolve: (result: any) => void;
 

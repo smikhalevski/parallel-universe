@@ -1,13 +1,26 @@
+import { Deferred } from './Deferred';
+
 /**
  * The promise that can be instantly aborted.
  *
  * @template T The value that the promise is resolved with.
  */
 export class AbortablePromise<T> extends Promise<T> {
+  static from<T>(promise: Promise<T> | Deferred<T>): AbortablePromise<T> {
+    return new AbortablePromise<T>((resolve, reject, signal) => {
+      if (promise instanceof Deferred) {
+        signal.addEventListener('abort', () => {
+          promise.reject(signal.reason);
+        });
+      }
+      resolve(promise);
+    });
+  }
+
   /**
    * Creates a new abortable promise.
    *
-   * @param executor A callback used to initialize the promise.
+   * @param executor A callback that initializes the promise.
    * @template T The value that the deferred is resolved with.
    */
   constructor(
@@ -15,9 +28,9 @@ export class AbortablePromise<T> extends Promise<T> {
       /**
        * The resolve callback used to resolve the promise with a value or the result of another promise.
        *
-       * @param result The fulfillment result.
+       * @param value The fulfillment result.
        */
-      resolve: (result: T | PromiseLike<T>) => void,
+      resolve: (value: T | PromiseLike<T>) => void,
       /**
        * The reject callback used to reject the promise with a provided reason or error.
        *

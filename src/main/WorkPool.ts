@@ -1,3 +1,4 @@
+import { AbortablePromise } from './AbortablePromise';
 import { AbortableCallback } from './types';
 import { AsyncQueue } from './AsyncQueue';
 import { noop } from './utils';
@@ -46,8 +47,8 @@ export class WorkPool {
    * @template T The callback result.
    * @returns The promise that is fulfilled with the callback result.
    */
-  submit<T>(cb: AbortableCallback<T>): Promise<T> {
-    return new Promise((resolve, reject) => {
+  submit<T>(cb: AbortableCallback<T>): AbortablePromise<T> {
+    return new AbortablePromise((resolve, reject, signal) => {
       this._jobQueue.add({ callback: cb, resolve, reject });
     });
   }
