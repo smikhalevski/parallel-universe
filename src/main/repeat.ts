@@ -60,7 +60,7 @@ export function repeat(
           if (signal.aborted) {
             return;
           }
-          if (until !== undefined && until(value)) {
+          if (until != null && until(value)) {
             resolve(value);
             return;
           }

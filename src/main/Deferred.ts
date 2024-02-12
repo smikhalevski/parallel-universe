@@ -1,5 +1,3 @@
-Promise;
-
 /**
  * The promise-like object that can be resolved externally.
  *

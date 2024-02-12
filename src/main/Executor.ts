@@ -1,5 +1,6 @@
+import { AbortablePromise } from './AbortablePromise';
 import { PubSub } from './PubSub';
-import { AbortableCallback, AsyncResult, Awaitable } from './types';
+import { AbortableCallback, Awaitable } from './types';
 import { isEqual, isPromiseLike } from './utils';
 
 /**
@@ -8,24 +9,33 @@ import { isEqual, isPromiseLike } from './utils';
  *
  * @template T The value stored by the executor.
  */
-export class Executor<T = any> implements AsyncResult<T> {
+export class Executor<T = any> {
+  /**
+   * `true` if the result was fulfilled with a value, or `false` otherwise.
+   */
   isFulfilled = false;
+
+  /**
+   * `true` if the result was rejected with a reason, or `false` otherwise.
+   */
   isRejected = false;
+
+  /**
+   * The result value or `undefined` if rejected.
+   */
   value: T | undefined;
+
+  /**
+   * The reason of failure.
+   */
   reason: any;
 
   /**
    * The promise of the pending execution, or `null` if there's no pending execution.
    */
-  promise: Promise<AsyncResult<T>> | null = null;
-
-  /**
-   * The last callback that was executed by the executor.
-   */
-  executee: AbortableCallback<T> | null = null;
+  promise: AbortablePromise<T> | null = null;
 
   private _pubSub = new PubSub();
-  private _abortController: AbortController | null = null;
 
   /**
    * `true` if result was fulfilled or rejected, or `false` otherwise.
@@ -50,68 +60,39 @@ export class Executor<T = any> implements AsyncResult<T> {
    * @param cb The callback that returns the new result for the executor to store.
    * @returns The promise that is resolved with the result of the callback execution.
    */
-  execute(cb: AbortableCallback<T>): Promise<AsyncResult<T>> {
-    this.executee = cb;
-
-    if (this._abortController) {
-      this._abortController.abort();
+  execute(cb: AbortableCallback<T>): AbortablePromise<T> {
+    if (this.promise) {
+      this.promise.abort();
     }
 
-    const abortController = new AbortController();
-    this._abortController = abortController;
+    const promise = (this.promise = new AbortablePromise((resolve, reject, signal) => {
+      signal.addEventListener('abort', () => {
+        if (this.promise === promise) {
+          this.reject(signal.reason);
+        }
+      });
 
-    const fulfill = (result: T): AsyncResult<T> => {
-      if (this._abortController === abortController) {
-        this._abortController = null;
-        this.resolve(result);
+      new Promise<T>(resolve => {
+        resolve(cb(signal));
+      }).then(
+        value => {
+          if (this.promise === promise) {
+            this.resolve(value);
+          }
+          resolve(value);
+        },
+        reason => {
+          if (this.promise === promise) {
+            this.reject(reason);
+          }
+          reject(reason);
+        }
+      );
+    }));
 
-        return {
-          isFulfilled: true,
-          isRejected: false,
-          value: result,
-          reason: undefined,
-        };
-      }
-      return {
-        isFulfilled: false,
-        isRejected: true,
-        value: undefined,
-        reason: new Error('Aborted'),
-      };
-    };
+    this._pubSub.publish();
 
-    const reject = (reason: unknown): AsyncResult<T> => {
-      if (this._abortController === abortController) {
-        this._abortController = null;
-        this.reject(reason);
-      }
-      return {
-        isFulfilled: false,
-        isRejected: true,
-        value: undefined,
-        reason,
-      };
-    };
-
-    let result;
-
-    try {
-      result = cb(abortController.signal);
-    } catch (error) {
-      return Promise.resolve(reject(error));
-    }
-
-    if (isPromiseLike(result)) {
-      const promise = Promise.resolve(result).then(fulfill, reject);
-
-      if (this._abortController === abortController) {
-        this.promise = promise;
-        this._pubSub.publish();
-      }
-      return promise;
-    }
-
-    return Promise.resolve(fulfill(result));
+    return promise;
   }
 
   /**
@@ -140,9 +121,9 @@ export class Executor<T = any> implements AsyncResult<T> {
    * callback is ignored. The signal passed to the executed callback is aborted.
    */
   abort(): this {
-    if (this._abortController) {
-      this._abortController.abort();
-      this._abortController = this.promise = null;
+    if (this.promise) {
+      this.promise.abort();
+      this.promise = null;
       this._pubSub.publish();
     }
     return this;
@@ -151,19 +132,19 @@ export class Executor<T = any> implements AsyncResult<T> {
   /**
    * Aborts pending execution and fulfills it with the given value.
    */
-  resolve(result: Awaitable<T>): this {
-    if (isPromiseLike(result)) {
-      this.execute(() => result);
+  resolve(value: Awaitable<T>): this {
+    if (isPromiseLike(value)) {
+      this.execute(() => value);
       return this;
     }
-    if (this.promise || !this.isFulfilled || !isEqual(this.value, result)) {
-      if (this._abortController) {
-        this._abortController.abort();
+    if (this.promise || !this.isFulfilled || !isEqual(this.value, value)) {
+      if (this.promise) {
+        this.promise.abort();
+        this.promise = null;
       }
-      this._abortController = this.promise = null;
       this.isFulfilled = true;
       this.isRejected = false;
-      this.value = result;
+      this.value = value;
       this.reason = undefined;
       this._pubSub.publish();
     }
@@ -175,10 +156,10 @@ export class Executor<T = any> implements AsyncResult<T> {
    */
   reject(reason: any): this {
     if (this.promise || !this.isRejected || !isEqual(this.reason, reason)) {
-      if (this._abortController) {
-        this._abortController.abort();
+      if (this.promise) {
+        this.promise.abort();
+        this.promise = null;
       }
-      this._abortController = this.promise = null;
       this.isFulfilled = false;
       this.isRejected = true;
       this.value = undefined;

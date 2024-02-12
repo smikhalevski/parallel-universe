@@ -18,23 +18,11 @@ export type Awaitable<T> = PromiseLike<T> | T;
  * @template T The result value.
  */
 export interface AsyncResult<T = any> {
-  /**
-   * `true` if the result was fulfilled with a value, or `false` otherwise.
-   */
   isFulfilled: boolean;
 
-  /**
-   * `true` if the result was rejected with a reason, or `false` otherwise.
-   */
   isRejected: boolean;
 
-  /**
-   * The result value or `undefined` if rejected.
-   */
   value: T | undefined;
 
-  /**
-   * The reason of failure.
-   */
   reason: any;
 }

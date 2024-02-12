@@ -54,7 +54,7 @@ export class Worker {
    * @param jobQueue The queue from which the worker takes jobs.
    */
   constructor(jobQueue: AsyncQueue<Job>) {
-    const next = (): void => {
+    const next = () => {
       if (this.isTerminated) {
         this._notify!();
         return;
