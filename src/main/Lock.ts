@@ -16,7 +16,7 @@ export class Lock {
    * `true` if {@link Lock} was acquired and wasn't released yet.
    */
   get isLocked() {
-    return this._promise != null;
+    return this._promise !== undefined;
   }
 
   /**
@@ -34,7 +34,7 @@ export class Lock {
       this._pubSub.publish();
     };
 
-    if (_promise) {
+    if (_promise !== undefined) {
       this._promise = promise = _promise.then(() => release);
     } else {
       this._promise = promise = Promise.resolve(release);

@@ -3,37 +3,52 @@ import { delay } from '../main';
 jest.useFakeTimers();
 
 describe('delay', () => {
-  test('instantly aborts if an aborted signal is provided', async () => {
-    const abortController = new AbortController();
-    abortController.abort();
-
-    await expect(delay(200, abortController.signal)).rejects.toEqual(new Error('Aborted'));
-  });
-
   test('resolves after a timeout passes', async () => {
-    const listenerMock = jest.fn();
+    const done = jest.fn();
 
-    delay(200).then(() => {
-      listenerMock();
-    });
+    delay(200).then(done);
 
     jest.advanceTimersByTime(100);
     await Promise.resolve();
 
-    expect(listenerMock).not.toHaveBeenCalled();
+    expect(done).not.toHaveBeenCalled();
 
     jest.advanceTimersByTime(100);
     await Promise.resolve();
 
-    expect(listenerMock).toHaveBeenCalledTimes(1);
+    expect(done).toHaveBeenCalledTimes(1);
+
+    jest.advanceTimersByTime(500);
+    await Promise.resolve();
+
+    expect(done).toHaveBeenCalledTimes(1);
   });
 
-  test('rejects when signal is aborted', async () => {
-    const abortController = new AbortController();
-    const promise = delay(200, abortController.signal);
+  test('resolves with undefined', async () => {
+    const promise = delay(200);
 
-    abortController.abort();
+    jest.runAllTimers();
 
-    await expect(promise).rejects.toEqual(new Error('Aborted'));
+    await expect(promise).resolves.toBeUndefined();
+  });
+
+  test('resolves with a value', async () => {
+    const promise = delay(200, 'aaa');
+
+    jest.runAllTimers();
+
+    await expect(promise).resolves.toBe('aaa');
+  });
+
+  test('aborts the delay', async () => {
+    const promise = delay(200);
+
+    promise.abort();
+
+    const expectPromise = expect(promise).rejects.toEqual(new DOMException('', 'AbortError'));
+
+    await jest.runAllTimersAsync();
+
+    await expectPromise;
   });
 });

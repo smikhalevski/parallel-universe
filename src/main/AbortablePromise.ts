@@ -1,27 +1,18 @@
-import { Deferred } from './Deferred';
+import type { Awaitable } from './types';
 
 /**
- * The promise that can be instantly aborted.
+ * The promise that can be aborted.
  *
  * @template T The value that the promise is resolved with.
  */
 export class AbortablePromise<T> extends Promise<T> {
-  static from<T>(promise: Promise<T> | Deferred<T>): AbortablePromise<T> {
-    return new AbortablePromise<T>((resolve, reject, signal) => {
-      if (promise instanceof Deferred) {
-        signal.addEventListener('abort', () => {
-          promise.reject(signal.reason);
-        });
-      }
-      resolve(promise);
-    });
-  }
+  private _abortController: AbortController;
 
   /**
    * Creates a new abortable promise.
    *
    * @param executor A callback that initializes the promise.
-   * @template T The value that the deferred is resolved with.
+   * @template T The value that the promise is resolved with.
    */
   constructor(
     executor: (
@@ -30,7 +21,7 @@ export class AbortablePromise<T> extends Promise<T> {
        *
        * @param value The fulfillment result.
        */
-      resolve: (value: T | PromiseLike<T>) => void,
+      resolve: (value: Awaitable<T>) => void,
       /**
        * The reject callback used to reject the promise with a provided reason or error.
        *
@@ -44,24 +35,24 @@ export class AbortablePromise<T> extends Promise<T> {
     ) => void
   ) {
     const abortController = new AbortController();
-    const signal = abortController.signal;
 
     super((resolve, reject) => {
-      signal.addEventListener('abort', () => {
-        reject(signal.reason);
+      abortController.signal.addEventListener('abort', () => {
+        reject(abortController.signal.reason);
       });
-
-      executor(resolve, reject, signal);
+      executor(resolve, reject, abortController.signal);
     });
 
-    this.abort = abortController.abort.bind(abortController);
+    this._abortController = abortController;
   }
 
   /**
-   * Aborts the signal passed to the promise executor and instantly rejects the promise with the reason.
+   * Aborts the signal passed to the executor and instantly rejects the promise with the reason.
    *
    * @param reason The abort reason. If not explicitly provided, it defaults to an
    * {@link https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror AbortError}.
    */
-  declare abort: (reason?: any) => void;
+  abort(reason?: any): void {
+    this._abortController.abort(reason);
+  }
 }

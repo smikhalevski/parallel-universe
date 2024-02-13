@@ -20,7 +20,7 @@ export function delay(ms: number): AbortablePromise<void>;
 export function delay<T>(ms: number, value: Awaitable<T>): AbortablePromise<T>;
 
 export function delay(ms: number, value?: unknown): AbortablePromise<unknown> {
-  return new AbortablePromise((resolve, reject, signal) => {
+  return new AbortablePromise((resolve, _reject, signal) => {
     const timer = setTimeout(resolve, ms, value);
 
     signal.addEventListener('abort', () => {

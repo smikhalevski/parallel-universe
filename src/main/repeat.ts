@@ -3,7 +3,8 @@ import type { AbortableCallback } from './types';
 
 /**
  * Invokes a callback periodically with the given delay between settlements of returned promises until the condition is
- * met.
+ * met. If callback throws an error or returns a rejected promise, then the promise returned from {@link repeat} is
+ * rejected.
  *
  * @param cb The callback that is periodically invoked.
  * @param ms The number of milliseconds between the settlement of the last promise returned by the callback and the
@@ -18,12 +19,13 @@ import type { AbortableCallback } from './types';
 export function repeat<I, O extends I>(
   cb: AbortableCallback<I>,
   ms: ((value: I, index: number) => number) | number,
-  until: (value: I) => value is O
+  until: (value: I, index: number) => value is O
 ): AbortablePromise<O>;
 
 /**
  * Invokes a callback periodically with the given delay between settlements of returned promises until the condition is
- * met.
+ * met. If callback throws an error or returns a rejected promise, then the promise returned from {@link repeat} is
+ * rejected.
  *
  * @param cb The callback that is periodically invoked.
  * @param ms The number of milliseconds between the settlement of the last promise returned by the callback and the next
@@ -37,13 +39,13 @@ export function repeat<I, O extends I>(
 export function repeat<T>(
   cb: AbortableCallback<T>,
   ms?: ((value: T, index: number) => number) | number,
-  until?: (value: T) => unknown
+  until?: (value: T, index: number) => unknown
 ): AbortablePromise<T>;
 
 export function repeat(
   cb: AbortableCallback<unknown>,
   ms?: ((value: unknown, index: number) => number) | number,
-  until?: (value: unknown) => unknown
+  until?: (value: unknown, index: number) => unknown
 ): AbortablePromise<unknown> {
   return new AbortablePromise((resolve, reject, signal) => {
     let timer: NodeJS.Timeout;
@@ -60,7 +62,7 @@ export function repeat(
           if (signal.aborted) {
             return;
           }
-          if (until != null && until(value)) {
+          if (typeof until === 'function' && until(value, index)) {
             resolve(value);
             return;
           }

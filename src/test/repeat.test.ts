@@ -1,29 +1,19 @@
-import { repeatUntil } from '../main';
+import { delay, repeat } from '../main';
 
-describe('repeatUntil', () => {
+describe('repeat', () => {
   test('first callback invocation in synchronous', () => {
     const cbMock = jest.fn();
 
-    repeatUntil(cbMock, () => true);
+    repeat(cbMock, 0, () => true);
 
     expect(cbMock).toHaveBeenCalledTimes(1);
   });
 
-  test('rejects if callback throws synchronously', async () => {
-    await expect(
-      repeatUntil(
-        () => {
-          throw 111;
-        },
-        () => true
-      )
-    ).rejects.toEqual(111);
-  });
-
   test('resolves with returned value', async () => {
     await expect(
-      repeatUntil(
+      repeat(
         () => 111,
+        0,
         () => true
       )
     ).resolves.toEqual(111);
@@ -31,135 +21,101 @@ describe('repeatUntil', () => {
 
   test('resolves if callback returns a fulfilled promise', async () => {
     await expect(
-      repeatUntil(
+      repeat(
         () => Promise.resolve(111),
+        0,
         () => true
       )
     ).resolves.toEqual(111);
   });
 
-  test('rejects if callback returns rejected promise', async () => {
+  test('rejects if callback throws', async () => {
     await expect(
-      repeatUntil(
-        () => Promise.reject(111),
-        () => true
-      )
-    ).rejects.toEqual(111);
+      repeat(() => {
+        throw new Error('expected');
+      })
+    ).rejects.toEqual(new Error('expected'));
+  });
+
+  test('rejects if callback returns rejected promise', async () => {
+    await expect(repeat(() => Promise.reject(111))).rejects.toEqual(111);
   });
 
   test('rejects if until callback throws', async () => {
     await expect(
-      repeatUntil(
+      repeat(
         () => 111,
+        0,
         () => {
-          throw 222;
+          throw new Error('expected');
         }
       )
-    ).rejects.toEqual(222);
+    ).rejects.toEqual(new Error('expected'));
   });
 
   test('rejects if ms callback throws', async () => {
     await expect(
-      repeatUntil(
+      repeat(
         () => 111,
-        () => false,
         () => {
-          throw 222;
+          throw new Error('expected');
         }
       )
-    ).rejects.toEqual(222);
+    ).rejects.toEqual(new Error('expected'));
   });
 
   test('resolves when until callback returns true', async () => {
     const cbMock = jest.fn();
-    const conditionMock = jest.fn();
+    const untilMock = jest.fn();
 
-    conditionMock.mockReturnValueOnce(false);
-    conditionMock.mockReturnValueOnce(false);
-    conditionMock.mockReturnValueOnce(true);
+    untilMock.mockReturnValueOnce(false);
+    untilMock.mockReturnValueOnce(false);
+    untilMock.mockReturnValueOnce(true);
 
-    await repeatUntil(cbMock, conditionMock);
+    await repeat(cbMock, 0, untilMock);
 
     expect(cbMock).toHaveBeenCalledTimes(3);
   });
 
   test('passes value to until callback on resolve', async () => {
-    const conditionMock = jest.fn(() => true);
+    const untilMock = jest.fn();
 
-    await repeatUntil(() => 111, conditionMock);
+    untilMock.mockReturnValueOnce(false);
+    untilMock.mockReturnValueOnce(true);
 
-    expect(conditionMock).toHaveBeenCalledTimes(1);
-    expect(conditionMock).toHaveBeenCalledWith({
-      isSettled: true,
-      isFulfilled: true,
-      isRejected: false,
-      result: 111,
-      reason: undefined,
-    });
-  });
+    await repeat(() => 111, 0, untilMock);
 
-  test('passes reason to until callback on reject', async () => {
-    const conditionMock = jest.fn(() => true);
-
-    await expect(
-      repeatUntil(() => {
-        throw 111;
-      }, conditionMock)
-    ).rejects.toBe(111);
-
-    expect(conditionMock).toHaveBeenCalledTimes(1);
-    expect(conditionMock).toHaveBeenCalledWith({
-      isSettled: true,
-      isFulfilled: false,
-      isRejected: true,
-      result: undefined,
-      reason: 111,
-    });
+    expect(untilMock).toHaveBeenCalledTimes(2);
+    expect(untilMock).toHaveBeenCalledWith(111, 0);
+    expect(untilMock).toHaveBeenCalledWith(111, 1);
   });
 
   test('passes value to ms callback on resolve', async () => {
     const msMock = jest.fn();
-    const conditionMock = jest.fn();
+    const untilMock = jest.fn();
 
-    conditionMock.mockReturnValueOnce(false);
-    conditionMock.mockReturnValueOnce(true);
+    untilMock.mockReturnValueOnce(false);
+    untilMock.mockReturnValueOnce(false);
+    untilMock.mockReturnValueOnce(true);
 
-    await repeatUntil(() => 111, conditionMock, msMock);
+    await repeat(() => 111, msMock, untilMock);
 
-    expect(msMock).toHaveBeenCalledTimes(1);
-    expect(msMock).toHaveBeenCalledWith({
-      isSettled: true,
-      isFulfilled: true,
-      isRejected: false,
-      result: 111,
-      reason: undefined,
-    });
+    expect(msMock).toHaveBeenCalledTimes(2);
+    expect(msMock).toHaveBeenCalledWith(111, 0);
+    expect(msMock).toHaveBeenCalledWith(111, 1);
   });
 
-  test('passes reason to ms callback on reject', async () => {
-    const msMock = jest.fn();
-    const conditionMock = jest.fn();
+  test('aborts the repetition', async () => {
+    const cbMock = jest.fn();
 
-    conditionMock.mockReturnValueOnce(false);
-    conditionMock.mockReturnValueOnce(true);
+    const promise = repeat(cbMock);
 
-    await expect(
-      repeatUntil(
-        () => {
-          throw 111;
-        },
-        conditionMock,
-        msMock
-      )
-    ).rejects.toBe(111);
+    promise.abort();
 
-    expect(msMock).toHaveBeenCalledTimes(1);
-    expect(msMock).toHaveBeenCalledWith({
-      isSettled: true,
-      isFulfilled: false,
-      isRejected: true,
-      result: undefined,
-      reason: 111,
-    });
+    await expect(promise).rejects.toEqual(new DOMException('', 'AbortError'));
+
+    await delay(100);
+
+    expect(cbMock).toHaveBeenCalledTimes(1);
   });
 });

@@ -21,7 +21,7 @@ export class Executor<T = any> {
   isRejected = false;
 
   /**
-   * The result value or `undefined` if rejected.
+   * The value or `undefined` if rejected.
    */
   value: T | undefined;
 
@@ -65,7 +65,7 @@ export class Executor<T = any> {
       this.promise.abort();
     }
 
-    const promise = (this.promise = new AbortablePromise((resolve, reject, signal) => {
+    const promise = new AbortablePromise<T>((resolve, reject, signal) => {
       signal.addEventListener('abort', () => {
         if (this.promise === promise) {
           this.reject(signal.reason);
@@ -88,7 +88,9 @@ export class Executor<T = any> {
           reject(reason);
         }
       );
-    }));
+    });
+
+    this.promise = promise;
 
     this._pubSub.publish();
 

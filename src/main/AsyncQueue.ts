@@ -1,12 +1,4 @@
-import { noop } from './utils';
-
-/**
- * The protocol passed to the {@link AsyncQueue} consumer, so it can acknowledge that the value was processed and should be
- * removed from the queue.
- *
- * @template T The value taken from the queue.
- */
-export type AckProtocol<T> = [value: T, ack: (ok?: boolean) => void];
+import { AbortablePromise } from './AbortablePromise';
 
 /**
  * Asynchronous queue decouples value producers and value consumers.
@@ -15,12 +7,12 @@ export type AckProtocol<T> = [value: T, ack: (ok?: boolean) => void];
  */
 export class AsyncQueue<T = any> {
   /**
-   * The list of values in the queue.
+   * The elements stored in the queue.
    */
-  private _values: T[] = [];
+  private _elements: T[] = [];
 
   /**
-   * The promise that was returned for the most recent take.
+   * The promise that resolves after the most recent take was acknowledged.
    */
   private _promise = Promise.resolve();
 
@@ -28,120 +20,111 @@ export class AsyncQueue<T = any> {
    * Resolves a pending acknowledgement promise, so the consumer can obtain the value from the queue. `undefined` if
    * there's no pending consumer.
    */
-  private _notify?: () => void;
+  private _resolveTake?: () => void;
 
   /**
    * Returns the number of values stored in this queue.
    */
   get size() {
-    return this._values.length;
+    return this._elements.length;
   }
 
   /**
-   * Returns a promise that is fulfilled with a value when it is available. Values are taken in the same order they were
-   * added. Taken values are removed from the queue.
-   *
-   * @returns The promise that is fulfilled with a value that was added to the queue.
-   */
-  take(): Promise<T> {
-    return this._takeAck(false).then(okAckValue);
-  }
-
-  /**
-   * Returns a promise that is fulfilled with an {@link AckProtocol} when a value is available.
-   *
-   * The acknowledgement is automatically revoked on _the next tick_ after returned promise is fulfilled. Value
-   * remains in the queue is the acknowledgement wasn't called.
-   */
-  takeAck(): Promise<AckProtocol<T>> {
-    return this._takeAck(false);
-  }
-
-  /**
-   * Returns a promise that is fulfilled with an {@link AckProtocol} when a value is available.
-   *
-   * Consequent consumers are blocked until the acknowledgement is called.
-   */
-  takeBlockingAck(): Promise<AckProtocol<T>> {
-    return this._takeAck(true);
-  }
-
-  /**
-   * Appends the new value to the end of the queue.
+   * Appends a new value to the end of the queue.
    *
    * @param value The value to append.
    */
-  add(value: T): this {
-    this._values.push(value);
+  append(value: T): this {
+    this._elements.push(value);
 
-    if (this._notify) {
-      this._notify();
+    if (this._resolveTake !== undefined) {
+      this._resolveTake();
     }
     return this;
+  }
+
+  /**
+   * Returns a promise that is fulfilled with a value when it is available.
+   *
+   * Values are taken in the same order they were appended. Taken values are removed from the queue.
+   *
+   * @returns The promise that is fulfilled with a value that was added to the queue.
+   */
+  take(): AbortablePromise<T> {
+    return new AbortablePromise((resolve, reject, signal) => {
+      const promise = this.takeAck();
+
+      signal.addEventListener('abort', () => {
+        promise.abort(signal.reason);
+      });
+
+      promise.then(([value, ack]) => {
+        ack(!signal.aborted);
+        resolve(value);
+      }, reject);
+    });
+  }
+
+  /**
+   * Returns a promise that is fulfilled with a value and an acknowledgement callback.
+   *
+   * The promise is fulfilled when a value is available. Consequent consumers are blocked until the acknowledgement
+   * callback is invoked. Invoking acknowledgement callback multiple times is a no-op.
+   *
+   * **Note:** Be sure to always call an acknowledgement callback. Otherwise, consequent consumers would never be
+   * fulfilled.
+   *
+   * @returns A tuple that contains a value available in the queue, and a callback that acknowledges that the value was
+   * processed and should be removed from the queue.
+   */
+  takeAck(): AbortablePromise<[value: T, ack: (isTaken?: boolean) => void]> {
+    return new AbortablePromise((resolveTake, _rejectTake, signal) => {
+      this._promise = this._promise.then(() => {
+        if (signal.aborted) {
+          return;
+        }
+
+        return new Promise(resolveAck => {
+          let isAcked = false;
+
+          const ack = (isTaken?: boolean) => {
+            if (isAcked) {
+              return;
+            }
+            if (isTaken === undefined || isTaken) {
+              this._elements.shift();
+            }
+            resolveAck();
+            isAcked = true;
+          };
+
+          if (this._elements.length !== 0) {
+            resolveTake([this._elements[0], ack]);
+            return;
+          }
+
+          const abortTake = () => {
+            this._resolveTake = undefined;
+            resolveAck();
+          };
+
+          signal.addEventListener('abort', abortTake);
+
+          this._resolveTake = () => {
+            signal.removeEventListener('abort', abortTake);
+
+            this._resolveTake = undefined;
+            resolveTake([this._elements[0], ack]);
+          };
+        });
+      });
+    });
   }
 
   /**
    * Iterates over elements that are available in the queue.
    */
   [Symbol.iterator](): IterableIterator<T> {
-    return this._values[Symbol.iterator]();
+    return this._elements[Symbol.iterator]();
   }
-
-  private _takeAck(blocking: boolean): Promise<AckProtocol<T>> {
-    const { _values } = this;
-
-    let ackSettled = false;
-    let ackRevoked = false;
-    let resolveAck: (() => void) | undefined;
-
-    const ack = (ok = true): void => {
-      if (ackSettled) {
-        return;
-      }
-      if (ackRevoked) {
-        throw new Error('AsyncQueue acknowledgement was revoked');
-      }
-      if (ok) {
-        _values.shift();
-      }
-
-      ackSettled = true;
-
-      if (resolveAck) {
-        resolveAck();
-      }
-    };
-
-    const promise = this._promise.then<AckProtocol<T>>(() => {
-      if (_values.length !== 0) {
-        return [_values[0], ack];
-      }
-
-      return new Promise(resolve => {
-        this._notify = () => {
-          this._notify = undefined;
-          resolve([_values[0], ack]);
-        };
-      });
-    });
-
-    if (blocking) {
-      const ackPromise = new Promise<void>(resolve => {
-        resolveAck = resolve;
-      });
-
-      this._promise = promise.then(() => ackPromise);
-    } else {
-      this._promise = promise.then(noop).then(() => {
-        ackRevoked = true;
-      });
-    }
-
-    return promise;
-  }
-}
-
-function okAckValue<T>([value, ack]: AckProtocol<T>): T {
-  ack();
-  return value;
 }

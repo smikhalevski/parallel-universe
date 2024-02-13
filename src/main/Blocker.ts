@@ -8,13 +8,13 @@ import { PubSub } from './PubSub';
 export class Blocker<T = void> {
   private _pubSub = new PubSub();
   private _promise?: Promise<T>;
-  private _release?: (result: T) => void;
+  private _unblock?: (result: T) => void;
 
   /**
    * `true` if {@link Blocker} is blocked and wasn't unblocked yet, or `false` otherwise.
    */
   get isBlocked() {
-    return this._release !== undefined;
+    return this._unblock !== undefined;
   }
 
   /**
@@ -22,9 +22,9 @@ export class Blocker<T = void> {
    * then the same promise is returned.
    */
   block(): Promise<T> {
-    if (!this._promise) {
+    if (this._promise === undefined) {
       this._promise = new Promise(resolve => {
-        this._release = resolve;
+        this._unblock = resolve;
       });
       this._pubSub.publish();
     }
@@ -35,11 +35,11 @@ export class Blocker<T = void> {
    * Fulfills the promise returned from {@link block}. If the blocker isn't blocked then no-op.
    */
   unblock(result: T): void {
-    const { _release } = this;
+    const { _unblock } = this;
 
-    if (_release) {
-      this._release = undefined;
-      _release(result);
+    if (_unblock !== undefined) {
+      this._unblock = undefined;
+      _unblock(result);
       this._pubSub.publish();
     }
   }

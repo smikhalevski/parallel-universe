@@ -33,7 +33,7 @@ describe('Worker', () => {
 
     job.callback = cbMock;
 
-    queue.add(job);
+    queue.append(job);
 
     await jobPromise;
 
@@ -52,7 +52,7 @@ describe('Worker', () => {
       throw new Error('expected');
     });
 
-    queue.add(job);
+    queue.append(job);
 
     await jobPromise;
 
@@ -70,7 +70,7 @@ describe('Worker', () => {
 
     job.callback = cbMock;
 
-    queue.add(job);
+    queue.append(job);
 
     await jobPromise;
 
@@ -85,7 +85,7 @@ describe('Worker', () => {
   test('takes async job from the queue and rejects', async () => {
     job.callback = jest.fn(() => Promise.reject(111));
 
-    queue.add(job);
+    queue.append(job);
 
     await jobPromise;
 
@@ -108,8 +108,8 @@ describe('Worker', () => {
       job2.reject = jest.fn(resolve);
     });
 
-    queue.add(job);
-    queue.add(job2);
+    queue.append(job);
+    queue.append(job2);
 
     await jobPromise;
 
@@ -140,8 +140,8 @@ describe('Worker', () => {
       job2.reject = jest.fn(resolve);
     });
 
-    queue.add(job);
-    queue.add(job2);
+    queue.append(job);
+    queue.append(job2);
 
     await jobPromise;
     await job2Promise;
@@ -155,7 +155,7 @@ describe('Worker', () => {
 
     expect(worker.isTerminated).toBe(true);
 
-    queue.add(job);
+    queue.append(job);
 
     await promise;
     await delay(100);
@@ -171,7 +171,7 @@ describe('Worker', () => {
       return delay(100);
     });
 
-    queue.add(job);
+    queue.append(job);
 
     await delay(10);
 
@@ -188,7 +188,7 @@ describe('Worker', () => {
       return Promise.resolve();
     });
 
-    queue.add(job);
+    queue.append(job);
 
     await jobPromise;
 
@@ -204,7 +204,7 @@ describe('Worker', () => {
   test('resolves the termination promise after an async job is completed', async () => {
     job.callback = jest.fn(() => delay(100));
 
-    queue.add(job);
+    queue.append(job);
 
     await delay(10);
 

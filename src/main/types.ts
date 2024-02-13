@@ -11,18 +11,3 @@ export type AbortableCallback<T> = (signal: AbortSignal) => Awaitable<T>;
  * @template T The result value.
  */
 export type Awaitable<T> = PromiseLike<T> | T;
-
-/**
- * The value of the async execution.
- *
- * @template T The result value.
- */
-export interface AsyncResult<T = any> {
-  isFulfilled: boolean;
-
-  isRejected: boolean;
-
-  value: T | undefined;
-
-  reason: any;
-}

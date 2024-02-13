@@ -28,15 +28,15 @@ export function timeout<T>(cb: AbortableCallback<T> | PromiseLike<T>, ms: number
 
   return new AbortablePromise<T>((resolve, reject, signal) => {
     const timer = setTimeout(() => {
-      reject(new DOMException('Timeout', 'TimeoutError'));
+      reject(new DOMException('', 'TimeoutError'));
     }, ms);
 
     signal.addEventListener('abort', () => {
       clearTimeout(timer);
     });
 
-    new Promise<T>(resolve => {
-      resolve(cb(signal));
+    new Promise<T>(resolveValue => {
+      resolveValue(cb(signal));
     }).then(
       value => {
         clearTimeout(timer);

@@ -33,24 +33,24 @@ Asynchronous queue decouples value providers and value consumers.
 const queue = new AsyncQueue();
 
 // Provider adds a value
-queue.add('Mars');
+queue.append('Mars');
 
 // Consumer takes a value
 queue.take();
 // ⮕ Promise { 'Mars' }
 ```
 
-`add` appends the value to the queue, while `take` removes the value from the queue as soon as it is available. If there
-are no values in the queue upon `take` call then the returned promise is resolved after the next `add` call.
+`append` appends the value to the queue, while `take` removes the value from the queue as soon as it is available. If there
+are no values in the queue upon `take` call then the returned promise is resolved after the next `append` call.
 
 ```ts
 const queue = new AsyncQueue();
 
-// The returned promise would be resolved after the add call
+// The returned promise would be resolved after the append call
 queue.take();
 // ⮕ Promise { 'Mars' }
 
-queue.add('Mars');
+queue.append('Mars');
 ```
 
 Consumers receive values from the queue in the same order they were added by providers:
@@ -58,8 +58,8 @@ Consumers receive values from the queue in the same order they were added by pro
 ```ts
 const queue = new AsyncQueue();
 
-queue.add('Mars');
-queue.add('Venus');
+queue.append('Mars');
+queue.append('Venus');
 
 queue.take();
 // ⮕ Promise { 'Mars' }
@@ -103,7 +103,7 @@ The value that was retained in the queue becomes available for the subsequent co
 ```ts
 const queue = new AsyncQueue();
 
-queue.add('Pluto');
+queue.append('Pluto');
 
 queue.takeAck(([value, ack]) => {
   ack(false); // Tells queue to retain the value

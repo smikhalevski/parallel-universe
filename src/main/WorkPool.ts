@@ -49,7 +49,7 @@ export class WorkPool {
    */
   submit<T>(cb: AbortableCallback<T>): AbortablePromise<T> {
     return new AbortablePromise((resolve, reject, signal) => {
-      this._jobQueue.add({ callback: cb, resolve, reject });
+      this._jobQueue.append({ callback: cb, resolve, reject });
     });
   }
 
