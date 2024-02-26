@@ -12,4 +12,5 @@ export { timeout } from './timeout';
 export { waitFor } from './waitFor';
 export { isPromiseLike } from './utils';
 
+export type { ValueAck } from './AsyncQueue';
 export type { Awaitable, AbortableCallback } from './types';
