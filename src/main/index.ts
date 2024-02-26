@@ -6,9 +6,9 @@ export { Executor } from './Executor';
 export { Lock } from './Lock';
 export { PubSub } from './PubSub';
 export { WorkPool } from './WorkPool';
-export { timeout } from './timeout';
-export { repeat } from './repeat';
 export { delay } from './delay';
+export { repeat } from './repeat';
+export { timeout } from './timeout';
 export { waitFor } from './waitFor';
 export { isPromiseLike } from './utils';
 
