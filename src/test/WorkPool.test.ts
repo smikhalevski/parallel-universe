@@ -1,4 +1,5 @@
-import { sleep, WorkPool } from '../main';
+import { delay, WorkPool } from '../main';
+import { noop } from '../main/utils';
 
 describe('WorkPool', () => {
   let pool: WorkPool;
@@ -81,15 +82,15 @@ describe('WorkPool', () => {
   test('terminates excessive workers with pending jobs', async () => {
     const resolveMock = jest.fn();
 
-    const cbMock1 = jest.fn(() => sleep(100).then(() => resolveMock(111)));
-    const cbMock2 = jest.fn(() => sleep(100).then(() => resolveMock(222)));
+    const cbMock1 = jest.fn(() => delay(100).then(() => resolveMock(111)));
+    const cbMock2 = jest.fn(() => delay(100).then(() => resolveMock(222)));
 
     pool.resize(2);
 
     pool.submit(cbMock1);
-    pool.submit(cbMock2);
+    pool.submit(cbMock2).catch(noop);
 
-    await sleep(10);
+    await delay(10);
 
     await pool.resize(1);
 

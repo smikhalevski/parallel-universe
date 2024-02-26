@@ -1,26 +1,39 @@
 import { waitFor } from '../main';
 
 describe('waitFor', () => {
-  test('first callback invocation in synchronous', () => {
-    const cbMock = jest.fn();
+  test('first callback invocation in synchronous', async () => {
+    const cbMock = jest.fn(() => true);
 
-    cbMock.mockImplementationOnce(() => false);
-    cbMock.mockImplementationOnce(() => true);
-
-    waitFor(cbMock);
+    await waitFor(cbMock);
 
     expect(cbMock).toHaveBeenCalledTimes(1);
   });
 
-  test('does not reject if callback throws synchronously', async () => {
+  test('invokes callback until truthy value is returned', async () => {
     const cbMock = jest.fn();
 
-    cbMock.mockImplementationOnce(() => {
-      throw 111;
-    });
-    cbMock.mockImplementationOnce(() => 222);
+    cbMock.mockImplementationOnce(() => false);
+    cbMock.mockImplementationOnce(() => '');
+    cbMock.mockImplementationOnce(() => 0);
+    cbMock.mockImplementationOnce(() => null);
+    cbMock.mockImplementationOnce(() => undefined);
+    cbMock.mockImplementationOnce(() => 'aaa');
 
-    await expect(waitFor(cbMock)).resolves.toEqual(222);
+    await expect(waitFor(cbMock)).resolves.toBe('aaa');
+
+    expect(cbMock).toHaveBeenCalledTimes(6);
+  });
+
+  test('rejects if callback throws', async () => {
+    await expect(
+      waitFor(() => {
+        throw new Error('expected');
+      })
+    ).rejects.toEqual(new Error('expected'));
+  });
+
+  test('rejects if callback returns a rejected promise', async () => {
+    await expect(waitFor(() => Promise.reject(111))).rejects.toBe(111);
   });
 
   test('resolves with returned value', async () => {
@@ -31,42 +44,27 @@ describe('waitFor', () => {
     await expect(waitFor(() => Promise.resolve(111))).resolves.toEqual(111);
   });
 
-  test('does not reject if callback returns rejected promise', async () => {
-    const cbMock = jest.fn();
-
-    cbMock.mockImplementationOnce(() => Promise.reject(111));
-    cbMock.mockImplementationOnce(() => Promise.resolve(222));
-
-    await expect(waitFor(cbMock)).resolves.toEqual(222);
-  });
-
   test('rejects if ms callback throws', async () => {
     await expect(
       waitFor(
         () => false,
         () => {
-          throw 222;
+          throw new Error('expected');
         }
       )
-    ).rejects.toEqual(222);
+    ).rejects.toEqual(new Error('expected'));
   });
 
-  test('passes result to ms callback on resolve', async () => {
+  test('passes value to ms callback on resolve', async () => {
     const cbMock = jest.fn();
     const msMock = jest.fn();
 
-    cbMock.mockImplementationOnce(() => 0);
+    cbMock.mockImplementationOnce(() => '');
     cbMock.mockImplementationOnce(() => true);
 
     await waitFor(cbMock, msMock);
 
     expect(msMock).toHaveBeenCalledTimes(1);
-    expect(msMock).toHaveBeenCalledWith({
-      isSettled: true,
-      isFulfilled: true,
-      isRejected: false,
-      result: 0,
-      reason: undefined,
-    });
+    expect(msMock).toHaveBeenNthCalledWith(1, '', 0);
   });
 });

@@ -1,7 +1,7 @@
 /**
- * The callback that receives a signal that is aborted when execution must be stopped, and returns the execution result.
+ * The callback that receives a signal that is aborted when execution must be stopped, and returns the execution value.
  *
- * @template T The returned result.
+ * @template T The returned value.
  */
 export type AbortableCallback<T> = (signal: AbortSignal) => Awaitable<T>;
 
@@ -11,35 +11,3 @@ export type AbortableCallback<T> = (signal: AbortSignal) => Awaitable<T>;
  * @template T The result value.
  */
 export type Awaitable<T> = PromiseLike<T> | T;
-
-/**
- * The result of the async execution.
- *
- * @template T The result value.
- */
-export interface AsyncResult<T = any> {
-  /**
-   * `true` if result was fulfilled or rejected, or `false` otherwise.
-   */
-  isSettled: boolean;
-
-  /**
-   * `true` if the result was fulfilled with a value, or `false` otherwise.
-   */
-  isFulfilled: boolean;
-
-  /**
-   * `true` if the result was rejected with a reason, or `false` otherwise.
-   */
-  isRejected: boolean;
-
-  /**
-   * The result value or `undefined` if failed.
-   */
-  result: T | undefined;
-
-  /**
-   * The reason of failure.
-   */
-  reason: any;
-}
