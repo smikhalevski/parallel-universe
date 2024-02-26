@@ -92,7 +92,7 @@ describe('AsyncQueue', () => {
     queue.append(111);
 
     await queue.takeAck().then(([, ack]) => {
-      ack();
+      ack(true);
     });
 
     expect(queue.size).toBe(0);
@@ -103,12 +103,12 @@ describe('AsyncQueue', () => {
     const queue = new AsyncQueue();
 
     const promise1 = queue.takeAck().then(([value, ack]) => {
-      ack();
+      ack(true);
       consumerMock(value);
     });
 
     const promise2 = queue.takeAck().then(([value, ack]) => {
-      ack();
+      ack(true);
       consumerMock(value);
     });
 
@@ -167,7 +167,7 @@ describe('AsyncQueue', () => {
 
     promise.then(([, ack]) => {
       promise.abort();
-      ack();
+      ack(true);
     });
 
     queue.append(111);

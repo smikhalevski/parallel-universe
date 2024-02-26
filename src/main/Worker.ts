@@ -70,7 +70,7 @@ export class Worker {
             return;
           }
 
-          ack();
+          ack(true);
 
           abortController.signal.addEventListener('abort', () => {
             job.reject(abortController.signal.reason);

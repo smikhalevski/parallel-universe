@@ -5,7 +5,7 @@ import { isEqual, isPromiseLike } from './utils';
 
 /**
  * Manages async callback execution process and provides ways to access execution results, abort or replace an
- * execution, and subscribe to state changes.
+ * execution, and subscribe to its state changes.
  *
  * @template T The value stored by the executor.
  */
@@ -125,7 +125,7 @@ export class Executor<T = any> {
    * callback is ignored. The signal passed to the executed callback is aborted.
    */
   abort(): this {
-    if (this.promise) {
+    if (this.promise !== null) {
       this.promise.abort();
       this.promise = null;
       this._pubSub.publish();
@@ -141,8 +141,8 @@ export class Executor<T = any> {
       this.execute(() => value);
       return this;
     }
-    if (this.promise || !this.isFulfilled || !isEqual(this.value, value)) {
-      if (this.promise) {
+    if (this.promise !== null || !this.isFulfilled || !isEqual(this.value, value)) {
+      if (this.promise !== null) {
         this.promise.abort();
         this.promise = null;
       }
@@ -159,8 +159,8 @@ export class Executor<T = any> {
    * Instantly aborts pending execution and rejects with the given reason.
    */
   reject(reason: any): this {
-    if (this.promise || !this.isRejected || !isEqual(this.reason, reason)) {
-      if (this.promise) {
+    if (this.promise !== null || !this.isRejected || !isEqual(this.reason, reason)) {
+      if (this.promise !== null) {
         this.promise.abort();
         this.promise = null;
       }

@@ -6,7 +6,7 @@ import { AbortablePromise } from './AbortablePromise';
  *
  * @template T The value taken from the queue.
  */
-export type ValueAck<T> = [value: T, ack: (isTaken?: boolean) => void];
+export type ValueAck<T> = [value: T, ack: (isTaken: boolean) => void];
 
 /**
  * Asynchronous queue decouples value producers and value consumers.
@@ -97,11 +97,11 @@ export class AsyncQueue<T = any> {
         return new Promise(resolveAck => {
           let isAcked = false;
 
-          const ack = (isTaken?: boolean) => {
+          const ack = (isTaken: boolean) => {
             if (isAcked) {
               return;
             }
-            if (isTaken === undefined || isTaken) {
+            if (isTaken) {
               this._elements.shift();
             }
             resolveAck();
