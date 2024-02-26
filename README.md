@@ -12,18 +12,58 @@ npm install --save-prod parallel-universe
 
 🚀 [API documentation is available here.](https://smikhalevski.github.io/parallel-universe/)
 
+- [`AbortablePromise`](#abortablepromise)
+- [`Deferred`](#deferred)
 - [`AsyncQueue`](#asyncqueue)
-    - [Acknowledgements](#acknowledgements)
-    - [Blocking vs non-blocking acknowledgements](#blocking-vs-non-blocking-acknowledgements)
 - [`WorkPool`](#workpool)
 - [`Executor`](#executor)
 - [`Lock`](#lock)
 - [`Blocker`](#blocker)
 - [`PubSub`](#pubsub)
-- [`repeatUntil`](#repeatuntil)
+- [`repeat`](#repeat)
 - [`waitFor`](#waitfor)
-- [`delay`](#sleep)
-- [`timeout`](#racetimeout)
+- [`delay`](#delay)
+- [`timeout`](#timeout)
+
+# `AbortablePromise`
+
+The promise that can be aborted.
+
+```ts
+const promise = new AbortablePromise((resolve, reject, signal) => {
+  signal.addEventListener('abort', () => {
+    // Listen to the signal being aborted
+  });
+  
+  // Resolve or reject the promise
+});
+
+promises.abort();
+```
+
+When [`abort`](https://smikhalevski.github.io/parallel-universe/classes/AbortablePromise.html#abort) is called,
+the promise is instantly rejected with
+an [`AbortError`](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror) if it isn't settled yet.
+
+Provide a custom abort reason:
+
+```ts
+promise.abort(new Error('Operation aborted'));
+```
+
+# `Deferred`
+
+The promise that can be resolved externally.
+
+```ts
+const promise = new Deferred<string>();
+
+promise.then(value => {
+  doSomething(value);
+});
+
+promises.resolve('Mars');
+```
 
 # `AsyncQueue`
 
@@ -37,18 +77,18 @@ queue.append('Mars');
 
 // Consumer takes a value
 queue.take();
-// ⮕ Promise { 'Mars' }
+// ⮕ AbortablePromise { 'Mars' }
 ```
 
-`append` appends the value to the queue, while `take` removes the value from the queue as soon as it is available. If there
-are no values in the queue upon `take` call then the returned promise is resolved after the next `append` call.
+`append` appends the value to the queue, while `take` removes the value from the queue as soon as it is available.
+If there are no values in the queue upon `take` call then the returned promise is resolved after the next `append` call.
 
 ```ts
 const queue = new AsyncQueue();
 
 // The returned promise would be resolved after the append call
 queue.take();
-// ⮕ Promise { 'Mars' }
+// ⮕ AbortablePromise { 'Mars' }
 
 queue.append('Mars');
 ```
@@ -62,34 +102,42 @@ queue.append('Mars');
 queue.append('Venus');
 
 queue.take();
-// ⮕ Promise { 'Mars' }
+// ⮕ AbortablePromise { 'Mars' }
 
 queue.take();
-// ⮕ Promise { 'Venus' }
+// ⮕ AbortablePromise { 'Venus' }
 ```
 
 ## Acknowledgements
 
 In some cases removing the value from the queue isn't the desirable behavior, since the consumer may not be able to
-process the taken value. Use `takeAck` to examine available value and acknowledge that it can be processed.
+process the taken value. Use `takeAck` to examine available value and acknowledge that it can be processed. `takeAck`
+returns a tuple of the available value and the acknowledgement callback. The consumer should call `ack` to notify
+the queue on weather to remove the value from the queue or to retain it.
 
 ```ts
 queue.takeAck().then(([value, ack]) => {
-  if (doSomeChecks()) {
-    ack();
-    doSomething(value);
+  try {
+    if (doSomeChecks()) {
+      ack(true);
+      doSomething(value);
+    } 
+  } finally {
+    ack(false);
   }
 });
 ```
 
-`takeAck` returns a tuple of the available value and the acknowledgement callback. The consumer should call `ack` to
-notify the queue on weather to remove the value from the queue or to retain it.
+To guarantee that consumers receive values in the same order as they were provided, acknowledgements prevent subsequent
+consumers from being fulfilled until `ack` is called. Be sure to call `ack` to prevent the queue from being stuck
+indefinitely.
+
+Calling `ack` multiple times is safe, since only the first call would have an effect.
 
 To acknowledge that the consumer can process the value, and the value must be removed from the queue use:
 
 ```ts
-ack();
-// or ack(true)
+ack(true);
 ```
 
 To acknowledge that the value should be retained by the queue use:
@@ -110,57 +158,7 @@ queue.takeAck(([value, ack]) => {
 });
 
 queue.take();
-// ⮕ Promise { 'Pluto' }
-```
-
-## Blocking vs non-blocking acknowledgements
-
-If you didn't call `ack`, the acknowledgement would be automatically revoked on _the next tick_ after the promise
-returned by `takeAck` is resolved, and the value would remain in the queue.
-
-If acknowledgement was revoked, the `ack` call would throw an error:
-
-```ts
-queue.takeAck()
-  .then(protocol => protocol) // Add an extra tick
-  .then(([value, ack]) => {
-    ack();
-    // ❌ Error: AsyncQueue acknowledgement was revoked
-  });
-```
-
-To prevent the acknowledgement from being revoked, request a blocking acknowledgement:
-
-```ts
-queue.takeBlockingAck()
-  .then(protocol => protocol) // Add an extra tick
-  .then(([value, ack]) => {
-    ack(); // Value successfully acknowledged
-    doSomething(value);
-  });
-```
-
-Blocking acknowledgement should be used if the consumer has to perform asynchronous actions _before_ processing the
-value.
-
-To guarantee that consumers receive values in the same order as they were provided, blocking acknowledgements prevent
-subsequent consumers from being resolved until `ack` is called. Be sure to call `ack` to prevent the queue from being
-stuck indefinitely.
-
-```ts
-async function blockingConsumer() {
-  const [value, ack] = queue.takeAck(true);
-
-  try {
-    if (await doSomeChecks()) {
-      ack(true);
-      doSomething(value);
-    }
-  } finally {
-    // It's safe to call ack multiple times since it's a no-op
-    ack(false);
-  }
-}
+// ⮕ AbortablePromise { 'Pluto' }
 ```
 
 # `WorkPool`
@@ -172,8 +170,10 @@ wait in the queue.
 // The pool that processes 5 callbacks in parallel at maximum
 const pool = new WorkPool(5);
 
-pool.submit(async signal => doSomething());
-// ⮕ Promise<ReturnType<typeof doSomething>>
+pool.submit(signal => {
+  return Promise.resolve('Mars');
+});
+// ⮕ AbortablePromise<string>
 ```
 
 You can change how many callbacks can the pool process in parallel:
@@ -207,7 +207,7 @@ Create an `Executor` instance and submit a callback for execution:
 const executor = new Executor();
 
 executor.execute(doSomething);
-// ⮕ Promise<void>
+// ⮕ AbortablePromise<void>
 ```
 
 The `execute` method returns a promise that is fulfilled when the promise returned from the callback is settled. If
@@ -319,39 +319,54 @@ pubSub.subscribe(message => {
 pubSub.publish('Pluto');
 ```
 
-# `repeatUntil`
+# `repeat`
 
-Invokes a callback multiple times until the condition is met.
+Invokes a callback periodically with the given delay between settlements of returned promises until the condition is
+met. By default, the callback is invoked indefinitely with no delay between settlements: 
 
 ```ts
-repeatUntil(
-  // The callback that is invoked repeatedly
-  async () => doSomething(),
-
-  // The condition clause must return a truthy value to stop
-  // the loop
-  result => result.isFulfilled,
-
-  // An optional callback that returns a delay in milliseconds
-  // between iterations
-  result => 100,
-);
-// ⮕ Promise<ReturnType<typeof doSomething>>
+repeat(async () => {
+  await doSomething();
+});
+// ⮕ AbortablePromise<void>
 ```
 
-You can combine `repeatUntil` with [`timeout`](#racetimeout) to limit the repeat duration:
+Specify a delay between invocations:
+
+```ts
+repeat(doSomething, 3000);
+// ⮕ AbortablePromise<void>
+```
+
+Abort the loop:
+
+```ts
+const promise = repeat(doSomething, 3000);
+
+promise.abort();
+```
+
+Specify the condition when the loop must be stopped. The example below randomly picks a planet name once every 3 seconds
+and fulfills the returned promise when `'Mars'` is picked: 
+
+```ts
+repeat(
+  () => ['Mars', 'Pluto', 'Venus'][Math.floor(Math.random() * 3)],
+  3000,
+  value => value === 'Mars'
+);
+// ⮕ AbortablePromise<string>
+```
+
+You can combine `repeat` with [`timeout`](#timeout) to limit the repeat duration:
 
 ```ts
 timeout(
-  signal =>
-    repeatUntil(
-      () => doSomething(),
-      result => signal.aborted || result.isFulfilled,
-      100
-    ),
+  repeat(async () => {
+    await doSomething();
+  }),
   5000
 );
-// ⮕ Promise<ReturnType<typeof doSomething>>
 ```
 
 # `waitFor`
@@ -360,7 +375,7 @@ Returns a promise that is fulfilled when a callback returns a truthy value:
 
 ```ts
 waitFor(async () => doSomething());
-// ⮕ Promise<ReturnType<typeof doSomething>>
+// ⮕ AbortablePromise<ReturnType<typeof doSomething>>
 ```
 
 If you don't want `waitFor` to invoke the callback too frequently, provide a delay in milliseconds:
@@ -375,8 +390,15 @@ Returns a promise that resolves after a timeout. If signal is aborted then the r
 error.
 
 ```ts
-delay(100, abortController.signal);
-// ⮕ Promise<void>
+delay(100);
+// ⮕ AbortablePromise<void>
+```
+
+Delay can be resolved with a value:
+
+```ts
+delay(100, 'Pluto');
+// ⮕ AbortablePromise<string>
 ```
 
 # `timeout`
@@ -388,7 +410,7 @@ timeout(async signal => doSomething(), 100);
 // ⮕ Promise<ReturnType<typeof doSomething>>
 
 timeout(
-  new Promise(resolve => {
+  new AbortablePromise(resolve => {
     // Resolve the promise value
   }),
   100
