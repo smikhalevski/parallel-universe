@@ -1,4 +1,5 @@
 import { delay, WorkPool } from '../main';
+import { noop } from '../main/utils';
 
 describe('WorkPool', () => {
   let pool: WorkPool;
@@ -87,7 +88,7 @@ describe('WorkPool', () => {
     pool.resize(2);
 
     pool.submit(cbMock1);
-    pool.submit(cbMock2);
+    pool.submit(cbMock2).catch(noop);
 
     await delay(10);
 

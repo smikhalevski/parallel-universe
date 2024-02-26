@@ -1,6 +1,7 @@
 export { AbortablePromise } from './AbortablePromise';
 export { AsyncQueue } from './AsyncQueue';
 export { Blocker } from './Blocker';
+export { Deferred } from './Deferred';
 export { Executor } from './Executor';
 export { Lock } from './Lock';
 export { PubSub } from './PubSub';

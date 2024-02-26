@@ -160,6 +160,23 @@ describe('AsyncQueue', () => {
     expect(value).toBe(111);
   });
 
+  test('aborted take of a taken value is ignored', async () => {
+    const queue = new AsyncQueue();
+
+    const promise = queue.takeAck();
+
+    promise.then(([, ack]) => {
+      promise.abort();
+      ack();
+    });
+
+    queue.append(111);
+
+    await promise;
+
+    expect(queue.size).toBe(0);
+  });
+
   test('returns the size of the queue', () => {
     const queue = new AsyncQueue();
 

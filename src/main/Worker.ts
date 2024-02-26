@@ -1,25 +1,31 @@
 import { AsyncQueue } from './AsyncQueue';
+import { noop } from './utils';
 
 /**
  * The job that a worker can execute.
  */
 export interface Job {
   /**
+   * The signal that the job was aborted by the consumer.
+   */
+  signal: AbortSignal;
+
+  /**
    * The callback that the worker must execute.
    *
    * @param signal The signal that is aborted when the job must be aborted.
    */
-  callback: (signal: AbortSignal) => unknown;
+  cb(signal: AbortSignal): unknown;
 
   /**
-   * The callback that receives the callback value.
+   * The callback that receives the fulfillment value.
    */
-  resolve: (result: any) => void;
+  resolve(value: any): void;
 
   /**
-   * The callback that receives an error thrown by the callback.
+   * The callback that receives an error thrown by the {@link run callback}.
    */
-  reject: (reason: any) => void;
+  reject(reason: any): void;
 }
 
 /**
@@ -27,26 +33,19 @@ export interface Job {
  */
 export class Worker {
   /**
-   * The controller that aborts the active job if the worker is terminated. If `undefined` then there's no active job.
-   */
-  private _abortController?: AbortController;
-
-  /**
-   * The worker EOL promise, created if termination was requested during active job processing.
-   */
-  private _promise?: Promise<void>;
-
-  /**
-   * Resolves the EOL {@link _promise}.
-   */
-  private _notify?: () => void;
-
-  /**
    * `true` if the worker won't consume any new jobs, or `false` otherwise.
    */
-  get isTerminated(): boolean {
-    return this._promise !== undefined;
-  }
+  isTerminated = false;
+
+  /**
+   * The controller that aborts the most recent job.
+   */
+  private declare _abortController: AbortController;
+
+  /**
+   * The promise that resolves when the most recent job is settled.
+   */
+  private declare _promise: Promise<void>;
 
   /**
    * Creates a new {@link Worker} instance.
@@ -55,59 +54,49 @@ export class Worker {
    */
   constructor(jobQueue: AsyncQueue<Job>) {
     const next = () => {
-      if (this.isTerminated) {
-        this._notify!();
-        return;
-      }
+      const abortController = new AbortController();
+      this._abortController = abortController;
 
-      jobQueue.takeAck().then(([job, ack]) => {
-        if (this.isTerminated) {
-          return;
-        }
+      const jobAckPromise = jobQueue.takeAck();
 
-        ack();
+      abortController.signal.addEventListener('abort', () => {
+        jobAckPromise.abort(abortController.signal.reason);
+      });
 
-        const abortController = new AbortController();
-        this._abortController = abortController;
+      this._promise = jobAckPromise
+        .then(([job, ack]) => {
+          if (abortController.signal.aborted || job.signal.aborted) {
+            ack(false);
+            return;
+          }
 
-        new Promise(resolve => {
-          resolve(job.callback(abortController.signal));
-        }).then(
-          result => {
-            this._abortController = undefined;
-            job.resolve(result);
-            next();
-          },
-          reason => {
-            this._abortController = undefined;
-            job.reject(reason);
+          ack();
+
+          abortController.signal.addEventListener('abort', () => {
+            job.reject(abortController.signal.reason);
+          });
+
+          job.signal.addEventListener('abort', () => {
+            abortController.abort(job.signal.reason);
+          });
+
+          return new Promise(resolve => {
+            resolve((0, job.cb)(abortController.signal));
+          }).then(job.resolve, job.reject);
+        }, noop)
+        .then(() => {
+          if (!this.isTerminated) {
             next();
           }
-        );
-      });
+        });
     };
 
     next();
   }
 
-  /**
-   * Terminates the worker and aborts the active job.
-   *
-   * @returns The promise that is resolved when an active job is completed and worker is terminated.
-   */
-  terminate(): Promise<void> {
-    const { _promise, _abortController } = this;
-
-    if (_promise) {
-      return _promise;
-    }
-    if (_abortController) {
-      return (this._promise = new Promise(resolve => {
-        this._notify = resolve;
-        _abortController.abort();
-      }));
-    } else {
-      return (this._promise = Promise.resolve());
-    }
+  terminate(reason: any): Promise<void> {
+    this._abortController.abort(reason);
+    this.isTerminated = true;
+    return this._promise;
   }
 }

@@ -68,7 +68,7 @@ export class Executor<T = any> {
     const promise = new AbortablePromise<T>((resolve, reject, signal) => {
       signal.addEventListener('abort', () => {
         if (this.promise === promise) {
-          this.reject(signal.reason);
+          this.abort();
         }
       });
 
@@ -77,12 +77,14 @@ export class Executor<T = any> {
       }).then(
         value => {
           if (this.promise === promise) {
+            this.promise = null;
             this.resolve(value);
           }
           resolve(value);
         },
         reason => {
           if (this.promise === promise) {
+            this.promise = null;
             this.reject(reason);
           }
           reject(reason);

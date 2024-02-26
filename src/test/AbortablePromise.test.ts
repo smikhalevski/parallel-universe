@@ -49,5 +49,6 @@ describe('AbortablePromise', () => {
     promise.abort();
 
     await expect(promise).resolves.toBe(111);
+    expect(promise['_abortController'].signal.aborted).toBe(true);
   });
 });

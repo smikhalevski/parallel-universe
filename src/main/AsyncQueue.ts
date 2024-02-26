@@ -1,6 +1,14 @@
 import { AbortablePromise } from './AbortablePromise';
 
 /**
+ * The protocol provided to the {@link AsyncQueue} consumer, so it can acknowledge that the value was processed and
+ * should be removed from the queue.
+ *
+ * @template T The value taken from the queue.
+ */
+export type ValueAck<T> = [value: T, ack: (isTaken?: boolean) => void];
+
+/**
  * Asynchronous queue decouples value producers and value consumers.
  *
  * @template T The value stored in the queue.
@@ -48,7 +56,8 @@ export class AsyncQueue<T = any> {
    *
    * Values are taken in the same order they were appended. Taken values are removed from the queue.
    *
-   * @returns The promise that is fulfilled with a value that was added to the queue.
+   * @returns The promise that is fulfilled with a value that was added to the queue. Aborting the returned  promise
+   * after the value was taken is a no-op.
    */
   take(): AbortablePromise<T> {
     return new AbortablePromise((resolve, reject, signal) => {
@@ -75,9 +84,10 @@ export class AsyncQueue<T = any> {
    * fulfilled.
    *
    * @returns A tuple that contains a value available in the queue, and a callback that acknowledges that the value was
-   * processed and should be removed from the queue.
+   * processed and should be removed from the queue. Aborting the returned promise after a consumer received an
+   * acknowledgement callback is a no-op.
    */
-  takeAck(): AbortablePromise<[value: T, ack: (isTaken?: boolean) => void]> {
+  takeAck(): AbortablePromise<ValueAck<T>> {
     return new AbortablePromise((resolveTake, _rejectTake, signal) => {
       this._promise = this._promise.then(() => {
         if (signal.aborted) {
