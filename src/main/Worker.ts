@@ -57,13 +57,9 @@ export class Worker {
       const abortController = new AbortController();
       this._abortController = abortController;
 
-      const jobAckPromise = jobQueue.takeAck();
-
-      abortController.signal.addEventListener('abort', () => {
-        jobAckPromise.abort(abortController.signal.reason);
-      });
-
-      this._promise = jobAckPromise
+      this._promise = jobQueue
+        .takeAck()
+        .withSignal(abortController.signal)
         .then(([job, ack]) => {
           if (abortController.signal.aborted || job.signal.aborted) {
             ack(false);
