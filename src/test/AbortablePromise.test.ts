@@ -51,4 +51,48 @@ describe('AbortablePromise', () => {
     await expect(promise).resolves.toBe(111);
     expect(promise['_abortController'].signal.aborted).toBe(true);
   });
+
+  test('aborts if signal is aborted asynchronously', async () => {
+    const promise = new AbortablePromise(() => {});
+    const abortController = new AbortController();
+
+    promise.withSignal(abortController.signal);
+
+    abortController.abort(111);
+
+    await expect(promise).rejects.toBe(abortController.signal.reason);
+  });
+
+  test('does not abort if an external signal is not aborted', async () => {
+    const promise = new AbortablePromise(resolve => {
+      resolve(111);
+    });
+    const abortController = new AbortController();
+
+    promise.withSignal(abortController.signal);
+
+    await expect(promise).resolves.toBe(111);
+  });
+
+  test('aborts if an external signal is aborted asynchronously', async () => {
+    const promise = new AbortablePromise(() => {});
+    const abortController = new AbortController();
+
+    promise.withSignal(abortController.signal);
+
+    abortController.abort(111);
+
+    await expect(promise).rejects.toBe(abortController.signal.reason);
+  });
+
+  test('aborts if an external signal is aborted before subscription', async () => {
+    const promise = new AbortablePromise(() => {});
+    const abortController = new AbortController();
+
+    abortController.abort(111);
+
+    promise.withSignal(abortController.signal);
+
+    await expect(promise).rejects.toBe(abortController.signal.reason);
+  });
 });

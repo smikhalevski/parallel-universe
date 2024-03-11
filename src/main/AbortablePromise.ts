@@ -63,9 +63,13 @@ export class AbortablePromise<T> extends Promise<T> {
    * @returns This promise.
    */
   withSignal(signal: AbortSignal): this {
-    signal.addEventListener('abort', () => {
+    if (signal.aborted) {
       this.abort(signal.reason);
-    });
+    } else {
+      signal.addEventListener('abort', () => {
+        this.abort(signal.reason);
+      });
+    }
     return this;
   }
 }
