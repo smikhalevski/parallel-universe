@@ -61,16 +61,12 @@ export class AsyncQueue<T = any> {
    */
   take(): AbortablePromise<T> {
     return new AbortablePromise((resolve, reject, signal) => {
-      const promise = this.takeAck();
-
-      signal.addEventListener('abort', () => {
-        promise.abort(signal.reason);
-      });
-
-      promise.then(([value, ack]) => {
-        ack(!signal.aborted);
-        resolve(value);
-      }, reject);
+      this.takeAck()
+        .withSignal(signal)
+        .then(([value, ack]) => {
+          ack(!signal.aborted);
+          resolve(value);
+        }, reject);
     });
   }
 

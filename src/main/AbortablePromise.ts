@@ -55,4 +55,21 @@ export class AbortablePromise<T> extends Promise<T> {
   abort(reason?: any): void {
     this._abortController.abort(reason);
   }
+
+  /**
+   * Subscribes this promise to be aborted when the signal is aborted.
+   *
+   * @param signal The signal that aborts this promise.
+   * @returns This promise.
+   */
+  withSignal(signal: AbortSignal): this {
+    if (signal.aborted) {
+      this.abort(signal.reason);
+    } else {
+      signal.addEventListener('abort', () => {
+        this.abort(signal.reason);
+      });
+    }
+    return this;
+  }
 }

@@ -51,6 +51,12 @@ Provide a custom abort reason:
 promise.abort(new Error('Operation aborted'));
 ```
 
+Abort promise if an external signal is aborted:
+
+```ts
+promise.withSignal(signal);
+```
+
 # `Deferred`
 
 The promise that can be resolved externally.
