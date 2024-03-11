@@ -269,7 +269,7 @@ describe('Executor', () => {
     executor.execute(() => Promise.resolve(333)).catch(noop);
     executor.abort();
 
-    expect(listenerMock).toHaveBeenCalledTimes(4);
+    expect(listenerMock).toHaveBeenCalledTimes(3);
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(true);
     expect(executor.isRejected).toBe(false);
@@ -283,7 +283,7 @@ describe('Executor', () => {
     executor.execute(() => Promise.resolve(111)).catch(noop);
     executor.abort();
 
-    expect(listenerMock).toHaveBeenCalledTimes(4);
+    expect(listenerMock).toHaveBeenCalledTimes(3);
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(false);
     expect(executor.isRejected).toBe(true);
@@ -298,7 +298,7 @@ describe('Executor', () => {
     executor.abort();
     await promise.catch(noop);
 
-    expect(listenerMock).toHaveBeenCalledTimes(4);
+    expect(listenerMock).toHaveBeenCalledTimes(3);
     expect(executor.isPending).toBe(false);
     expect(executor.isFulfilled).toBe(true);
     expect(executor.isRejected).toBe(false);

@@ -125,27 +125,31 @@ export class Executor<T = any> {
    * callback is ignored. The signal passed to the executed callback is aborted.
    */
   abort(): this {
-    if (this.promise !== null) {
-      this.promise.abort();
+    const promise = this.promise;
+
+    if (promise !== null) {
       this.promise = null;
+      promise.abort();
       this._pubSub.publish();
     }
     return this;
   }
 
   /**
-   * Aborts pending execution and fulfills it with the given value.
+   * Aborts pending execution and fulfills it with the value.
    */
   resolve(value: Awaitable<T>): this {
+    const promise = this.promise;
+
     if (isPromiseLike(value)) {
       this.execute(() => value);
       return this;
     }
-    if (this.promise !== null || !this.isFulfilled || !isEqual(this.value, value)) {
-      if (this.promise !== null) {
-        this.promise.abort();
-        this.promise = null;
-      }
+    if (
+      (promise !== null && (promise.abort(), !(this.promise = null))) ||
+      !this.isFulfilled ||
+      !isEqual(this.value, value)
+    ) {
       this.isFulfilled = true;
       this.isRejected = false;
       this.value = value;
@@ -156,14 +160,16 @@ export class Executor<T = any> {
   }
 
   /**
-   * Instantly aborts pending execution and rejects with the given reason.
+   * Instantly aborts pending execution and rejects with the reason.
    */
   reject(reason: any): this {
-    if (this.promise !== null || !this.isRejected || !isEqual(this.reason, reason)) {
-      if (this.promise !== null) {
-        this.promise.abort();
-        this.promise = null;
-      }
+    const promise = this.promise;
+
+    if (
+      (promise !== null && (promise.abort(), !(this.promise = null))) ||
+      !this.isRejected ||
+      !isEqual(this.reason, reason)
+    ) {
       this.isFulfilled = false;
       this.isRejected = true;
       this.value = undefined;
