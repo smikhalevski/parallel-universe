@@ -52,7 +52,7 @@ export class AbortablePromise<T> extends Promise<T> {
    * @param reason The abort reason. If not explicitly provided, it defaults to an
    * {@link https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror AbortError}.
    */
-  abort(reason?: any): void {
+  abort(reason?: unknown): void {
     this._abortController.abort(reason);
   }
 
