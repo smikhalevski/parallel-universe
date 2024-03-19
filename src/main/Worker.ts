@@ -1,5 +1,5 @@
 import { AsyncQueue } from './AsyncQueue';
-import { noop } from './utils';
+import { noop, withSignal } from './utils';
 
 /**
  * The job that a worker can execute.
@@ -57,19 +57,21 @@ export class Worker {
       const abortController = new AbortController();
       this._abortController = abortController;
 
+      const signal = abortController.signal;
+
       this._promise = jobQueue
         .takeAck()
-        .withSignal(abortController.signal)
+        .withSignal(signal)
         .then(([job, ack]) => {
-          if (abortController.signal.aborted || job.signal.aborted) {
+          if (signal.aborted || job.signal.aborted) {
             ack(false);
             return;
           }
 
           ack(true);
 
-          abortController.signal.addEventListener('abort', () => {
-            job.reject(abortController.signal.reason);
+          signal.addEventListener('abort', () => {
+            job.reject(signal.reason);
           });
 
           job.signal.addEventListener('abort', () => {
@@ -77,7 +79,7 @@ export class Worker {
           });
 
           return new Promise(resolve => {
-            resolve((0, job.cb)(abortController.signal));
+            resolve(withSignal((0, job.cb)(signal), signal));
           }).then(job.resolve, job.reject);
         }, noop)
         .then(() => {
