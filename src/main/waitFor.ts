@@ -1,6 +1,6 @@
-import type { AbortablePromise } from './AbortablePromise';
+import { AbortablePromise } from './AbortablePromise';
 import { repeat } from './repeat';
-import type { AbortableCallback } from './types';
+import { Awaitable } from './types';
 
 /**
  * Polls the callback until it returns a truthy value or rejects.
@@ -12,7 +12,7 @@ import type { AbortableCallback } from './types';
  * @returns The truthy value.
  */
 export function waitFor<T>(
-  cb: AbortableCallback<T>,
+  cb: (signal: AbortSignal, index: number) => Awaitable<T>,
   ms?: ((value: T, index: number) => number) | number
 ): AbortablePromise<Exclude<T, false | 0 | '' | null | undefined>> {
   return repeat<any>(cb, ms, Boolean);
