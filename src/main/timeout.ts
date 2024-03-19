@@ -1,5 +1,6 @@
 import { AbortablePromise } from './AbortablePromise';
 import { AbortableCallback } from './types';
+import { withSignal } from './utils';
 
 /**
  * Returns a promise that is fulfilled with a produced value, or rejected after the timeout elapses.
@@ -11,16 +12,6 @@ import { AbortableCallback } from './types';
  * @template T The value returned from the callback or promise.
  */
 export function timeout<T>(cb: AbortableCallback<T> | PromiseLike<T>, ms: number): AbortablePromise<T> {
-  if (cb instanceof AbortablePromise) {
-    return timeout(signal => {
-      signal.addEventListener('abort', () => {
-        cb.abort(signal.reason);
-      });
-
-      return cb;
-    }, ms);
-  }
-
   if (typeof cb !== 'function') {
     return timeout(() => cb, ms);
   }
@@ -34,8 +25,8 @@ export function timeout<T>(cb: AbortableCallback<T> | PromiseLike<T>, ms: number
       clearTimeout(timer);
     });
 
-    new Promise<T>(resolveValue => {
-      resolveValue(cb(signal));
+    new Promise<T>(resolve => {
+      resolve(withSignal(cb(signal), signal));
     }).then(
       value => {
         clearTimeout(timer);

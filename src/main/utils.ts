@@ -1,3 +1,5 @@
+import { AbortablePromise } from './AbortablePromise';
+
 export function noop() {}
 
 /**
@@ -12,4 +14,8 @@ export function isEqual(a: unknown, b: unknown): boolean {
  */
 export function isPromiseLike<T>(value: any): value is PromiseLike<T> {
   return value !== null && typeof value === 'object' && typeof value.then === 'function';
+}
+
+export function withSignal<T>(value: T, signal: AbortSignal): T {
+  return value instanceof AbortablePromise ? value.withSignal(signal) : value;
 }

@@ -1,5 +1,6 @@
 import { AbortablePromise } from './AbortablePromise';
 import { Awaitable } from './types';
+import { withSignal } from './utils';
 
 /**
  * Invokes a callback periodically until it returns the value. If a callback throws an error or returns a promise that
@@ -27,7 +28,7 @@ export function retry<T>(
 
     (function next(index: number) {
       new Promise<T>(resolve => {
-        resolve(cb(signal, index));
+        resolve(withSignal(cb(signal, index), signal));
       }).then(resolve, reason => {
         if (signal.aborted) {
           return;

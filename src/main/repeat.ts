@@ -1,5 +1,6 @@
 import { AbortablePromise } from './AbortablePromise';
 import { Awaitable } from './types';
+import { withSignal } from './utils';
 
 /**
  * Invokes a callback periodically with the given delay between fulfillment of returned promises until the condition is
@@ -19,7 +20,7 @@ import { Awaitable } from './types';
  */
 export function repeat<I, O extends I>(
   cb: (signal: AbortSignal, index: number) => Awaitable<I>,
-  ms: ((value: I, index: number) => number) | number,
+  ms: ((value: I, index: number) => number) | number | undefined,
   until: (value: I, index: number) => value is O
 ): AbortablePromise<O>;
 
@@ -58,7 +59,7 @@ export function repeat(
 
     (function next(index: number) {
       new Promise(resolve => {
-        resolve(cb(signal, index));
+        resolve(withSignal(cb(signal, index), signal));
       })
         .then(value => {
           if (signal.aborted) {
