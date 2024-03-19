@@ -1,4 +1,4 @@
-import type { Awaitable } from './types';
+import { Awaitable } from './types';
 
 /**
  * The promise that can be aborted.

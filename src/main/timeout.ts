@@ -1,6 +1,5 @@
 import { AbortablePromise } from './AbortablePromise';
 import { AbortableCallback } from './types';
-import { isPromiseLike } from './utils';
 
 /**
  * Returns a promise that is fulfilled with a produced value, or rejected after the timeout elapses.
@@ -22,7 +21,7 @@ export function timeout<T>(cb: AbortableCallback<T> | PromiseLike<T>, ms: number
     }, ms);
   }
 
-  if (isPromiseLike(cb)) {
+  if (typeof cb !== 'function') {
     return timeout(() => cb, ms);
   }
 
