@@ -185,11 +185,11 @@ pool.submit(signal => {
 You can change how many callbacks can the pool process in parallel:
 
 ```ts
-pool.resize(2);
+pool.setSize(2);
 // ⮕ Promise<void>
 ```
 
-`resize` returns the promise that is resolved when there are no excessive callbacks being processed in parallel.
+`setSize` returns the promise that is resolved when there are no excessive callbacks being processed in parallel.
 
 If you resize the pool down, callbacks that are pending and exceed the new size limit, are notified via `signal` that
 they must be aborted.
@@ -198,7 +198,7 @@ To abort all callbacks that are being processed by the pool and wait for their c
 
 ```ts
 // Resolved when all pending callbacks are fulfilled
-pool.resize(0);
+pool.setSize(0);
 // ⮕ Promise<void>
 ```
 

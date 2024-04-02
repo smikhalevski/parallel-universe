@@ -3,8 +3,8 @@ import { Awaitable } from './types';
 import { withSignal } from './utils';
 
 /**
- * Invokes a callback periodically until it returns the value. If a callback throws an error or returns a promise that
- * is rejected then it is invoked again after a delay.
+ * Invokes a callback periodically until it successfully returns the result. If a callback throws an error or returns
+ * a promise that is rejected then it is invoked again after a delay.
  *
  * @param cb The callback that must return the fulfilled result.
  * @param ms The number of milliseconds between the rejection of the last promise returned by the callback and the next

@@ -3,14 +3,6 @@ import { PubSub } from './PubSub';
 import { AbortableCallback, Awaitable } from './types';
 import { isEqual, isPromiseLike, withSignal } from './utils';
 
-type ExecutorEvent =
-  | { type: 'pending'; target: Executor }
-  | { type: 'cleared'; target: Executor }
-  | { type: 'aborted'; target: Executor }
-  | { type: 'invalidated'; target: Executor }
-  | { type: 'fulfilled'; target: Executor }
-  | { type: 'rejected'; target: Executor };
-
 /**
  * Manages async callback execution process and provides ways to access execution results, abort or replace an
  * execution, and subscribe to its state changes.
@@ -31,15 +23,15 @@ export class Executor<T = any> {
   /**
    * `true` if {@link invalidate} was called on a settled executor and a new settlement hasn't occurred yet.
    */
-  isInvalidated = false;
+  isStale = false;
 
   /**
-   * The value or `undefined` if rejected.
+   * The value or `undefined` if executor isn't {@link isFulfilled fulfilled}.
    */
   value: T | undefined;
 
   /**
-   * The reason of failure.
+   * The reason of failure or `undefined` if executor isn't {@link isRejected rejected}.
    */
   reason: any;
 
@@ -65,12 +57,14 @@ export class Executor<T = any> {
   /**
    * The last callback passed to {@link execute}.
    */
-  private _lastCallback: AbortableCallback<T> | null = null;
+  executee: AbortableCallback<T> | null = null;
 
-  private _pubSub = new PubSub<ExecutorEvent>();
+  private _pubSub = new PubSub();
 
   /**
-   * Instantly aborts pending execution (if any), marks executor as pending and invokes the callback.
+   * Executes a callback and populates the executor with the returned result.
+   *
+   * Instantly aborts pending execution (if any), marks executor as pending and then invokes the callback.
    *
    * If other execution was started before the promise returned by the callback is fulfilled then the signal is aborted
    * and the returned result is ignored.
@@ -79,13 +73,13 @@ export class Executor<T = any> {
    * @returns The promise that is resolved with the result of the callback execution.
    */
   execute(cb: AbortableCallback<T>): AbortablePromise<T> {
-    this._lastCallback = cb;
+    this.executee = cb;
 
     const promise = new AbortablePromise<T>((resolve, reject, signal) => {
       signal.addEventListener('abort', () => {
         if (this.promise === promise) {
           this.promise = null;
-          this._pubSub.publish({ type: 'aborted', target: this });
+          this._pubSub.publish();
         }
       });
 
@@ -117,19 +111,28 @@ export class Executor<T = any> {
       prevPromise.abort();
     }
 
-    this._pubSub.publish({ type: 'pending', target: this });
+    this._pubSub.publish();
 
     return promise;
   }
 
   /**
-   * If
+   * Executes the last callback executed by this executor, or returns the promise of the pending execution.
+   *
+   * If there's no {@link executee} then the returned promise is rejected.
+   *
+   * @see {@link invalidate}
    */
-  retry(): this {
-    if (this._lastCallback !== null) {
-      this.execute(this._lastCallback);
+  retry(): AbortablePromise<T> {
+    if (this.promise !== null) {
+      return this.promise;
     }
-    return this;
+    if (this.executee !== null) {
+      return this.execute(this.executee);
+    }
+    return new AbortablePromise<T>((_resolve, reject) => {
+      reject(new Error("Executor doesn't have an executee"));
+    });
   }
 
   /**
@@ -146,37 +149,40 @@ export class Executor<T = any> {
    */
   clear(): this {
     if (this.isSettled) {
-      this.isFulfilled = this.isRejected = this.isInvalidated = false;
+      this.isFulfilled = this.isRejected = this.isStale = false;
       this.value = this.reason = undefined;
-      this._pubSub.publish({ type: 'cleared', target: this });
+      this._pubSub.publish();
     }
     return this;
   }
 
   /**
-   * Instantly aborts pending execution and preserves available results. Value (or error) returned from pending
+   * Instantly aborts pending execution and preserves available results as is. Value (or error) returned from pending
    * callback is ignored. The signal passed to the executed callback is aborted.
    *
    * @param reason The abort reason passed to the pending promise.
    */
   abort(reason?: unknown): this {
-    this.promise?.abort(reason);
-    return this;
-  }
-
-  /**
-   * If the executor is settled then its value is marked {@link isInvalidated as invalid} and the last executee passed
-   * to {@link execute} is executed again and pending execution is aborted.
-   */
-  invalidate(): this {
-    if (this.isInvalidated !== (this.isInvalidated = this.isSettled)) {
-      this._pubSub.publish({ type: 'invalidated', target: this });
+    if (this.promise !== null) {
+      this.promise.abort(reason);
     }
     return this;
   }
 
   /**
-   * Aborts pending execution and fulfills it with the value.
+   * If the executor is settled then its value is marked as {@link isStale stale}.
+   *
+   * @see {@link retry}
+   */
+  invalidate(): this {
+    if (this.isStale !== (this.isStale = this.isSettled)) {
+      this._pubSub.publish();
+    }
+    return this;
+  }
+
+  /**
+   * Aborts pending execution and fulfills the executor with the given value.
    */
   resolve(value: Awaitable<T>): this {
     const promise = this.promise;
@@ -186,16 +192,16 @@ export class Executor<T = any> {
       return this;
     }
     if (
-      (promise !== null && (promise.abort(), !(this.promise = null))) ||
-      this.isInvalidated ||
+      (promise !== null && ((this.promise = null), promise.abort(), true)) ||
+      this.isStale ||
       !this.isFulfilled ||
       !isEqual(this.value, value)
     ) {
       this.isFulfilled = true;
-      this.isRejected = this.isInvalidated = false;
+      this.isRejected = this.isStale = false;
       this.value = value;
       this.reason = undefined;
-      this._pubSub.publish({ type: 'fulfilled', target: this });
+      this._pubSub.publish();
     }
     return this;
   }
@@ -207,27 +213,27 @@ export class Executor<T = any> {
     const promise = this.promise;
 
     if (
-      (promise !== null && (promise.abort(), !(this.promise = null))) ||
-      this.isInvalidated ||
+      (promise !== null && ((this.promise = null), promise.abort(), true)) ||
+      this.isStale ||
       !this.isRejected ||
       !isEqual(this.reason, reason)
     ) {
-      this.isFulfilled = this.isInvalidated = false;
+      this.isFulfilled = this.isStale = false;
       this.isRejected = true;
       this.value = undefined;
       this.reason = reason;
-      this._pubSub.publish({ type: 'rejected', target: this });
+      this._pubSub.publish();
     }
     return this;
   }
 
   /**
-   * Subscribes a listener to the execution state changes.
+   * Subscribes a listener to the executor state changes.
    *
    * @param listener The listener that would be notified.
    * @returns The callback to unsubscribe the listener.
    */
-  subscribe(listener: (event: ExecutorEvent) => void): () => void {
+  subscribe(listener: () => void): () => void {
     return this._pubSub.subscribe(listener);
   }
 }

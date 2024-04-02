@@ -79,7 +79,7 @@ describe('Executor', () => {
     executor.execute(() => Promise.resolve(111)).catch(noop);
     executor.execute(() => Promise.resolve(222));
 
-    expect(listenerMock).toHaveBeenCalledTimes(3);
+    expect(listenerMock).toHaveBeenCalledTimes(2);
   });
 
   test('aborts pending execution if new execution is submitted', async () => {
@@ -90,7 +90,7 @@ describe('Executor', () => {
     const promise2 = executor.execute(() => Promise.resolve(222));
 
     expect(cbMock.mock.calls[0][0].aborted).toBe(true);
-    expect(listenerMock).toHaveBeenCalledTimes(3);
+    expect(listenerMock).toHaveBeenCalledTimes(2);
     expect(executor.isSettled).toBe(false);
     expect(executor.value).toBe(undefined);
 
@@ -98,7 +98,7 @@ describe('Executor', () => {
 
     await expect(promise1).rejects.toEqual(new DOMException('', 'AbortError'));
 
-    expect(listenerMock).toHaveBeenCalledTimes(4);
+    expect(listenerMock).toHaveBeenCalledTimes(3);
     expect(executor.value).toBe(222);
   });
 

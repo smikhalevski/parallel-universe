@@ -202,7 +202,7 @@ describe('Worker', () => {
 
     await expect(worker.terminate(undefined)).resolves.toBe(undefined);
 
-    expect(job.resolve).toHaveBeenCalledTimes(1);
+    expect(job.reject).toHaveBeenCalledTimes(2);
   });
 
   test('returns the same promise', async () => {
