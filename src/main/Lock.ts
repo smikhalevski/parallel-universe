@@ -1,5 +1,3 @@
-import { PubSub } from './PubSub';
-
 /**
  * Promise-based lock implementation.
  *
@@ -9,7 +7,6 @@ import { PubSub } from './PubSub';
  * @see https://en.wikipedia.org/wiki/Lock_(computer_science) Lock (computer science)
  */
 export class Lock {
-  private _pubSub = new PubSub();
   private _promise?: Promise<() => void>;
 
   /**
@@ -31,26 +28,14 @@ export class Lock {
       if (this._promise === promise) {
         this._promise = undefined;
       }
-      this._pubSub.publish();
     };
 
     if (_promise !== undefined) {
       this._promise = promise = _promise.then(() => release);
     } else {
       this._promise = promise = Promise.resolve(release);
-      this._pubSub.publish();
     }
 
     return promise;
-  }
-
-  /**
-   * Subscribes a listener to the {@link isLocked} status changes.
-   *
-   * @param listener The listener that would be notified.
-   * @returns The callback to unsubscribe the listener.
-   */
-  subscribe(listener: () => void): () => void {
-    return this._pubSub.subscribe(listener);
   }
 }
