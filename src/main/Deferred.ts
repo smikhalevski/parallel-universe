@@ -1,4 +1,4 @@
-import type { Awaitable } from './types';
+import { Awaitable } from './types';
 
 /**
  * The promise that can be resolved externally.
@@ -6,6 +6,10 @@ import type { Awaitable } from './types';
  * @template T The value that the promise is fulfilled with.
  */
 export class Deferred<T> extends Promise<T> {
+  static get [Symbol.species]() {
+    return Promise;
+  }
+
   /**
    * Fulfills the promise with the specified value. If the promise has already been resolved, either to a value,
    * a rejection, or another promise, this method does nothing.
@@ -14,19 +18,19 @@ export class Deferred<T> extends Promise<T> {
    * associated promise. If this value is a promise, then the associated promise will be resolved to the passed promise,
    * and follow the state as the provided promise (including any future transitions).
    */
-  declare resolve: (value: Awaitable<T>) => void;
+  resolve: (value: Awaitable<T>) => void;
 
   /**
    * Rejects the promise with the specified reason. If the promise has already been resolved, either to a value,
    * a rejection, or another promise, this method does nothing.
    *
    * @param reason The rejection reason for the associated promise. Although the reason can be undefined, it is
-   * generally an {@link !Error Error} object, like in exception handling.
+   * generally an {@link Error} object, like in exception handling.
    *
    * **Note:** This argument should not be a promise. Specifying a rejected promise would make the rejection reason
    * equal to the rejected promise itself, and not its rejection reason.
    */
-  declare reject: (reason?: any) => void;
+  reject: (reason?: any) => void;
 
   /**
    * Creates a new instance of {@link Deferred}.
@@ -34,9 +38,15 @@ export class Deferred<T> extends Promise<T> {
    * @template T The value that the promise is fulfilled with.
    */
   constructor() {
-    super((resolve, reject) => {
-      this.resolve = resolve;
-      this.reject = reject;
+    let resolve;
+    let reject;
+
+    super((resolveSuper, rejectSuper) => {
+      resolve = resolveSuper;
+      reject = rejectSuper;
     });
+
+    this.resolve = resolve!;
+    this.reject = reject!;
   }
 }

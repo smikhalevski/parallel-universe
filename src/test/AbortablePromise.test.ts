@@ -1,6 +1,13 @@
 import { AbortablePromise } from '../main';
 
 describe('AbortablePromise', () => {
+  test('creates an instance of promise', () => {
+    const promise = new AbortablePromise((resolve, reject, signal) => {});
+
+    expect(promise).toBeInstanceOf(Promise);
+    expect(promise).toBeInstanceOf(AbortablePromise);
+  });
+
   test('resolves with a value', async () => {
     const promise = new AbortablePromise((resolve, reject, signal) => {
       setTimeout(resolve, 0, 111);

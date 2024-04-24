@@ -1,10 +1,8 @@
 <p align="center">
   <a href="#readme">
-    <img alt="Spaceman" src="./spaceman.png"/>
+    <img alt="Spaceman" src="./logo.png"/>
   </a>
 </p>
-
-The set of async flow control structures and promise utils.
 
 ```sh
 npm install --save-prod parallel-universe
@@ -16,7 +14,6 @@ npm install --save-prod parallel-universe
 - [`Deferred`](#deferred)
 - [`AsyncQueue`](#asyncqueue)
 - [`WorkPool`](#workpool)
-- [`Executor`](#executor)
 - [`Lock`](#lock)
 - [`Blocker`](#blocker)
 - [`PubSub`](#pubsub)
@@ -185,11 +182,11 @@ pool.submit(signal => {
 You can change how many callbacks can the pool process in parallel:
 
 ```ts
-pool.resize(2);
+pool.setSize(2);
 // ⮕ Promise<void>
 ```
 
-`resize` returns the promise that is resolved when there are no excessive callbacks being processed in parallel.
+`setSize` returns the promise that is resolved when there are no excessive callbacks being processed in parallel.
 
 If you resize the pool down, callbacks that are pending and exceed the new size limit, are notified via `signal` that
 they must be aborted.
@@ -198,63 +195,8 @@ To abort all callbacks that are being processed by the pool and wait for their c
 
 ```ts
 // Resolved when all pending callbacks are fulfilled
-pool.resize(0);
+pool.setSize(0);
 // ⮕ Promise<void>
-```
-
-# `Executor`
-
-Executor manages an async callback execution process and provides ways to access execution results, abort or replace an
-execution, and subscribe to its state changes.
-
-Create an `Executor` instance and submit a callback for execution:
-
-```ts
-const executor = new Executor();
-
-executor.execute(doSomething);
-// ⮕ AbortablePromise<void>
-```
-
-The `execute` method returns a promise that is fulfilled when the promise returned from the callback is settled. If
-there's a pending execution, it is aborted and the new execution is started.
-
-To abort the pending execution, you can use
-an [abort signal](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal)
-passed to the executed callback:
-
-```ts
-executor.execute(async signal => {
-  // Check signal.aborted
-});
-
-executor.abort();
-```
-
-When execution is aborted the current `value` and `reason` remain intact.
-
-To reset the executor to the initial state use:
-
-```ts
-executor.clear();
-```
-
-You can directly fulfill or reject an executor:
-
-```ts
-executor.resolve(value);
-
-executor.reject(reason);
-```
-
-Subscribe to an executor to receive notifications when its state changes:
-
-```ts
-const unsubscribe = executor.subscribe(() => {
-  // Handle the update
-});
-
-unsubscribe();
 ```
 
 # `Lock`
@@ -370,6 +312,51 @@ You can combine `repeat` with [`timeout`](#timeout) to limit the repeat duration
 timeout(
   repeat(async () => {
     await doSomething();
+  }),
+  5000
+);
+```
+
+# `retry`
+
+Invokes a callback periodically until it successfully returns the result. If a callback throws an error or returns
+a promise that is rejected then it is invoked again after a delay. 
+
+```ts
+retry(async () => {
+  await doSomethingOrThrow();
+});
+// ⮕ AbortablePromise<void>
+```
+
+Specify a delay between tries:
+
+```ts
+retry(doSomethingOrThrow, 3000);
+// ⮕ AbortablePromise<void>
+```
+
+Specify maximum number of tries:
+
+```ts
+retry(doSomethingOrThrow, 3000, 5);
+// ⮕ AbortablePromise<void>
+```
+
+Abort the retry prematurely:
+
+```ts
+const promise = retry(doSomethingOrThrow, 3000);
+
+promise.abort();
+```
+
+You can combine `retry` with [`timeout`](#timeout) to limit the retry duration:
+
+```ts
+timeout(
+  retry(async () => {
+    await doSomethingOrThrow();
   }),
   5000
 );

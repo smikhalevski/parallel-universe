@@ -1,8 +1,9 @@
 import { AbortablePromise } from './AbortablePromise';
-import type { AbortableCallback } from './types';
+import { Awaitable } from './types';
+import { withSignal } from './utils';
 
 /**
- * Invokes a callback periodically with the given delay between settlements of returned promises until the condition is
+ * Invokes a callback periodically with the given delay between fulfillment of returned promises until the condition is
  * met. If callback throws an error or returns a rejected promise, then the promise returned from {@link repeat} is
  * rejected.
  *
@@ -15,15 +16,16 @@ import type { AbortableCallback } from './types';
  * @template I The value returned by the callback.
  * @template O The value that fulfills the returned promise.
  * @returns The promise that is fulfilled with the callback result.
+ * @see {@link retry}
  */
 export function repeat<I, O extends I>(
-  cb: AbortableCallback<I>,
-  ms: ((value: I, index: number) => number) | number,
+  cb: (signal: AbortSignal, index: number) => Awaitable<I>,
+  ms: ((value: I, index: number) => number) | number | undefined,
   until: (value: I, index: number) => value is O
 ): AbortablePromise<O>;
 
 /**
- * Invokes a callback periodically with the given delay between settlements of returned promises until the condition is
+ * Invokes a callback periodically with the given delay between fulfillment of returned promises until the condition is
  * met. If callback throws an error or returns a rejected promise, then the promise returned from {@link repeat} is
  * rejected.
  *
@@ -35,15 +37,16 @@ export function repeat<I, O extends I>(
  * indefinitely.
  * @template T The value returned by the callback.
  * @returns The promise that is fulfilled with the callback result.
+ * @see {@link retry}
  */
 export function repeat<T>(
-  cb: AbortableCallback<T>,
+  cb: (signal: AbortSignal, index: number) => Awaitable<T>,
   ms?: ((value: T, index: number) => number) | number,
   until?: (value: T, index: number) => unknown
 ): AbortablePromise<T>;
 
 export function repeat(
-  cb: AbortableCallback<unknown>,
+  cb: (signal: AbortSignal, index: number) => Awaitable<unknown>,
   ms?: ((value: unknown, index: number) => number) | number,
   until?: (value: unknown, index: number) => unknown
 ): AbortablePromise<unknown> {
@@ -56,13 +59,13 @@ export function repeat(
 
     (function next(index: number) {
       new Promise(resolve => {
-        resolve(cb(signal));
+        resolve(withSignal(cb(signal, index), signal));
       })
         .then(value => {
           if (signal.aborted) {
             return;
           }
-          if (typeof until === 'function' && until(value, index)) {
+          if (until !== undefined && until(value, index)) {
             resolve(value);
             return;
           }

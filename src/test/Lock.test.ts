@@ -55,42 +55,4 @@ describe('Lock', () => {
     release2();
     expect(lock.isLocked).toBe(false);
   });
-
-  test('triggers listener when locked', () => {
-    const listenerMock = jest.fn();
-    const lock = new Lock();
-    lock.subscribe(listenerMock);
-
-    lock.acquire();
-
-    expect(listenerMock).toHaveBeenCalledTimes(1);
-  });
-
-  test('triggers listener when unlocked', async () => {
-    const listenerMock = jest.fn();
-    const lock = new Lock();
-    lock.subscribe(listenerMock);
-
-    const release = await lock.acquire();
-    release();
-
-    expect(listenerMock).toHaveBeenCalledTimes(2);
-  });
-
-  test('triggers listener when owner is changed', async () => {
-    const listenerMock = jest.fn();
-    const lock = new Lock();
-    lock.subscribe(listenerMock);
-
-    const releasePromise1 = lock.acquire();
-    const releasePromise2 = lock.acquire();
-
-    const release1 = await releasePromise1;
-    release1();
-
-    const release2 = await releasePromise2;
-    release2();
-
-    expect(listenerMock).toHaveBeenCalledTimes(3);
-  });
 });

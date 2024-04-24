@@ -1,4 +1,4 @@
-import type { Awaitable } from './types';
+import { Awaitable } from './types';
 
 /**
  * The promise that can be aborted.
@@ -6,7 +6,11 @@ import type { Awaitable } from './types';
  * @template T The value that the promise is resolved with.
  */
 export class AbortablePromise<T> extends Promise<T> {
-  private _abortController: AbortController;
+  static get [Symbol.species]() {
+    return Promise;
+  }
+
+  private declare _abortController: AbortController;
 
   /**
    * Creates a new abortable promise.
@@ -52,7 +56,7 @@ export class AbortablePromise<T> extends Promise<T> {
    * @param reason The abort reason. If not explicitly provided, it defaults to an
    * {@link https://developer.mozilla.org/en-US/docs/Web/API/DOMException#aborterror AbortError}.
    */
-  abort(reason?: any): void {
+  abort(reason?: unknown): void {
     this._abortController.abort(reason);
   }
 

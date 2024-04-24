@@ -25,7 +25,7 @@ export class WorkPool {
    * @param size The number of workers in the pool.
    */
   constructor(size = 1) {
-    this._setSize(size, undefined);
+    this.setSize(size);
   }
 
   /**
@@ -52,47 +52,7 @@ export class WorkPool {
    * @return The promise that is fulfilled when the number of workers matches the requested size: excessive workers were
    * deleted or additional workers were spawned.
    */
-  resize(size: number, reason?: any): Promise<void> {
-    return this._setSize(size, reason);
-  }
-
-  /**
-   * Submits a new callback that should be executed by the worker in the pool.
-   *
-   * @param cb The callback to invoke.
-   * @template T The callback result.
-   * @returns The promise that is fulfilled with the callback result.
-   */
-  submit<T>(cb: AbortableCallback<T>): AbortablePromise<T> {
-    return new AbortablePromise((resolve, reject, signal) => {
-      this._jobQueue.append({ cb, resolve, reject, signal });
-    });
-  }
-
-  /**
-   * Aborts all pending jobs and returns promise that is fulfilled when all workers are terminated.
-   *
-   * This operation preserves the size of the pool intact.
-   *
-   * @param reason The reason that is used to reject all pending job promises.
-   * @return The promise that is fulfilled when all workers are terminated.
-   */
-  abort(reason?: any): Promise<void> {
-    const size = this.size;
-    this._setSize(0, reason);
-    return this._setSize(size, reason);
-  }
-
-  /**
-   * Changes the size of the pool by spawning or terminating workers. When worker is terminated while processing an
-   * async task, its signal is aborted.
-   *
-   * @param size The non-negative integer number of workers in the pool.
-   * @param reason The reason that is used to reject all pending job promises.
-   * @returns The promise that is fulfilled when the pool reaches the requested size: excessive workers were terminated
-   * or additional workers were spawned.
-   */
-  private _setSize(size: number, reason: any): Promise<void> {
+  setSize(size: number, reason?: any): Promise<void> {
     const { _workers } = this;
 
     const promises = [];
@@ -124,5 +84,32 @@ export class WorkPool {
     }
 
     return Promise.all(promises).then(noop);
+  }
+
+  /**
+   * Submits a new callback that should be executed by the worker in the pool.
+   *
+   * @param cb The callback to invoke.
+   * @template T The callback result.
+   * @returns The promise that is fulfilled with the callback result.
+   */
+  submit<T>(cb: AbortableCallback<T>): AbortablePromise<T> {
+    return new AbortablePromise((resolve, reject, signal) => {
+      this._jobQueue.append({ cb, resolve, reject, signal });
+    });
+  }
+
+  /**
+   * Aborts all pending jobs and returns promise that is fulfilled when all workers are terminated.
+   *
+   * This operation preserves the size of the pool intact.
+   *
+   * @param reason The reason that is used to reject all pending job promises.
+   * @return The promise that is fulfilled when all workers are terminated.
+   */
+  abort(reason?: any): Promise<void> {
+    const size = this.size;
+    this.setSize(0, reason);
+    return this.setSize(size);
   }
 }

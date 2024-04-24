@@ -8,13 +8,27 @@ export class PubSub<T = void> {
   private _listeners: Array<(value: T) => unknown> = [];
 
   /**
+   * The number of subscribed listeners.
+   */
+  get listenerCount() {
+    return this._listeners.length;
+  }
+
+  /**
    * Synchronously invokes listeners with the published message.
    *
    * @param message The published message.
    */
   publish(message: T): void {
     for (const listener of this._listeners) {
-      listener(message);
+      try {
+        listener(message);
+      } catch (error) {
+        setTimeout(() => {
+          // Force uncaught exception
+          throw error;
+        }, 0);
+      }
     }
   }
 
@@ -35,5 +49,9 @@ export class PubSub<T = void> {
         this._listeners.splice(index, 1);
       }
     };
+  }
+
+  unsubscribeAll(): void {
+    this._listeners = [];
   }
 }

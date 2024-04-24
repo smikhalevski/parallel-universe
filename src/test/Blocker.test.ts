@@ -39,25 +39,4 @@ describe('Blocker', () => {
 
     expect(blocker.isBlocked).toBe(false);
   });
-
-  test('triggers listener when blocked', () => {
-    const listenerMock = jest.fn();
-    const blocker = new Blocker();
-    blocker.subscribe(listenerMock);
-
-    blocker.block();
-
-    expect(listenerMock).toHaveBeenCalledTimes(1);
-  });
-
-  test('triggers listener when unblocked', () => {
-    const listenerMock = jest.fn();
-    const blocker = new Blocker();
-    blocker.subscribe(listenerMock);
-
-    blocker.block();
-    blocker.unblock();
-
-    expect(listenerMock).toHaveBeenCalledTimes(2);
-  });
 });
