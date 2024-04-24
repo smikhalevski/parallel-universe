@@ -1,6 +1,6 @@
 <p align="center">
   <a href="#readme">
-    <img alt="Spaceman" src="./spaceman.png"/>
+    <img alt="Spaceman" src="./logo.png"/>
   </a>
 </p>
 
