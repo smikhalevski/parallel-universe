@@ -6,7 +6,11 @@ import { Awaitable } from './types';
  * @template T The value that the promise is resolved with.
  */
 export class AbortablePromise<T> extends Promise<T> {
-  private _abortController: AbortController;
+  static get [Symbol.species]() {
+    return Promise;
+  }
+
+  private declare _abortController: AbortController;
 
   /**
    * Creates a new abortable promise.
