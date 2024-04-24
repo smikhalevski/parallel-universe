@@ -18,6 +18,7 @@ npm install --save-prod parallel-universe
 - [`Blocker`](#blocker)
 - [`PubSub`](#pubsub)
 - [`repeat`](#repeat)
+- [`retry`](#retry)
 - [`waitFor`](#waitfor)
 - [`delay`](#delay)
 - [`timeout`](#timeout)
@@ -35,7 +36,7 @@ const promise = new AbortablePromise((resolve, reject, signal) => {
   // Resolve or reject the promise
 });
 
-promises.abort();
+promise.abort();
 ```
 
 When [`abort`](https://smikhalevski.github.io/parallel-universe/classes/AbortablePromise.html#abort) is called,
@@ -65,7 +66,7 @@ promise.then(value => {
   doSomething(value);
 });
 
-promises.resolve('Mars');
+promise.resolve('Mars');
 ```
 
 # `AsyncQueue`
