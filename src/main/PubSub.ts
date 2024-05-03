@@ -33,6 +33,23 @@ export class PubSub<T = void> {
   }
 
   /**
+   * Waits for a message that satisfies the given predicate to be published and resolves with that message.
+   *
+   * @param predicate A function that takes the message as a parameter and returns true if the message satisfies the condition, otherwise false.
+   * @returns A promise that resolves with the published message that satisfies the predicate.
+   */
+  waitFor(predicate: (message: T) => boolean): Promise<T> {
+    return new Promise(resolve => {
+      const unsubscribe = this.subscribe(message => {
+        if (predicate(message)) {
+          resolve(message);
+          unsubscribe();
+        }
+      });
+    });
+  }
+
+  /**
    * Adds a listener that would receive all messages published via {@link publish}.
    *
    * @param listener The callback.

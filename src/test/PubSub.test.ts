@@ -1,4 +1,4 @@
-import { PubSub } from '../main';
+import { PubSub, delay } from '../main';
 
 describe('PubSub', () => {
   test('publishes a message', () => {
@@ -53,5 +53,43 @@ describe('PubSub', () => {
 
     expect(listenerMock1).toHaveBeenCalledTimes(0);
     expect(listenerMock2).toHaveBeenCalledTimes(1);
+  });
+
+  test('waits for a specific message and resolves with that message', () => {
+    const pubSub = new PubSub<number>();
+
+    pubSub
+      .waitFor(message => message === 42)
+      .then(message => {
+        expect(message).toBe(42);
+      });
+
+    pubSub.publish(10);
+    pubSub.publish(20);
+    pubSub.publish(42);
+    pubSub.publish(30);
+  });
+
+  test('does not resolve if no message matches the predicate', () => {
+    const listenerMock = jest.fn();
+    const pubSub = new PubSub<number>();
+
+    let result: number;
+
+    pubSub
+      .waitFor(message => message === 42)
+      .then(message => {
+        result = message;
+        listenerMock();
+      });
+
+    pubSub.publish(10);
+    pubSub.publish(20);
+    pubSub.publish(30);
+
+    delay(100).then(() => {
+      expect(result).toBeUndefined();
+      expect(listenerMock).toHaveBeenCalledTimes(0);
+    });
   });
 });
