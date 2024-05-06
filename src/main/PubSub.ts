@@ -1,3 +1,5 @@
+import { AbortablePromise } from './AbortablePromise';
+
 /**
  * Publish–subscribe pattern implementation that guarantees the delivery of published messages even if any of listeners
  * would throw an error.
@@ -35,17 +37,35 @@ export class PubSub<T = void> {
   /**
    * Waits for a message that satisfies the given predicate to be published and resolves with that message.
    *
+   * @template R A subtype of T that the predicate function identifies as satisfying the condition.
    * @param predicate A function that takes the message as a parameter and returns true if the message satisfies the condition, otherwise false.
-   * @returns A promise that resolves with the published message that satisfies the predicate.
+   * @returns An {@link AbortablePromise} that resolves with the published message that satisfies the predicate.
    */
-  waitFor(predicate: (message: T) => boolean): Promise<T> {
-    return new Promise(resolve => {
+  waitFor<R extends T>(predicate: (message: T) => message is R): AbortablePromise<R>;
+
+  /**
+   * Waits for a message that satisfies the given predicate to be published and resolves with that message.
+   *
+   * @param predicate A function that takes the message as a parameter and returns true if the message satisfies the condition, otherwise false.
+   * @returns An {@link AbortablePromise} that resolves with the published message that satisfies the predicate.
+   */
+  waitFor(predicate: (message: T) => boolean): AbortablePromise<T>;
+
+  /**
+   * Waits for a message that satisfies the given predicate to be published and resolves with that message.
+   *
+   * @param predicate A function that takes the message as a parameter and returns true if the message satisfies the condition, otherwise false.
+   * @returns An {@link AbortablePromise} that resolves with the published message that satisfies the predicate.
+   */
+  waitFor(predicate: (message: T) => boolean) {
+    return new AbortablePromise((resolve, _reject, signal) => {
       const unsubscribe = this.subscribe(message => {
         if (predicate(message)) {
           resolve(message);
           unsubscribe();
         }
       });
+      signal.addEventListener('abort', unsubscribe);
     });
   }
 
