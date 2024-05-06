@@ -54,4 +54,29 @@ describe('PubSub', () => {
     expect(listenerMock1).toHaveBeenCalledTimes(0);
     expect(listenerMock2).toHaveBeenCalledTimes(1);
   });
+
+  test('waits for a specific message and resolves with that message', async () => {
+    const pubSub = new PubSub<number>();
+    const promise = pubSub.waitFor((message): message is 42 => message === 42);
+
+    pubSub.publish(10);
+    pubSub.publish(20);
+    pubSub.publish(42);
+    pubSub.publish(30);
+
+    await expect(promise).resolves.toBe(42);
+  });
+
+  test('aborts the waiter of the specific message', () => {
+    const predicateMock = jest.fn();
+    const pubSub = new PubSub<number>();
+    const promise = pubSub.waitFor(message => message === 42);
+
+    promise.then(predicateMock, () => {});
+    promise.abort();
+
+    pubSub.publish(42);
+
+    expect(predicateMock).not.toHaveBeenCalled();
+  });
 });
