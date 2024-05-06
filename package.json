@@ -1,6 +1,6 @@
 {
   "name": "parallel-universe",
-  "version": "6.0.0",
+  "version": "6.1.0",
   "description": "The set of async flow control structures and promise utils.",
   "main": "./index.js",
   "module": "./index.mjs",
