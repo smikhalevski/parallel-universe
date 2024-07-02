@@ -22,7 +22,7 @@ export class PubSub<T = void> {
    * @param message The published message.
    */
   publish(message: T): void {
-    for (const listener of this._listeners) {
+    for (const listener of this._listeners.slice(0)) {
       try {
         listener(message);
       } catch (error) {

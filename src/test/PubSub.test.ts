@@ -79,4 +79,20 @@ describe('PubSub', () => {
 
     expect(predicateMock).not.toHaveBeenCalled();
   });
+
+  test('can unsubscribe in listener', () => {
+    const pubSub = new PubSub();
+    const listenerMock1 = jest.fn(() => {
+      unsubscribe1();
+    });
+    const listenerMock2 = jest.fn();
+
+    const unsubscribe1 = pubSub.subscribe(listenerMock1);
+    pubSub.subscribe(listenerMock2);
+
+    pubSub.publish();
+
+    expect(listenerMock1).toHaveBeenCalledTimes(1);
+    expect(listenerMock2).toHaveBeenCalledTimes(1);
+  });
 });
