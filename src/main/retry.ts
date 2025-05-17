@@ -1,6 +1,6 @@
-import { AbortablePromise } from './AbortablePromise';
-import { Awaitable } from './types';
-import { withSignal } from './utils';
+import { AbortablePromise } from './AbortablePromise.js';
+import { Awaitable } from './types.js';
+import { withSignal } from './utils.js';
 
 /**
  * Invokes a callback periodically until it successfully returns the result. If a callback throws an error or returns
@@ -20,7 +20,7 @@ export function retry<T>(
   maxCount?: number
 ): AbortablePromise<T> {
   return new AbortablePromise((resolve, reject, signal) => {
-    let timer: NodeJS.Timeout;
+    let timer: number;
 
     signal.addEventListener('abort', () => {
       clearTimeout(timer);

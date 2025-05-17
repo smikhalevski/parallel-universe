@@ -1,4 +1,4 @@
-import { Awaitable } from './types';
+import { Awaitable } from './types.js';
 
 /**
  * The promise that can be aborted.
@@ -10,7 +10,7 @@ export class AbortablePromise<T> extends Promise<T> {
     return Promise;
   }
 
-  private declare _abortController: AbortController;
+  declare private _abortController: AbortController;
 
   /**
    * Creates a new abortable promise.

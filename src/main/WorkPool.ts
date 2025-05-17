@@ -1,8 +1,8 @@
-import { AbortablePromise } from './AbortablePromise';
-import { AbortableCallback } from './types';
-import { AsyncQueue } from './AsyncQueue';
-import { noop } from './utils';
-import { Job, Worker } from './Worker';
+import { AbortablePromise } from './AbortablePromise.js';
+import { AbortableCallback } from './types.js';
+import { AsyncQueue } from './AsyncQueue.js';
+import { noop } from './utils.js';
+import { Job, Worker } from './Worker.js';
 
 /**
  * The callback execution pool that can execute limited number of callbacks in parallel while other submitted callbacks

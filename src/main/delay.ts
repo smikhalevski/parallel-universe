@@ -1,5 +1,5 @@
-import { AbortablePromise } from './AbortablePromise';
-import { Awaitable } from './types';
+import { AbortablePromise } from './AbortablePromise.js';
+import { Awaitable } from './types.js';
 
 /**
  * Returns a promise that is fulfilled with `undefined` after a timeout elapses.

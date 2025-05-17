@@ -1,6 +1,6 @@
-import { AbortablePromise } from './AbortablePromise';
-import { Awaitable } from './types';
-import { withSignal } from './utils';
+import { AbortablePromise } from './AbortablePromise.js';
+import { Awaitable } from './types.js';
+import { withSignal } from './utils.js';
 
 /**
  * Invokes a callback periodically with the given delay between fulfillment of returned promises until the condition is
@@ -51,7 +51,7 @@ export function repeat(
   until?: (value: unknown, index: number) => unknown
 ): AbortablePromise<unknown> {
   return new AbortablePromise((resolve, reject, signal) => {
-    let timer: NodeJS.Timeout;
+    let timer: number;
 
     signal.addEventListener('abort', () => {
       clearTimeout(timer);

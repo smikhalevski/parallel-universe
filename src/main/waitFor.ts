@@ -1,6 +1,6 @@
-import { AbortablePromise } from './AbortablePromise';
-import { repeat } from './repeat';
-import { Awaitable } from './types';
+import { AbortablePromise } from './AbortablePromise.js';
+import { repeat } from './repeat.js';
+import { Awaitable } from './types.js';
 
 /**
  * Polls the callback until it returns a truthy value or rejects.

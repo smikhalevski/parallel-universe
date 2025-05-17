@@ -1,58 +1,57 @@
-import { Lock } from '../main';
+import { expect, test } from 'vitest';
+import { Lock } from '../main/index.js';
 
-describe('Lock', () => {
-  test('the new lock is unlocked', () => {
-    expect(new Lock().isLocked).toBe(false);
+test('the new lock is unlocked', () => {
+  expect(new Lock().isLocked).toBe(false);
+});
+
+test('acquiring the lock returns a promise', async () => {
+  await expect(new Lock().acquire()).resolves.toBeInstanceOf(Function);
+});
+
+test('provides the exclusive lock ownership', async () => {
+  const lock = new Lock();
+
+  const releasePromise1 = lock.acquire();
+  const releasePromise2 = lock.acquire();
+
+  let value;
+
+  releasePromise1.then(() => {
+    value = 111;
+  });
+  releasePromise2.then(() => {
+    value = 222;
   });
 
-  test('acquiring the lock returns a promise', async () => {
-    await expect(new Lock().acquire()).resolves.toBeInstanceOf(Function);
-  });
+  const release1 = await releasePromise1;
 
-  test('provides the exclusive lock ownership', async () => {
-    const lock = new Lock();
+  expect(value).toBe(111);
 
-    const releasePromise1 = lock.acquire();
-    const releasePromise2 = lock.acquire();
+  release1();
 
-    let value;
+  await releasePromise2;
 
-    releasePromise1.then(() => {
-      value = 111;
-    });
-    releasePromise2.then(() => {
-      value = 222;
-    });
+  expect(value).toBe(222);
+});
 
-    const release1 = await releasePromise1;
+test('locked is true if the lock is locked', async () => {
+  const lock = new Lock();
 
-    expect(value).toBe(111);
+  const releasePromise1 = lock.acquire();
+  const releasePromise2 = lock.acquire();
 
-    release1();
+  expect(lock.isLocked).toBe(true);
 
-    await releasePromise2;
+  const release1 = await releasePromise1;
+  expect(lock.isLocked).toBe(true);
 
-    expect(value).toBe(222);
-  });
+  release1();
+  expect(lock.isLocked).toBe(true);
 
-  test('locked is true if the lock is locked', async () => {
-    const lock = new Lock();
+  const release2 = await releasePromise2;
+  expect(lock.isLocked).toBe(true);
 
-    const releasePromise1 = lock.acquire();
-    const releasePromise2 = lock.acquire();
-
-    expect(lock.isLocked).toBe(true);
-
-    const release1 = await releasePromise1;
-    expect(lock.isLocked).toBe(true);
-
-    release1();
-    expect(lock.isLocked).toBe(true);
-
-    const release2 = await releasePromise2;
-    expect(lock.isLocked).toBe(true);
-
-    release2();
-    expect(lock.isLocked).toBe(false);
-  });
+  release2();
+  expect(lock.isLocked).toBe(false);
 });

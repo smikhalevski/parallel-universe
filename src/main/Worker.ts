@@ -1,5 +1,5 @@
-import { AsyncQueue } from './AsyncQueue';
-import { noop, withSignal } from './utils';
+import { AsyncQueue } from './AsyncQueue.js';
+import { noop, withSignal } from './utils.js';
 
 /**
  * The job that a worker can execute.
@@ -40,12 +40,12 @@ export class Worker {
   /**
    * The controller that aborts the most recent job.
    */
-  private declare _abortController: AbortController;
+  declare private _abortController: AbortController;
 
   /**
    * The promise that resolves when the most recent job is settled.
    */
-  private declare _promise: Promise<void>;
+  declare private _promise: Promise<void>;
 
   /**
    * Creates a new {@link Worker} instance.

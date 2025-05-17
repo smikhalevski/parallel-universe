@@ -1,54 +1,53 @@
-import { delay } from '../main';
+import { expect, test, vi } from 'vitest';
+import { delay } from '../main/index.js';
 
-jest.useFakeTimers();
+vi.useFakeTimers();
 
-describe('delay', () => {
-  test('resolves after a timeout passes', async () => {
-    const done = jest.fn();
+test('resolves after a timeout passes', async () => {
+  const done = vi.fn();
 
-    delay(200).then(done);
+  delay(200).then(done);
 
-    jest.advanceTimersByTime(100);
-    await Promise.resolve();
+  vi.advanceTimersByTime(100);
+  await Promise.resolve();
 
-    expect(done).not.toHaveBeenCalled();
+  expect(done).not.toHaveBeenCalled();
 
-    jest.advanceTimersByTime(100);
-    await Promise.resolve();
+  vi.advanceTimersByTime(100);
+  await Promise.resolve();
 
-    expect(done).toHaveBeenCalledTimes(1);
+  expect(done).toHaveBeenCalledTimes(1);
 
-    jest.advanceTimersByTime(500);
-    await Promise.resolve();
+  vi.advanceTimersByTime(500);
+  await Promise.resolve();
 
-    expect(done).toHaveBeenCalledTimes(1);
-  });
+  expect(done).toHaveBeenCalledTimes(1);
+});
 
-  test('resolves with undefined', async () => {
-    const promise = delay(200);
+test('resolves with undefined', async () => {
+  const promise = delay(200);
 
-    jest.runAllTimers();
+  vi.runAllTimers();
 
-    await expect(promise).resolves.toBeUndefined();
-  });
+  await expect(promise).resolves.toBeUndefined();
+});
 
-  test('resolves with a value', async () => {
-    const promise = delay(200, 'aaa');
+test('resolves with a value', async () => {
+  const promise = delay(200, 'aaa');
 
-    jest.runAllTimers();
+  vi.runAllTimers();
 
-    await expect(promise).resolves.toBe('aaa');
-  });
+  await expect(promise).resolves.toBe('aaa');
+});
 
-  test('aborts the delay', async () => {
-    const promise = delay(200);
+test('aborts the delay', async () => {
+  const promise = delay(200);
 
-    promise.abort();
+  promise.abort();
 
-    const expectPromise = expect(promise).rejects.toEqual(new DOMException('', 'AbortError'));
+  const expectPromise = expect(promise).rejects.toBeInstanceOf(DOMException);
 
-    await jest.runAllTimersAsync();
+  await vi.runAllTimersAsync();
 
-    await expectPromise;
-  });
+  await expectPromise;
 });

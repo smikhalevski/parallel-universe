@@ -1,4 +1,4 @@
-import { AbortablePromise } from './AbortablePromise';
+import { AbortablePromise } from './AbortablePromise.js';
 
 /**
  * Publish–subscribe pattern implementation that guarantees the delivery of published messages even if any of listeners

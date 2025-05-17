@@ -1,4 +1,4 @@
-import { AbortablePromise } from './AbortablePromise';
+import { AbortablePromise } from './AbortablePromise.js';
 
 export function noop() {}
 

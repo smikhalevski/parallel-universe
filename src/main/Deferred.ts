@@ -1,4 +1,4 @@
-import { Awaitable } from './types';
+import { Awaitable } from './types.js';
 
 /**
  * The promise that can be resolved externally.

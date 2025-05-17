@@ -1,42 +1,41 @@
-import { Blocker } from '../main';
+import { expect, test } from 'vitest';
+import { Blocker } from '../main/index.js';
 
-describe('Blocker', () => {
-  test('unblocked by default', () => {
-    expect(new Blocker().isBlocked).toBe(false);
-  });
+test('unblocked by default', () => {
+  expect(new Blocker().isBlocked).toBe(false);
+});
 
-  test('blocks', () => {
-    const blocker = new Blocker();
+test('blocks', () => {
+  const blocker = new Blocker();
 
-    expect(blocker.block()).toBeInstanceOf(Promise);
-    expect(blocker.isBlocked).toBe(true);
-  });
+  expect(blocker.block()).toBeInstanceOf(Promise);
+  expect(blocker.isBlocked).toBe(true);
+});
 
-  test('sequential blocks return the same promise', () => {
-    const blocker = new Blocker();
+test('sequential blocks return the same promise', () => {
+  const blocker = new Blocker();
 
-    expect(blocker.block()).toBe(blocker.block());
-  });
+  expect(blocker.block()).toBe(blocker.block());
+});
 
-  test('unblocks with result', async () => {
-    const blocker = new Blocker<number>();
+test('unblocks with result', async () => {
+  const blocker = new Blocker<number>();
 
-    const promise = blocker.block();
+  const promise = blocker.block();
 
-    blocker.unblock(111);
+  blocker.unblock(111);
 
-    await expect(promise).resolves.toBe(111);
-    expect(blocker.isBlocked).toBe(false);
-  });
+  await expect(promise).resolves.toBe(111);
+  expect(blocker.isBlocked).toBe(false);
+});
 
-  test('no-op multiple unblocks', () => {
-    const blocker = new Blocker();
+test('no-op multiple unblocks', () => {
+  const blocker = new Blocker();
 
-    blocker.block();
+  blocker.block();
 
-    blocker.unblock();
-    blocker.unblock();
+  blocker.unblock();
+  blocker.unblock();
 
-    expect(blocker.isBlocked).toBe(false);
-  });
+  expect(blocker.isBlocked).toBe(false);
 });

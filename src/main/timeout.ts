@@ -1,6 +1,6 @@
-import { AbortablePromise } from './AbortablePromise';
-import { AbortableCallback } from './types';
-import { withSignal } from './utils';
+import { AbortablePromise } from './AbortablePromise.js';
+import { AbortableCallback } from './types.js';
+import { withSignal } from './utils.js';
 
 /**
  * Returns a promise that is fulfilled with a produced value, or rejected after the timeout elapses.

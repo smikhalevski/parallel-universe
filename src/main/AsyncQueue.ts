@@ -1,4 +1,4 @@
-import { AbortablePromise } from './AbortablePromise';
+import { AbortablePromise } from './AbortablePromise.js';
 
 /**
  * The protocol provided to the {@link AsyncQueue} consumer, so it can acknowledge that the value was processed and
