@@ -6,6 +6,7 @@ test('creates an instance of promise', () => {
 
   expect(promise).toBeInstanceOf(Promise);
   expect(promise).toBeInstanceOf(AbortablePromise);
+  expect(Promise.resolve()).not.toBeInstanceOf(AbortablePromise);
 });
 
 test('resolves with a value', async () => {
