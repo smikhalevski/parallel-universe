@@ -214,7 +214,7 @@ lock.acquire();
 // ⮕ Promise<() => void>
 ```
 
-You can check that the lock is [locked](https://smikhalevski.github.io/parallel-universe/classes/Lock.html#isLocked)
+You can check that the lock is [locked](https://smikhalevski.github.io/parallel-universe/classes/Lock.html#islocked)
 before acquiring a lock.
 
 For example, if you want to force an async callback executions to be sequential you can use an external lock:
